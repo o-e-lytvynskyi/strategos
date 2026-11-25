@@ -29,7 +29,7 @@ class RallyTest {
         p.h.submit(ProdScene.P0, new SetRally(UnitSet.of(p.centre), 30, 3, 30)); // a log of the oak
         p.h.step();
         assertThat(p.h.results().get(p.h.results().size() - 1).outcome()).isEqualTo(CommandOutcome.ACCEPTED);
-        assertThat(p.s.buildings().rallyKind(p.centre)).isEqualTo(BuildingStore.RALLY_NODE);
+        assertThat(p.s.buildings().queues().rallyKind(p.centre)).isEqualTo(BuildingStore.RALLY_NODE);
         p.train();
         p.train();
         List<Integer> made = new ArrayList<>();
@@ -42,7 +42,8 @@ class RallyTest {
         for (int unit : made) {
             int i = Handle.index(unit);
             assertThat(p.s.orders().kind(i)).isEqualTo(OrderKind.GATHER);
-            assertThat(p.s.orders().target(i)).isEqualTo(p.s.buildings().rallyTarget(p.centre));
+            assertThat(p.s.orders().target(i))
+                    .isEqualTo(p.s.buildings().queues().rallyTarget(p.centre));
         }
         assertThat(p.s.treasury().gathered(0, 1)).as("their wood came home").isPositive();
 

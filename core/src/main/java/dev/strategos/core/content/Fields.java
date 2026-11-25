@@ -132,11 +132,20 @@ record Fields(String file, List<TemplateProblem> problems) {
         }
     }
 
-    /** A building's garrison (BLD-16), if it has one: known keys, a whole capacity of at least 1 and class tokens. */
+    /**
+     * A building's garrison (BLD-16), if it has one: known keys, a whole capacity of at least 1 and class tokens; a holder
+     * with neither (the base's {@code ejectBelow} alone) holds nobody. {@code heal} and {@code ejectBelow} are ranged
+     * numbers (BLD-10).
+     */
     void garrisonHolder(JsonObject building) {
         JsonObject holder = object(building, "", "GarrisonHolder", false);
         if (holder == null) return;
-        known(holder, "/GarrisonHolder", "capacity", "classes");
+        known(holder, "/GarrisonHolder", "capacity", "classes", "heal", "ejectBelow");
+        rangedNumber(holder, CorePaths.GARRISON_HEAL);
+        rangedNumber(holder, CorePaths.GARRISON_EJECT_BELOW);
+        if (!holder.has("capacity") && !holder.has("classes")) {
+            return; // only the base's ejectBelow: a building that holds nobody
+        }
         rangedNumber(holder, CorePaths.GARRISON_CAPACITY);
         if (!(holder.get("capacity") instanceof JsonPrimitive n)
                 || !n.isNumber()

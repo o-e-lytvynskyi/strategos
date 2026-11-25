@@ -90,7 +90,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG
                             .optionalFieldOf("lastRequest", PathStore.NEVER)
                             .forGetter(PathStore.UnitPath::lastRequest),
-                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath))
+                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath),
+                    Codec.BOOL.optionalFieldOf("wanted", false).forGetter(PathStore.UnitPath::wanted))
             .apply(i, PathStore.UnitPath::new));
 
     private static final Codec<PathRequest> REQUEST = RecordCodecBuilder.create(i -> i.group(
@@ -473,7 +474,14 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision),
                     SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
                     STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
-                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("territory", List.of())
+                            .forGetter(MatchSnapshot.Play::territory),
+                    Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture),
+                    Codec.LONG.listOf().optionalFieldOf("gates", List.of()).forGetter(MatchSnapshot.Play::gates),
+                    Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(

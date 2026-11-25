@@ -66,7 +66,7 @@ public final class RtsScreen extends Screen {
             return;
         }
         double[] from = in.dragFrom();
-        if (from.length == 2) {
+        if (from.length == 2 && !mode.placement().isWall()) { // a wall's drag is its ghost, not a selection box
             int x0 = (int) Math.min(from[0], mouseX);
             int y0 = (int) Math.min(from[1], mouseY);
             int x1 = (int) Math.max(from[0], mouseX);
@@ -184,6 +184,7 @@ public final class RtsScreen extends Screen {
     /** Selection (UI-03), control groups (UI-04) and orders (UI-05). */
     private void handle(List<InputState.Event> events) {
         Selection selection = mode.selection();
+        InputState keys = mode.input();
         for (InputState.Event e : events) {
             mode.fired(e.action());
             boolean shift = Modifiers.shift(e.modifiers());
@@ -210,14 +211,23 @@ public final class RtsScreen extends Screen {
                         selection.allOfType(onScreen(mode.seen()), unit, shift);
                     }
                 }
-                case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                case BOX_SELECT -> {
+                    if (!mode.placement().drag(pickAt(e.x(), e.y()), pickAt(e.toX(), e.toY()), shift)) {
+                        selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                    }
+                }
                 case ORDER_PREVIEW -> mode.preview(true);
                 case ORDER_CONTEXT -> {
                     if (mode.placement().armed()) {
                         mode.placement().cancel(); // a right click while placing disarms, as in the classics
                     } else {
                         mode.order(
-                                x(e.x()), y(e.y()), shift, Modifiers.ctrl(e.modifiers()), Modifiers.alt(e.modifiers()));
+                                x(e.x()),
+                                y(e.y()),
+                                shift,
+                                Modifiers.ctrl(e.modifiers()),
+                                Modifiers.alt(e.modifiers()),
+                                keys != null && keys.held(Action.CAPTURE));
                     }
                 }
                 case BUILD -> mode.placement().cycle();

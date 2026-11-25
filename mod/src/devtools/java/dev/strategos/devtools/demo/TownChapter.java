@@ -31,7 +31,10 @@ final class TownChapter implements DemoChapter {
     @Override
     public void script(DemoScript s) {
         Watch watch = new Watch();
-        s.run(st -> watch.attach(st.match()))
+        s.run(st -> {
+                    st.match();
+                    watch.attach(st);
+                })
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, 0, 8);
                     st.building(Ids.HOUSE, 0, -24, -14);
@@ -66,7 +69,7 @@ final class TownChapter implements DemoChapter {
                 .pause(5);
     }
 
-    private static @Nullable BuildingView centre(DemoStage st) {
+    private static @Nullable BuildingView centre(Stage st) {
         List<BuildingView> b = st.buildings(0, Ids.CIVIC_CENTRE);
         return b.isEmpty() ? null : b.getFirst();
     }

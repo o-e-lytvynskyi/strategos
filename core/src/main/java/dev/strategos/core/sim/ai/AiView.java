@@ -395,4 +395,43 @@ public final class AiView {
                 && orders.get(0).kind() == OrderKind.BURN
                 && orders.get(0).target() == building;
     }
+
+    /** Whether unit {@code u}'s current order is to capture building {@code building} (AI-08). */
+    public boolean capturing(UnitView u, int building) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty()
+                && orders.get(0).kind() == OrderKind.CAPTURE
+                && orders.get(0).target() == building;
+    }
+
+    /** Building {@code building}'s capture points in thousandths, 0 when it cannot be captured (AI-08). */
+    public long captureTotal(int building) {
+        return q.captureTotal(building);
+    }
+
+    /** Building {@code building}'s owner's regeneration a second in thousandths, its garrison's included (AI-08). */
+    public long captureRegen(int building) {
+        return q.captureRegen(building);
+    }
+
+    /** Unit {@code handle}'s capture strength in thousandths a second (AI-08). */
+    public long captureStrength(int handle) {
+        return q.captureStrength(handle);
+    }
+
+    /** The places free in building {@code building} for unit {@code handle}; 0 when it does not admit it (AI-08). */
+    public int garrisonRoom(int handle, int building) {
+        return q.garrisonRoom(handle, building);
+    }
+
+    /** The faction owning the territory under column ({@code x}, {@code z}), -1 for neutral (AI-08). */
+    public int territoryOwner(int x, int z) {
+        return q.territoryOwner(x, z);
+    }
+
+    /** The most own buildings of {@code id} the faction may have now, 0 for no limit (AI-08). */
+    public int buildingLimit(TemplateId id) {
+        UnitTemplate t = q.templates().byId(id);
+        return t == null ? 0 : q.buildingLimit(t.netIndex(), faction);
+    }
 }

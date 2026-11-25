@@ -27,6 +27,7 @@ import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.TerritoryScene;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.PathLoad;
 import dev.strategos.gametest.StrategosTest;
@@ -997,6 +998,30 @@ public final class PerfTests {
     @StrategosTest(batch = "perf_mvp_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void mvpStress(GameTestHelper h) {
         PerfSoaks.mvpStress(h);
+    }
+
+    /**
+     * PERF-16 (M9 spec §2.13), the territory and garrison perf gate: MAP-02 under fog and {@code Victory.NONE} with 4 x
+     * 150 population all placed at the start ({@link TerritoryScene}), all four played by the Hard computer, a churn
+     * driver that completes, destroys or transfers a house or a sentry tower every 30 seconds and 40 units kept inside
+     * centres, houses and towers, for 18,000 ticks, 15 game minutes paced at 20 a second, two viewers seated. Budgets A-C
+     * and E gate as in the MVP soak (D and G are reported), and the territory never blocks a tick: its job's join waits
+     * at most 0.5 ms (p99) on the tick thread and a recompute starts at most once in 20 ticks. The report adds {@code
+     * systems.territory} and {@code systems.garrison}. Writes {@code territory_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_territory", arena = "arena_flat_48", timeoutTicks = 60_000)
+    public static void territorySoak(GameTestHelper h) {
+        PerfSoaks.territorySoak(h);
+    }
+
+    /**
+     * PERF-16: the territory scene at twice its churn (every 15 seconds) and its garrisons (80 units), for 6,000 ticks:
+     * budget C's p95 at most 50 ms gates, with the territory's join and cadence checks; the rest is reported. Writes
+     * {@code territory_stress.json}.
+     */
+    @StrategosTest(batch = "perf_territory_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void territoryStress(GameTestHelper h) {
+        PerfSoaks.territoryStress(h);
     }
 
     /**

@@ -37,11 +37,12 @@ class ProductionTest {
                 int roll = rng.nextInt(30);
                 if (roll == 0) {
                     p.h.submit(ProdScene.P0, new Train(p.centre, TemplateSet.WORKER));
-                } else if (roll == 1 && p.s.buildings().queueSize(p.centre) > 0) {
+                } else if (roll == 1 && p.s.buildings().queues().queueSize(p.centre) > 0) {
                     p.h.submit(
                             ProdScene.P0,
                             new CancelTrain(
-                                    p.centre, rng.nextInt(p.s.buildings().queueSize(p.centre))));
+                                    p.centre,
+                                    rng.nextInt(p.s.buildings().queues().queueSize(p.centre))));
                 }
                 trained += (int) p.h.step().events().stream()
                         .filter(UnitCreated.class::isInstance)
@@ -49,7 +50,7 @@ class ProductionTest {
                 long stock = p.s.treasury().stock(0, 0);
                 long spent = p.s.treasury().spent(0, 0);
                 long refunded = p.s.treasury().refunded(0, 0);
-                long queued = p.s.buildings().queueSize(p.centre) * 60_000L;
+                long queued = p.s.buildings().queues().queueSize(p.centre) * 60_000L;
                 assertThat(stock + queued + trained * 60_000L)
                         .as("seed %d tick %d: the food in stock, queued and trained", seed, t)
                         .isEqualTo(10_000_000L);
@@ -82,19 +83,19 @@ class ProductionTest {
         ProdScene p = ProdScene.of(1_000, 0);
         assertThat(p.train().outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         p.h.runTicks(100);
-        long halfway = p.s.buildings().trained(p.centre);
+        long halfway = p.s.buildings().queues().trained(p.centre);
         assertThat(halfway).isBetween(95L, 105L);
         p.h.submit(
                 PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(40, 40), 19, 4));
         p.h.runTicks(300);
         assertThat(p.s.population().used(0)).as("19 and the head's reservation").isEqualTo(20);
-        assertThat(p.s.buildings().queueSize(p.centre))
+        assertThat(p.s.buildings().queues().queueSize(p.centre))
                 .as("its unit trained: the reservation was held")
                 .isZero();
         assertThat(p.train().outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         p.h.runTicks(50);
-        assertThat(p.s.buildings().reserved(p.centre)).isFalse();
-        assertThat(p.s.buildings().trained(p.centre))
+        assertThat(p.s.buildings().queues().reserved(p.centre)).isFalse();
+        assertThat(p.s.buildings().queues().trained(p.centre))
                 .as("a waiting head keeps what it had: none yet")
                 .isZero();
     }

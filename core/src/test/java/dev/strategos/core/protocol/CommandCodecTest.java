@@ -53,7 +53,17 @@ class CommandCodecTest {
                 new RingBell(0x80003),
                 new AllClear(0x80003),
                 new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE),
-                new Research(524_294, new TechId("strategos:gather_wood_1")));
+                new Research(524_294, new TechId("strategos:gather_wood_1")),
+                new Capture(UnitSet.of(3, 4), 0x300007),
+                new UpgradeBuilding(524_295),
+                new PlaceWall(
+                        new TemplateId("strategos:building/palisade"),
+                        10,
+                        -20,
+                        42,
+                        -20,
+                        List.of(1, 5),
+                        UnitSet.of(3, 4)));
     }
 
     @Test

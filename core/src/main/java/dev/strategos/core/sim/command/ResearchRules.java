@@ -63,7 +63,7 @@ final class ResearchRules {
             if (!Requirements.evaluate(tech.requires(), new MatchFactionView(state, faction))) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.REQUIREMENTS);
             }
-            if (b.queueSize(research.building()) >= BuildingStore.QUEUE_MAX) {
+            if (b.queues().queueSize(research.building()) >= BuildingStore.QUEUE_MAX) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.QUEUE_FULL);
             }
             long[] cost = state.costs().ofTech(tech);
@@ -72,7 +72,7 @@ final class ResearchRules {
                 return Tally.unaffordable(envelope, kind(), 1, missing);
             }
             state.treasury().pay(faction, cost);
-            b.enqueue(research.building(), QueueEntry.techEntry(tech.netIndex()));
+            b.queues().enqueue(research.building(), QueueEntry.techEntry(tech.netIndex()));
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }

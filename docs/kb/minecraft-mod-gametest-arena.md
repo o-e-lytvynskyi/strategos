@@ -108,3 +108,15 @@ block a test sets above the arena's height stays in the world for whatever test 
 blocks of platform at helper y 2..7 inside its eight. A match band may reach above the arena only
 if nothing is placed there. Locally the world under `mod/build/gametest/world` survives between
 runs as well.
+
+## A command sent to a match that is still preparing is lost without a word
+
+A match is `PREPARING` for a few ticks after it is made (the terrain is captured), and
+`MatchRuntime.submit` throws `MatchRefusedException` until it runs. Sent from a client-side
+scenario through `server.execute(...)`, the exception dies on the server thread with nothing in
+the log, and the scenario then waits for an effect that never comes until its timeout (M9's
+`rts_frame_borders` spawned its two civic centres on tick 1 and hung). Send a scene's set-up
+once `rt.lifecycle() == RUNNING`, or as a step after "the world" and "RTS mode" have loaded, as
+the goldens scenarios do. A demo chapter's script run against the L1 fake stage proves its
+order of steps only: the fake has no terrain, so a wall dragged onto a rock (`NOT_FLAT`) passes
+there and fails in the window.

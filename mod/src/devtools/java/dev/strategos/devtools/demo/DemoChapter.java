@@ -9,7 +9,7 @@ import java.util.List;
  * class here and a line in {@link DemoCatalog#CHAPTERS}.
  */
 public interface DemoChapter {
-    /** Lower case and dashes: the name on the command line. */
+    /** Lower case, dashes or underscores: the name on the command line. */
     String id();
 
     /** The title on the screen, English. */

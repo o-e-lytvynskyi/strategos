@@ -74,6 +74,16 @@ public final class GarrisonStore {
         return list == null ? 0 : list.size();
     }
 
+    /** The buildings that hold anyone, by handle ascending. */
+    public int[] holders() {
+        int[] out = new int[occupants.size()];
+        int k = 0;
+        for (int handle : occupants.keySet()) {
+            out[k++] = handle;
+        }
+        return out;
+    }
+
     /** The handles of the units inside building {@code handle}, in the order they went in. */
     public int[] occupants(int handle) {
         List<Integer> list = occupants.get(handle);

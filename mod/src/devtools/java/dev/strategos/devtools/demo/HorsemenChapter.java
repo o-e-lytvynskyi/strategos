@@ -25,7 +25,7 @@ final class HorsemenChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.HORSEMAN, 0, -16, 0, SQUAD, 2);
                     st.units(Ids.INFANTRY, 1, 16, 0, SQUAD, 2);

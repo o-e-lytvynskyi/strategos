@@ -3,6 +3,7 @@ package dev.strategos.core.client.order;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.AttackSpread;
+import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Gather;
@@ -14,7 +15,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The command one right click makes (UI-05.3–4, ORD-04.1, ECO-05): on an enemy's body an Attack on it, on a block
+ * The command one right click makes (UI-05.3–4, ORD-04.1, ECO-05, CMB-10): on an enemy's body an Attack on it, on a block
  * that yields a resource a Gather there, else a Move of the selection to the match-local point; with attack-move armed
  * (its key, then the click) an AttackMove there instead. Each joins the current orders with Shift; none without a
  * selection.
@@ -57,6 +58,18 @@ public final class OrderIntents {
                 UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray());
         QueueMode mode = shift ? QueueMode.QUEUE : QueueMode.REPLACE;
         return spread ? new AttackSpread(units, target, mode) : new Attack(units, target, mode, force);
+    }
+
+    /**
+     * The right click on an enemy's building with the capture key held (CMB-10): the selection captures it rather than
+     * attacking it; none without a selection.
+     */
+    public static @Nullable Capture capture(List<Integer> selection, int building) {
+        if (selection.isEmpty()) {
+            return null;
+        }
+        return new Capture(
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()), building);
     }
 
     /**

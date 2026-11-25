@@ -50,7 +50,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
      tick on a 384² map (L6).
   4. An update payload stays under 8 KB (L2).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** BLD-08, CORE-02 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — `TerritoryReferenceTest` (1), `TerritoryThreadsTest` (2), `perf_territory` — the territory system's p99 16.5 µs, the tick's join on the job p99 0 and max 25 µs, never more than 1 recompute in 20 ticks on the 384² map (3), `TerritoryCodecTest` (4); M9 T2–T4, T16, T18.
 
 #### TERR-02 · Territory build rules
 - **Value:** Expansion is a strategic choice: you build in your territory, and new civic centres
@@ -64,7 +65,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. AI placement respects the rules (L1).
   4. A refused placement in a GameTest shows the reason (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TERR-01, BLD-02, AI-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T5, T15: `PlacementTerritoryTest` (1, 2), `AiTerritoryPlacementTest` (3: 100 seeded matches, no territory refusal), `territorytests.refused_outside` (4)
 
 #### TERR-03 · Borders on terrain and minimap
 - **Value:** Borders are visible where they matter, on the ground and on the minimap (P2).
@@ -80,7 +82,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   4. Goldens, also under Sodium (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** TERR-01, UI-20 · **Size:** M ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — 1 `BorderGeometryTest.layoutGeometryEqualsItsStoredHash`; 2 `BorderGeometryTest.aChangedTileDirtiesOnlyTheSectionsItsEdgesTouch`; 3 `BorderBench.extractSection` 0.069 µs/op at 0 B/op, and PERF-14's `rts_frame_borders`: vanilla frame p50 3.72 / p99 8.88 ms, Sodium 1.75 / 4.70 ms, ours ≤ 0.72 ms — budget F; 4 `m9_goldens`, six frames on macos and macos-sodium (nmse 0 on rerun); M9 T6, T19.
 
 #### CMB-10 · Capturing buildings
 - **Value:** Take enemy buildings instead of razing them, as in 0 A.D. (P4).
@@ -95,7 +98,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. A building changes owner only at zero owner points, never on a majority (L1).
   3. A captured barracks trains for its new owner (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-03, TERR-01, MATCH-06 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T7–T9: `CaptureMathsTest` (1), `CaptureMathsTest.aMajorityNeverFlips…` and `CaptureRegenTest.strengthAboveRegeneration…` (2), `capturetests.captured_barracks_trains` (3); the capture order, bar and key; allied capture with `FakeAllies` (AFTER-M7 for real teams)
 
 #### BLD-10 · Garrison: healing, ejection and capture regeneration
 - **Value:** Garrisons protect and restore your army, and they hold buildings against capture
@@ -109,7 +113,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Garrisoned units raise capture regeneration (L1).
   4. A rally point on a building garrisons new units (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-10 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T10, T7: `GarrisonHealTest` (1), `GarrisonEjectTest` (2), `CaptureRegenTest.fiveInfantryInsideAddTwelveAndAHalfASecond` (3), `garrisontests.rally_garrisons` (4); allies inside with `FakeAllies` (AFTER-M7 for real teams)
 
 #### BLD-12 · Sentry tower and tower upgrades
 - **Value:** Hold chokepoints and protect your economy with towers (P4).
@@ -121,7 +126,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. Upgrading keeps the garrison and the health ratio (L3).
   3. Tower blueprints pass the construction and damage-stage tests (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-17, BLD-11 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T11: `TowerDataTest` (1), `UpgradeTest` and `towertests.upgrade_keeps_garrison` (2), `constructiontests.sentry_tower_is_built_and_equals_its_blueprint` and `…_damage_stages_remove_its_ranked_blocks` with the defence tower's (3)
 
 #### BLD-13 · Palisades and gates
 - **Value:** Wall off chokepoints with wooden palisades and let your own units through the gates
@@ -135,7 +141,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Gates open for allies and stay shut for enemies (L3).
   4. Enemies path around a palisade or attack it (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-04, PATH-12 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T13, T14: `WallLineTest` (1), `walltests.segments_match_layout` (2), `walltests.gate_allies_only` with `GateMovementTest`'s allies (3; AFTER-M7 for real teams), `walltests.enemies_around_or_through` (4)
 
 #### PATH-12 · Gates and doors in navigation
 - **Value:** Units pass their own gates without stopping and treat enemy gates as walls.
@@ -146,7 +153,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   1. Reachability per faction respects gates (L1).
   2. Units pass their own gates without stopping (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-04, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T12–T14: `GateReachabilityTest` (1), `pathtests.own_gate_no_stop` (2); 0/1/4 threads in `GateThreadCountHashTest`; allies with `FakeAllies` (AFTER-M7 for real teams)
 
 #### AI-08 · AI uses territory and capture
 - **Value:** The AI attacks and defends with the new systems instead of ignoring them (P5).
@@ -159,7 +167,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. The AI garrisons a tower under attack (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-05, CMB-10, BLD-10, TERR-02 · **Size:** M ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T15: `AiCaptureTest` (1), `AiTerritoryPlacementTest` (2), `AiGarrisonTowerTest` (3); `:core:openingBalance` holds every criterion (normal beats easy 176 of 200, Town at 11:31)
 
 #### PERF-16 · Territory and garrison perf gate
 - **Value:** Territory and garrisons cost no tick rate.
@@ -171,4 +180,5 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists territory and garrison costs (R).
 - **Tests:** L6, R · **Depends on:** TERR-01, BLD-10, PERF-10 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-24 — `perf_territory` A p50 0.93 ms, A p99 9.89 ms, C p95 9.12 ms, E 3.8 KB/s at most; `perf_territory_stress` C p95 9.0 ms (≤ 50); the report's `systems.territory` (p99 16.5 µs, join max 25 µs, 53 recomputes, at most 1 per 20 ticks) and `systems.garrison` (p99 24 µs, capture p99 1.4 µs); M9 T16, T18; the four-client pass is AFTER-M7 (PERF-10, spec §1.5).

@@ -37,7 +37,8 @@ final class ResearchChapter implements DemoChapter {
                     }
                 })
                 .run(st -> {
-                    watch.attach(st.match());
+                    st.match();
+                    watch.attach(st);
                 })
                 .run(st -> {
                     st.building(Ids.STOREHOUSE, 0, 6, -2);
@@ -67,13 +68,13 @@ final class ResearchChapter implements DemoChapter {
                 .pause(5);
     }
 
-    private static @Nullable BuildingView store(DemoStage st) {
+    private static @Nullable BuildingView store(Stage st) {
         List<BuildingView> b = st.buildings(0, Ids.STOREHOUSE);
         return b.isEmpty() ? null : b.getFirst();
     }
 
     /** The first worker's rate on trees, two decimals. */
-    private static String rate(DemoStage st) {
+    private static String rate(Stage st) {
         int[] w = st.handles(0, Ids.WORKER);
         StatBreakdown b = w.length == 0 ? null : st.q().stats(w[0], RATE);
         return b == null ? "?" : String.format(Locale.ROOT, "%.2f", b.result());

@@ -25,6 +25,47 @@ final class SoakCosts {
     private final EconomyTimes.Stats economy;
     private final @Nullable Combat combat;
     private final long[] trackers;
+    private final @Nullable Territory territory;
+
+    /**
+     * PERF-16: per sampled tick in nanoseconds, the territory system's run, the tick thread's wait on its recompute job,
+     * the garrison system's and the capture system's runs; and the territory grids delivered that tick.
+     */
+    static final class Territory {
+        private final long[] territory;
+        private final long[] join;
+        private final long[] garrison;
+        private final long[] capture;
+        private final long[] recomputes;
+
+        Territory(long[] territory, long[] join, long[] garrison, long[] capture, long[] recomputes) {
+            this.territory = territory;
+            this.join = join;
+            this.garrison = garrison;
+            this.capture = capture;
+            this.recomputes = recomputes;
+        }
+
+        long[] territory() {
+            return territory;
+        }
+
+        long[] join() {
+            return join;
+        }
+
+        long[] garrison() {
+            return garrison;
+        }
+
+        long[] capture() {
+            return capture;
+        }
+
+        long[] recomputes() {
+            return recomputes;
+        }
+    }
 
     /**
      * PERF-08: per sampled tick in nanoseconds, the units' enemy searches (targeting), the centres' volleys, the shot
@@ -54,7 +95,8 @@ final class SoakCosts {
             long saveNanos,
             EconomyTimes.Stats economy,
             @Nullable Combat combat,
-            long[] trackers) {
+            long[] trackers,
+            @Nullable Territory territory) {
         this.writer = writer;
         this.fx = fx;
         this.adapter = adapter;
@@ -69,6 +111,7 @@ final class SoakCosts {
         this.economy = economy;
         this.combat = combat;
         this.trackers = trackers;
+        this.territory = territory;
     }
 
     long[] writer() {
@@ -133,5 +176,10 @@ final class SoakCosts {
      */
     long[] trackers() {
         return trackers;
+    }
+
+    /** PERF-16: the territory and garrison systems' times; null for the other scenes. */
+    @Nullable Territory territory() {
+        return territory;
     }
 }

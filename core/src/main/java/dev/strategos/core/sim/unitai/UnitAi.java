@@ -95,6 +95,9 @@ public final class UnitAi {
     public static final StateId GARRISON = new StateId(22, "garrison", null);
     public static final StateId GARRISON_APPROACHING = new StateId(23, "garrison.approaching", UnitState.WALKING);
     public static final StateId GARRISONED = new StateId(24, "garrisoned", UnitState.GARRISONED);
+    public static final StateId CAPTURE = new StateId(25, "capture", null);
+    public static final StateId CAPTURE_APPROACHING = new StateId(26, "capture.approaching", UnitState.WALKING);
+    public static final StateId CAPTURING = new StateId(27, "capture.capturing", UnitState.COMBAT);
 
     private UnitAi() {}
 
@@ -125,8 +128,8 @@ public final class UnitAi {
                         StateDef.<MatchState>child(WALKING_AND_FIGHTING, INDIVIDUAL)
                                 .thinkEvery(5)
                                 .think(UnitAi::engageNearest)
-                                .on(Arrived.class, (ctx, m) -> finishOrder(ctx, false))
-                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(Arrived.class, UnitAi::arrivedOrBreach)
+                                .on(Stuck.class, UnitAi::giveUpOrBreach)
                                 .on(PathInvalidated.class, UnitAi::repath)
                                 .on(Attacked.class, (ctx, m) -> CombatActions.retaliate(ctx, m.attacker()))
                                 .transitions(next())
@@ -278,6 +281,25 @@ public final class UnitAi {
                                 .on(OrderReceived.class, Garrisoning::orderReceived)
                                 .on(StopOrdered.class, (ctx, m) -> {}) // inside: the queue is cleared, nothing to stop
                                 .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(CAPTURE, INDIVIDUAL)
+                                .initial(CAPTURE_APPROACHING)
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .on(Arrived.class, (ctx, m) -> {}) // capturing: nowhere to walk to
+                                .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(CAPTURE_APPROACHING, CAPTURE)
+                                .thinkEvery(5)
+                                .enter(Capturing::approach)
+                                .think(Capturing::keepApproaching)
+                                .on(Arrived.class, Capturing::arrived)
+                                .transitions(next(CAPTURING))
+                                .build(),
+                        StateDef.<MatchState>child(CAPTURING, CAPTURE)
+                                .thinkEvery(1)
+                                .think(Capturing::work)
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -287,8 +309,8 @@ public final class UnitAi {
      * {@code more}.
      */
     private static StateId[] next(StateId... more) {
-        List<StateId> all = new ArrayList<>(
-                List.of(IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN, GARRISON));
+        List<StateId> all = new ArrayList<>(List.of(
+                IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN, GARRISON, CAPTURE));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -316,6 +338,22 @@ public final class UnitAi {
         }
     }
 
+    /** An attack-move that ends short of its goal (no way nearer) attacks the wall in its way before it is done (BLD-13). */
+    private static void arrivedOrBreach(Context<MatchState> ctx, Arrived m) {
+        if (Breaching.shortOfGoal(ctx) && Breaching.breach(ctx)) {
+            return;
+        }
+        finishOrder(ctx, false);
+    }
+
+    /** An attack-move that cannot get nearer its goal attacks the wall in its way before it gives the order up (BLD-13). */
+    private static void giveUpOrBreach(Context<MatchState> ctx, Stuck m) {
+        if (m.rung() == Stuck.GIVE_UP && Breaching.breach(ctx)) {
+            return;
+        }
+        giveUp(ctx, m);
+    }
+
     private static void repath(Context<MatchState> ctx, PathInvalidated m) {
         ctx.host().paths().setRepath(ctx.unit(), true);
     }
@@ -340,7 +378,9 @@ public final class UnitAi {
                 BURN_APPROACHING,
                 BURNING,
                 GARRISON_APPROACHING,
-                GARRISONED);
+                GARRISONED,
+                CAPTURE_APPROACHING,
+                CAPTURING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -375,6 +415,7 @@ public final class UnitAi {
             case OrderKind.BUILD -> BUILD;
             case OrderKind.BURN -> BURN;
             case OrderKind.GARRISON -> GARRISON;
+            case OrderKind.CAPTURE -> CAPTURE;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

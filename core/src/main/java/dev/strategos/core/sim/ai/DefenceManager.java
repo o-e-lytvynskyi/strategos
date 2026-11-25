@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.UnitSet;
@@ -13,7 +14,10 @@ import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -94,7 +98,8 @@ final class DefenceManager implements AiModule {
             }
             memory.set(Slots.THREAT, tick + 1);
             if (tick - (memory.get(Slots.ALERT_SINCE) - 1) >= reaction) {
-                defend(view, budget, sink, base, blows, enemies);
+                Set<Integer> held = garrison(view, budget, sink, tick);
+                defend(view, budget, sink, base, blows, enemies, held);
             }
             bell(budget, sink, base, blows, tick);
         }
@@ -103,13 +108,20 @@ final class DefenceManager implements AiModule {
 
     /** Commits the soldiers and sends the wounded home. */
     private void defend(
-            AiView view, AiBudget budget, CommandSink sink, Base base, List<Hit> blows, List<UnitView> enemies) {
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            Base base,
+            List<Hit> blows,
+            List<UnitView> enemies,
+            Set<Integer> held) {
         Vec2d centre = new Vec2d(base.x(), base.z());
         Vec2d at = scene(base, blows);
         List<Integer> go = new ArrayList<>();
         List<Integer> home = new ArrayList<>();
         for (UnitView u : view.units()) {
             if (view.role(u) == AiView.ROLE_NONE
+                    || held.contains(u.handle())
                     || u.state() == UnitState.GARRISONED
                     || DetMath.length(u.x() - base.x(), u.z() - base.z()) > REACH) {
                 continue;
@@ -157,6 +169,67 @@ final class DefenceManager implements AiModule {
         } else {
             sink.send(AttackMove.replace(set, at));
         }
+    }
+
+    /** Blocks from an attacked tower or house within which units go in to garrison it (AI-08). */
+    static final double GARRISON_REACH = 24;
+
+    /**
+     * AI-08: an own tower or house of the base that took a blow within {@value #ATTACK} ticks and has room is garrisoned
+     * by the units nearest it (within {@value #GARRISON_REACH} blocks) that it admits: infantry a tower, workers a house.
+     * Towers come first, then houses, the lower handle first; at most one building in {@value #ATTACK} ticks. Returns
+     * the units sent in, which the defence leaves alone this think.
+     */
+    private Set<Integer> garrison(AiView view, AiBudget budget, CommandSink sink, long tick) {
+        Set<Integer> sent = new TreeSet<>();
+        long last = memory.get(Slots.GARRISONED);
+        if (last != 0 && tick - (last - 1) < ATTACK) {
+            return sent;
+        }
+        List<BuildingView> attacked = new ArrayList<>();
+        for (DefenceLog.Blow blow : view.blows()) {
+            if (tick - blow.tick() > ATTACK) {
+                continue;
+            }
+            for (BuildingView b : view.buildings()) {
+                if (b.handle() == blow.handle()
+                        && b.state() == 2
+                        && (view.is(b.template(), "Tower") || view.is(b.template(), "House"))
+                        && !attacked.contains(b)) {
+                    attacked.add(b);
+                }
+            }
+        }
+        attacked.sort(Comparator.comparingInt((BuildingView b) -> view.is(b.template(), "Tower") ? 0 : 1)
+                .thenComparingInt(BuildingView::handle));
+        for (BuildingView b : attacked) {
+            double bx = b.footprint().anchorX() + b.footprint().spanX() / 2.0;
+            double bz = b.footprint().anchorZ() + b.footprint().spanZ() / 2.0;
+            List<UnitView> near = new ArrayList<>();
+            for (UnitView u : view.units()) {
+                if (u.state() != UnitState.GARRISONED
+                        && DetMath.length(u.x() - bx, u.z() - bz) <= GARRISON_REACH
+                        && view.garrisonRoom(u.handle(), b.handle()) > 0) {
+                    near.add(u);
+                }
+            }
+            if (near.isEmpty() || !budget.spend(10)) {
+                continue;
+            }
+            near.sort(Comparator.comparingDouble((UnitView u) -> DetMath.length(u.x() - bx, u.z() - bz))
+                    .thenComparingInt(UnitView::handle));
+            int room = view.garrisonRoom(near.get(0).handle(), b.handle());
+            int[] going = near.subList(0, Math.min(room, near.size())).stream()
+                    .mapToInt(UnitView::handle)
+                    .toArray();
+            sink.send(new Garrison(UnitSet.of(going), b.handle()));
+            memory.set(Slots.GARRISONED, tick + 1);
+            for (int h : going) {
+                sent.add(h);
+            }
+            break;
+        }
+        return sent;
     }
 
     /** The blows of the log that fell on its own within {@value #REACH} blocks of the centre; the fights of a wave far away are not the base's. */

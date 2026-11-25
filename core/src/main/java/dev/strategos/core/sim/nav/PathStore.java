@@ -132,7 +132,13 @@ public final class PathStore {
     /** One unit's path as a snapshot keeps it. */
     @CoreApi
     public record UnitPath(
-            Waypoints waypoints, int cursor, PathStatus status, int request, long lastRequest, boolean repath) {
+            Waypoints waypoints,
+            int cursor,
+            PathStatus status,
+            int request,
+            long lastRequest,
+            boolean repath,
+            boolean wanted) {
         /** A unit that never asked for a path. */
         public static final UnitPath NONE = new UnitPath(Waypoints.NONE, 0, PathStatus.OK, 0, NEVER, false);
 
@@ -140,6 +146,12 @@ public final class PathStore {
             if (cursor < 0 || cursor > waypoints.count()) {
                 throw new IllegalArgumentException("waypoint cursor " + cursor + " outside 0.." + waypoints.count());
             }
+        }
+
+        /** A path with no request waiting for the next request pass. */
+        public UnitPath(
+                Waypoints waypoints, int cursor, PathStatus status, int request, long lastRequest, boolean repath) {
+            this(waypoints, cursor, status, request, lastRequest, repath, false);
         }
     }
 
@@ -233,7 +245,7 @@ public final class PathStore {
 
     /** The unit's path as a snapshot keeps it. */
     public UnitPath unitPath(int i) {
-        return new UnitPath(path[i], cursor[i], status(i), request[i], lastRequest[i], repath[i]);
+        return new UnitPath(path[i], cursor[i], status(i), request[i], lastRequest[i], repath[i], wanted[i]);
     }
 
     public void set(int i, UnitPath p) {
@@ -243,6 +255,7 @@ public final class PathStore {
         request[i] = p.request();
         lastRequest[i] = p.lastRequest();
         repath[i] = p.repath();
+        wanted[i] = p.wanted();
     }
 
     /** A new path to follow from its first waypoint; the request it answers is no longer awaited. */
@@ -295,7 +308,11 @@ public final class PathStore {
         repath[i] = value;
     }
 
-    /** An order arrived this tick: the unit asks for a path in this tick's request pass. */
+    /**
+     * An order arrived, or the unit's place moved: the unit asks for a path in the next request pass, this tick's or,
+     * when it arrived after this tick's pass (in MOVEMENT or a later phase), the next tick's. A flag that outlives its
+     * tick is saved and hashed (M9 spec §1.6 row 26).
+     */
     public void want(int i) {
         wanted[i] = true;
     }

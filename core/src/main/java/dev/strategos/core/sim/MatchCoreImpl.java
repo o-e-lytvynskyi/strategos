@@ -5,15 +5,19 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
+import dev.strategos.core.shared.TerritoryGrid;
+import dev.strategos.core.sim.capture.CaptureSystem;
 import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.combat.ShotSystem;
 import dev.strategos.core.sim.combat.TownArrows;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
+import dev.strategos.core.sim.garrison.GarrisonSystem;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.journal.JournalWriter;
 import dev.strategos.core.sim.move.MotionSystem;
 import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.List;
@@ -40,7 +44,8 @@ final class MatchCoreImpl implements MatchCore {
             SliceSource slices,
             int checkpointEvery,
             int maxJournalTicks,
-            List<Long> savedVision) {
+            List<Long> savedVision,
+            List<Long> savedTerritory) {
         CommandRules rules = CommandRules.m0();
         rules.verifyCovers(CommandKinds.DEFAULT);
         this.state = state;
@@ -50,12 +55,20 @@ final class MatchCoreImpl implements MatchCore {
             vision.restore(savedVision);
             vision.rebuild(state);
         }
+        TerritorySystem territory = new TerritorySystem(
+                state.config().bounds().sizeX(),
+                state.config().bounds().sizeZ(),
+                state.config().factions(),
+                ports.jobs());
+        state.setTerritorySystem(territory);
+        territory.restore(savedTerritory);
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
         this.journal = new JournalWriter(Snapshots.take(state), slices, checkpointEvery, maxJournalTicks);
         this.paths = new PathService(state, ports.jobs(), ports.clock());
         state.economyTimes().clock(ports.clock());
         state.combatTimes().clock(ports.clock());
+        state.systemTimes().clock(ports.clock());
         CommandSystem commands = new CommandSystem(state, rules);
         scheduler.register(new IngestSystem(commands, journal));
         scheduler.register(paths.delivery());
@@ -69,8 +82,11 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT
         scheduler.register(new ShotSystem(state));
         scheduler.register(new CombatSystem());
+        scheduler.register(new CaptureSystem()); // CMB-10: after the blows, so this tick's damage speeds capture
         scheduler.register(new EconomySystem());
+        scheduler.register(new GarrisonSystem()); // BLD-10: heals and ejects, after the tick's blows
         scheduler.register(vision); // FOW-01: the grids and the visibility, before the terrain's edits
+        scheduler.register(territory); // TERR-01: after vision, as 04 §10.6 orders the WORLD phase
         scheduler.register(new TerrainSystem());
         scheduler.register(new GearSystem());
         scheduler.register(new AlertSystem());
@@ -81,7 +97,8 @@ final class MatchCoreImpl implements MatchCore {
     static MatchCoreImpl create(
             MatchConfig config, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
         MatchState state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
-        return new MatchCoreImpl(state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks, List.of());
+        return new MatchCoreImpl(
+                state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks, List.of(), List.of());
     }
 
     static MatchCoreImpl restore(
@@ -99,7 +116,8 @@ final class MatchCoreImpl implements MatchCore {
                 slices,
                 checkpointEvery,
                 maxJournalTicks,
-                snapshot.play().vision());
+                snapshot.play().vision(),
+                snapshot.play().territory());
     }
 
     @Override
@@ -109,6 +127,11 @@ final class MatchCoreImpl implements MatchCore {
                     + "; the next is " + (state.tick() + 1));
         }
         state.beginTick(in);
+        // The unit grid is rebuilt where MOVEMENT ends; a unit set down, born, garrisoned or killed after that leaves
+        // the
+        // grid behind until then, while a match restored from this tick's snapshot builds it from the poses. Rebuilt
+        // here as well, every tick starts from the grid a restore builds, so a journal started mid-match replays.
+        state.spatial().rebuild(state);
         timers.beginTick();
         for (int i = 0; i < phases.length; i++) {
             if (i == 0) {
@@ -152,6 +175,18 @@ final class MatchCoreImpl implements MatchCore {
     @Override
     public @Nullable VisionSystem vision() {
         return state.visionSystem();
+    }
+
+    @Override
+    public @Nullable TerritoryGrid territory() {
+        TerritorySystem t = state.territorySystem();
+        return t == null || t.recomputes() == 0 ? null : t.grid();
+    }
+
+    @Override
+    public long territoryVersion() {
+        TerritorySystem t = state.territorySystem();
+        return t == null ? 0 : t.recomputes();
     }
 
     /** For the kernel's own tests. */

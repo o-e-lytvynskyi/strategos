@@ -23,6 +23,7 @@ import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
+import dev.strategos.mod.server.world.GateDoorBlocks;
 import dev.strategos.mod.server.world.PageJobs;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ public final class MatchRuntime {
     private final @Nullable MatchCore core;
     private final @Nullable MatchData data;
     private final BodyRegistry bodies;
+    private final GateDoorBlocks doors = new GateDoorBlocks();
     private final SpawnBudget spawnBudget;
     private final MatchLog log;
     private final @Nullable ResourceLocation map;
@@ -277,6 +279,14 @@ public final class MatchRuntime {
                 next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
+        if (next % GateDoorBlocks.EVERY == 0) {
+            doors.apply(
+                    level,
+                    space,
+                    id,
+                    c.queries().gateDoors(),
+                    StrategosServer.get().writer()); // BLD-13
+        }
         bodies.materialise(level, c.queries(), spawnBudget);
         if (data != null) {
             data.setDirty(); // a flag only: autosave and the stop encode the snapshot at a tick boundary

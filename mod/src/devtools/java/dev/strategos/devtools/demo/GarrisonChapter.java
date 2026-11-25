@@ -31,7 +31,7 @@ final class GarrisonChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -10, 0);
                     st.units(Ids.WORKER, 0, -10, 12, WORKERS, 1.5);
@@ -65,17 +65,17 @@ final class GarrisonChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static @Nullable BuildingView centre(DemoStage st) {
+    private static @Nullable BuildingView centre(Stage st) {
         List<BuildingView> b = st.buildings(0, Ids.CIVIC_CENTRE);
         return b.isEmpty() ? null : b.getFirst();
     }
 
-    private static boolean inside(DemoStage st, int handle) {
+    private static boolean inside(Stage st, int handle) {
         var u = st.q().unit(handle);
         return u != null && u.state() == UnitState.GARRISONED;
     }
 
-    private static boolean allInside(DemoStage st) {
+    private static boolean allInside(Stage st) {
         int[] workers = st.handles(0, Ids.WORKER);
         for (int h : workers) {
             if (!inside(st, h)) {
@@ -85,7 +85,7 @@ final class GarrisonChapter implements DemoChapter {
         return workers.length > 0;
     }
 
-    private static boolean anyInside(DemoStage st) {
+    private static boolean anyInside(Stage st) {
         for (int h : st.handles(0, Ids.WORKER)) {
             if (inside(st, h)) {
                 return true;

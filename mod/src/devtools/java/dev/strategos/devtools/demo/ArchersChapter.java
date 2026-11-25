@@ -23,7 +23,7 @@ final class ArchersChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.ARCHER, 0, -14, 0, 6, 1.5);
                     st.units(Ids.INFANTRY, 1, 16, 0, 5, 2);

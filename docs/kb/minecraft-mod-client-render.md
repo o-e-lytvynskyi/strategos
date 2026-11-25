@@ -130,3 +130,14 @@ and in the renderer's `setupRotations`: `hasPose(DYING) && deathTime == 0` →
   pixels. In Strategos an "empty" click landed under the HUD panel and did not clear the
   selection from M3 to M4, and the golden image was recorded with this error. After a run, look
   at `"ok"` in the result, not only at the diff.
+
+## Section geometry under Sodium: a dirty mark can be lost
+
+Geometry added through NeoForge's `AddSectionGeometryEvent` is rebuilt only when its section is
+re-meshed, so a change of the data it draws calls `LevelRenderer#setSectionDirty` for the
+sections it touches. Under Sodium some of those marks were lost: a section whose build had
+already taken the old data was uploaded with it and stayed so. M9's territory borders showed
+gaps in the Sodium goldens, stable across frames, that `levelRenderer.allChanged()` closed;
+vanilla drew them whole. Dirtying the same sections once more 10 client ticks later (after the
+builds in flight are done) fixed it at the cost of one extra re-mesh per change. Check such
+geometry under `-Pcompat` with a shot taken after the data settles, not only in vanilla.

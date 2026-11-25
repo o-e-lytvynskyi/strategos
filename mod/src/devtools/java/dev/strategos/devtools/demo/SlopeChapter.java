@@ -37,7 +37,7 @@ final class SlopeChapter implements DemoChapter {
                                 }
                             }
                         })
-                .run(DemoStage::match)
+                .run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -30, -20); // a building goes up within 48 blocks of one
                     st.admin(new Grant(new FactionSlot(0), "wood", 500));

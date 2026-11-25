@@ -39,6 +39,13 @@ final class HudBuildingCard {
             default -> Math.round(100.0 * b.health() / UnitHud.WHOLE) + " % HP";
         };
         paint.text(g, font, r, 1, b.rally() ? state + " · rally set" : state, theme.text());
+        if (!b.captureShares().isEmpty()) { // CMB-10: each faction's share of the capture points
+            HudRect bar = SelectionPanel.captureBar(r, pad);
+            g.fill(bar.x(), bar.y(), bar.right(), bar.bottom(), theme.border());
+            for (int[] seg : SelectionPanel.captureSegments(bar, b)) {
+                g.fill(seg[1], bar.y(), seg[1] + seg[2], bar.bottom(), theme.faction(seg[0]));
+            }
+        }
         if (b.fieldLeft() >= 0) {
             String crop = b.fieldRipening() > 0
                     ? "Ripening, " + (b.fieldRipening() + 19) / 20 + " s"

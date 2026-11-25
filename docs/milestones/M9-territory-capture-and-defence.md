@@ -1,0 +1,545 @@
+# M9 — Territory, capture and defence: implementation spec
+
+Cards: [roadmap/M9-territory-capture-and-defence.md](../roadmap/M9-territory-capture-and-defence.md#cards), ten
+cards approved by the owner on 2026-11-24 («Одобряю все 10»). Developer: `o-e-lytvynskyi`
+([branch file](../branches/o-e-lytvynskyi-m9.md)). Base: `main` after M6 (2026-11-24).
+
+## 0. Read this first
+
+### 0.1 Authority
+
+As M6 §0.1: the architecture and the ADRs decide *what*, this spec *how M9 builds it*; the cards define scope and
+acceptance; ROADMAP.md holds the statuses; a disagreement is a §1.6 row.
+
+**M7 is not merged** (it is held by `lev1pes`, and its branch carries `sim.diplomacy.DiplomacyView`). M9 needs two
+things from it: who is an ally (MATCH-06) and the multiplayer perf batch (PERF-10). Both are built **against a
+contract** (§2.1): M9 asks one narrow question, `Allies.allied(a, b)`, answered today by "the same faction", and
+**AFTER-M7** by `DiplomacyView.allied`. M8 (fog, `lev1pes`, claimed) is not needed. M9 never edits M7's or M8's
+files; where a shared file must change (`BuildingLife`, touched by M7), the change is small and merged by hand.
+
+### 0.2 Working rules for every task
+
+M6 §0.2 holds, with these changes:
+- **Windows.** Every L4 check of M9 runs in the consent batch (T19), so the screen is taken once.
+- **Long runs** go off the working copy (05-testing.md "Long runs"): `tools/longrun.sh` for `verifySoak` and the
+  perf batch, never in the working copy while editing.
+- **Order.** T1 first (the health check's moves); then the territory chain (T2–T5) and, beside it, the garrison and
+  the towers (T10–T11), which need no territory. Capture (T7–T9) follows territory; gates and palisades (T12–T14)
+  need only PATH-04. The AI (T15) and the perf gate (T16) come last (§7.1).
+
+### 0.3 Code conventions
+
+M6 §0.3 holds. Additions:
+
+| Topic | Rule |
+|---|---|
+| Snapshot | `MatchSnapshot.Play` gains `territory` (the source set's version and the delivered grid's hash; the grid is re-derived at restore, never saved) and `capture` (per building, its points per faction), each optional and saved only when non-empty, with the back-compat constructors of the M6 pattern; `SchemaVersion` stays 3 |
+| Commands | The next free wire id is 32: `Capture` 32, `UpgradeBuilding` 33, `PlaceWall` 34 |
+| Randomness | None: territory, capture and gates are deterministic without a stream |
+| AI memory | `AiMemory.SIZE` 31 → 34: `CAPTURE` 31 (the target being captured), `CAPTURE_SINCE` 32, `GARRISONED` 33 (the tick of the last defensive garrison) |
+| Payloads | New S2C `strategos:territory` (§2.4); `BuildingState.Entry` gains the capture fraction per faction (a byte per faction present, at most 8) and the upgrade's progress; every cap pinned in `WireCodecSizeTest` and `PayloadRoundTripTest` |
+| Template paths | `TerritoryInfluence/{weight,radius,root}`, `Placement/territory` (0 anywhere, 1 own, 2 own or neutral), `Capturable/{points,regen,garrisonRegen}`, `Capture/strength`, `GarrisonHolder/{heal,ejectBelow}`, `Upgrade/{to,time}` with the cost under `Upgrade/Cost`, `Wall/{segment,gate}`; constants in `CorePaths`, provenance in `provenance.json` |
+| Balance | Every new number has its provenance note and its sheet row (`:core:balanceSheet`) |
+| Relations | Every new "friend or foe" question goes through `Allies` (§2.1), never a faction `==` |
+
+### 0.4 Engine names to check (T6, T13; `api-lookup`)
+
+`FenceGateBlock.OPEN` and Sodium's handling of `AddSectionGeometryEvent` (the L4 goldens under Sodium answer it) are
+still to check (T13). Checked (2026-11-24, NeoForge 21.1.264 sources): `AddSectionGeometryEvent` (game bus, client only,
+fired on the main thread; `getSectionOrigin()`, `getLevel()` main thread only, `addRenderer(AdditionalSectionRenderer)`
+:72, renderers run on chunk-build threads) with `SectionRenderingContext#getOrCreateChunkBuffer(RenderType)` (chunk
+layers only) and `getPoseStack()`; `LevelRenderer#setSectionDirty(int, int, int)` (:2543, public);
+`RenderType.translucent()`; `VertexConsumer#addVertex(PoseStack.Pose, float, float, float)`, `setColor(int)`,
+`setUv`, `setLight(int)`, `setNormal(float, float, float)`.
+
+---
+
+## 1. Goal, demo and scope
+
+### 1.1 Goal
+
+0 A.D.'s identity on top of the MVP: territory that limits building, buildings you capture instead of raze, the
+full garrison (healing, ejection, capture regeneration), towers that garrison and upgrade, and palisades with gates.
+
+### 1.2 Slices
+
+1. **Territory** (TERR-01, TERR-02, TERR-03): the grid, the build rule, the borders.
+2. **Capture and garrison** (CMB-10, BLD-10): capture points, the capture order, healing, ejection, regeneration.
+3. **Defence works** (BLD-12, BLD-13, PATH-12): the sentry tower and upgrades, palisades and gates.
+4. **The AI and the gate** (AI-08, PERF-16).
+
+### 1.3 Demo script (L7, the owner)
+
+`scripts/playtest.sh`, then a skirmish on the first map against Normal:
+1. Borders show on the ground and on the minimap; a house dragged outside them is refused with "outside your
+   territory".
+2. Reach Town; place a second civic centre in neutral land; the border grows when it completes.
+3. Twenty infantry hold the capture key on an enemy barracks: the capture bar fills, the barracks turns to your
+   colour on the minimap and trains for you.
+4. Garrison wounded soldiers in the civic centre: they heal; set a rally point on a tower: new units garrison it.
+5. Build a sentry tower at a chokepoint, upgrade it in Town: the garrison stays.
+6. Drag a palisade across the gap with a gate: your units walk through, the enemy's walk around or attack it.
+
+The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `towers`, `palisade`.
+
+### 1.4 Cards, tasks and checks (traceability)
+
+| Card | Tasks | Acceptance → check |
+|---|---|---|
+| TERR-01 | T2, T3, T4, T16 | 1 `TerritoryReferenceTest`; 2 `TerritoryThreadsTest`; 3 PERF-16's churn scene (`perf_territory`); 4 `TerritoryCodecTest` |
+| TERR-02 | T5, T15 | 1, 2 `PlacementTerritoryTest`; 3 `AiTerritoryPlacementTest`; 4 `territorytests.refused_outside` |
+| TERR-03 | T6, T19 | 1, 2 `BorderGeometryTest`; 3 `BorderBench` in `jmhCompare`, PERF-14's border scene (consent); 4 border goldens, vanilla and Sodium (consent) |
+| CMB-10 | T7, T8, T9 | 1 `CaptureMathsTest`; 2 `CaptureOwnershipTest`; 3 `capturetests.captured_barracks_trains` |
+| BLD-10 | T10 | 1 `GarrisonHealTest`; 2 `GarrisonEjectTest`; 3 `CaptureRegenTest`; 4 `garrisontests.rally_garrisons` |
+| BLD-12 | T11 | 1 `TowerDataTest`; 2 `towertests.upgrade_keeps_garrison`; 3 the tower blueprints in `constructiontests` and the damage-stage suite |
+| BLD-13 | T13, T14 | 1 `WallLineTest`; 2 `walltests.segments_match_layout`; 3 `walltests.gate_allies_only`; 4 `walltests.enemies_around_or_through` |
+| PATH-12 | T12, T14 | 1 `GateReachabilityTest`; 2 `pathtests.own_gate_no_stop` |
+| AI-08 | T15 | 1 `AiCaptureTest`; 2 `AiTerritoryPlacementTest`; 3 `AiGarrisonTowerTest` |
+| PERF-16 | T16, T18 | 1 `perf_territory` A–C and E; 2 `perf_territory_stress` C p95 ≤ 50 ms; 3 the report's `territory` and `garrison` costs |
+
+### 1.5 Moved out of M9, with the reason
+
+- **Allied capture, allied gates and allied garrisons in a real team match** — AFTER-M7: MATCH-06's teams. M9's
+  tests cover them with a fake `Allies` (§2.1); the GameTests with two allied players run when M7 lands.
+- **PERF-16's multiplayer pass** (four clients) — AFTER-M7: PERF-10's batch. M9's gate runs the same budgets on one
+  server with four AI factions.
+- **Territory decay** — TERR-04, as the cards say.
+
+### 1.6 Differences resolved
+
+| # | Topic | Found | Resolution |
+|---|---|---|---|
+| 1 | Relations | The core has no ally notion: every friend-or-foe check is a faction `==` (`Garrisons.admits`, `UnitFilter.enemiesOf`) | `Allies` (§2.1), a contract M7's `DiplomacyView` fills |
+| 2 | Ownership | `BuildingStore` has no way to change a building's faction | `BuildingStore.transfer` (§2.5), with every owner-derived state re-derived |
+| 3 | The default building order | CMB-03's torches are the right-click on buildings | As 0 A.D. since Alpha 27: right-click attacks, holding the capture key (`key.strategos.capture`, N; §1.6 row 17) captures; the AI chooses by the target (§2.12) |
+| 4 | Payload cap | TERR-01 asks an update under 8 KB; a full grid of a 1,024² map is 16 K tiles | Deltas of changed tiles; an update over 7 KB is split across ticks (§2.4) |
+| 5 | Building colour | Buildings carry no owner colour in the world, only on the minimap | The capture bar and the minimap show ownership; an owner banner on buildings is a proposal (For the owner), not M9 scope |
+| 6 | Scale | 0 A.D.'s numbers are in metres on maps three times ours | Distances × 0.4 (the first map is 384 blocks against 0 A.D.'s ~1,000 m); capture points and rates keep 0 A.D.'s ratios to Health (§2.6), each with its provenance note |
+
+| 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
+
+| 22 | Walls, review of T13/T14 | §2.10 says `PlaceWall` lists the refused segments, that a step over 2 blocks starts a new segment, and the doors follow the blocks | `PlaceWall` reports counts, not indices (row 20); a step over 2 blocks gives the next segment its own base rather than starting a new segment, and a cliff inside one segment is refused by `FLAT`; the door state ignores the fence gates' own open/closed state: the doors follow the core, which writes them back when they differ |
+| 23 | The AI soak, T18 | §2.10 leaves the breach cooldowns transient (a restored match "only retries a segment early") | The cooldowns are `Play.breaches`, saved and hashed: a journal ring replays from a mid-match snapshot, and a forgotten cooldown lets the restored match try a segment again (found while chasing the AI soak's seed 13). Older saves read the field empty |
+| 24 | The AI soak, T18 | The design takes the unit grid rebuilt where MOVEMENT ends as the state a restore builds (`Snapshots`: "as the saved tick's movement left it") | Not after a unit is set down later in the tick (M9's gate put-outs and garrison exits do it): the live grid lags the poses, a restored one does not, and the AI soak's seed 13 diverged on the first tick after its mid-match journal start. The grid is rebuilt before each tick's first phase too, which costs one O(units) rebuild a tick |
+| 25 | Borders under Sodium, T19 | §2.11 dirties the touched sections once per territory version | Twice: once at once, once 10 client ticks later. Under Sodium some first marks were lost to builds already in flight, and the goldens showed gaps a full re-mesh closed |
+| 26 | The AI soak, T18 | The path store's "asks for a path in this tick's request pass" flag is per-tick and transient | It outlives its tick: MOVEMENT and the combat phases set it after the tick's request pass, for the next tick's. Saved with the unit's path (`UnitPath.wanted`) and hashed when set; the AI soak's seed 15 diverged on the first tick after its mid-match journal start, the restored archer giving its attack up as settled. Older saves read it false |
+| 27 | The cumulative perf batch, T20 | The earlier milestones' soaks keep their tick tail under budget A's 10 ms | `perftests.territory_soak` and `perftests.mvp_soak` broke budget A's p99 by about 2 %: 10.19 and 10.22 ms, foreign load 2 % (the batch before, on the same code, held both: the tail sits at the limit). The slowest ticks are the terrain rebuild every 20 ticks; a core-only tail diagnostic (hard against hard on MAP-02, per-system times of the slowest 1 % of ticks) put it at 1.85 ms of their mean, the same on `main` (p99 2.43 ms there, 2.48 here): no M9 growth. Each rebuilt page decoded its slice and edited it, and both copies hashed every voxel in the constructor, a hash a rebuild never reads; `VoxelSlice` now hashes on first use. The diagnostic's p99 1.90 ms, the terrain system's share of the slow ticks 0.69 ms |
+| 21 | Walls in the game (T14) | Units stopped at an allied gate because `Construction.evictBlocked` put them out of its columns every tick; group paths ignored gates; the spec named spruce fences, which `TemplateLint` refuses (they burn) | Allied gate columns are exempt from eviction and walkable in `LineOfWalk`, `PathRoutes`, `MotionMoves` and group jobs; crimson stems and fences; an attack-move that ends short attacks the nearest enemy wall within 6 blocks; doors set `FenceGateBlock.OPEN` every 4 ticks on change |
+| 20 | Walls in the core (T13) | A per-segment list does not fit the command result; a diagonal line; the gate's 3-high blueprint fails the style guide's rise rate | `PlaceWall` reports counts (laid, refused) and the first reason, PARTIAL on a mix, at most 64 segments; a diagonal snaps to its dominant axis; the gate is 4×4×1; walls are `Wall Decoration` (no conquest, skipped by the AI's mop-up) and not `Village` |
+| 19 | The AI's view (T15) | The AI could not read `Limit/count`, capture totals or garrison room | Read-only queries on `MatchQueries`/`AiView`; `Seize` decides capture or burn (effect > 1.5 × regeneration, give up after 90 s); a mop-up squad too weak to beat a barracks' regeneration is reinforced from idle soldiers; the second centre comes once the build order is done and twice its price is in stock |
+| 18 | Gate API (T12 review) | §2.9 names `Reach.reachable(from, to, faction)` and a faction passed to `GridAStar` | `Reach.reachable(grid, gates, allies, faction, from, to)`; `GridAStar` takes a `GateLinks.Pass` rather than a faction; no request-key change, the pass travels with the job |
+| 17 | The capture key and refusals (T8, T9) | C is vanilla's `key.saveToolbarActivator` (UNIVERSAL), which `DefaultKeysTest` (UI-01.2) refuses; Attack refuses an own target as INVALID_ARGUMENT | The capture key is N; own and allied buildings are refused as INVALID_ARGUMENT, a building or unit without capture as UNSUPPORTED; capturers keep capturing under fire (no retaliation) |
+| 16 | The upgrade (T11) | 0 A.D.'s sentry-to-defence upgrade takes 100 s (mechanics §1.6); an upgrade needs a queue entry the wire already carries | 50 s at our time scale (the tower builds in 75 s against 0 A.D.'s 150 s); the entry is the target template's index, told apart as a building template, so the wire, the save and the hash keep their formats |
+| 15 | Group paths and gates (T12) | `GroupJob` and `GroupPaths` treat gates as walls; `LineOfWalk`, `StringPuller` and `PathRoutes` do not know crossings | T14 teaches the path checks that a segment through an open allied gate is walkable; group paths through gates follow if the L3 shows a need |
+| 14 | HPA* with gates (T12) | A requester with a usable gate searches flat with the full cap | Kept: gates are few; a gate-aware HPA* if PERF-16 shows the cost |
+| 13 | Gate crossings (T12) | A gate column cannot be a door surface: its columns are blocked so components split | A crossing is a jump edge between the surfaces beside the gate at door cost 1.5 a block |
+| 12 | Dirty sections (T6) | Tiles are 8 blocks, sections 16: every tile lies on two section edges, and a changed tile dirties 1 to 3 section columns (4-neighbour edges), not up to 4 | `BorderGeometry.sectionsTouched` as found; a match origin off the 16-grid is cut from up to four match-local columns |
+| 11 | The garrison (T10) | `ejectBelow` in `building_base` makes every building a `GarrisonHolder` holding nobody; an ally's garrison needs the command rule too, not only `admits` | `Fields` accepts a holder with neither capacity nor classes; `GarrisonRule` asks for a faction allied with the building's |
+| 10 | The first land (T5) | The first grid was computed on a match's first tick, before its centres came, so the centres waited out the cadence and nothing could be placed for 20 ticks | A recompute is immediate while no source has ever been delivered (§2.3) |
+| 9 | Territory and fog (T4) | The cards do not say whether enemy land shows through the fog | Territory is public in M9, one grid for every client, as the shroud does not hide terrain; AFTER-M8: FOW-05's leak audit decides |
+| 8 | The territory hash (T2, T3) | Mixing the grid into the state hash would change every saved journal's hashes; the grid is a function of saved state | The grid is never hashed; `Play.territory` saves the delivered and the pending source sets, and a restore rebuilds both grids exactly (§2.3 amended) |
+
+New rows are added as tasks find them.
+
+### 1.7 Consent plan
+
+One batch, T19: the border goldens (three scenes, vanilla and Sodium), PERF-14's border scene (budget F with 200
+units and borders on the terrain and the minimap), and the new demo chapters once. About 25 minutes of windows.
+
+---
+
+## 2. Design of the M9 slice
+
+### 2.1 Allies, the contract (MATCH-06's seam)
+
+`core/sim/Allies.java`: `boolean allied(int factionA, int factionB)` — true for the same faction; Gaia is allied
+with nobody. `MatchState.allies()` returns `Allies.SAME_FACTION` today. **AFTER-M7:** an adapter over
+`DiplomacyView.allied(FactionSlot, FactionSlot)`; nothing else in M9 changes. Tests use `FakeAllies` (test
+fixtures) with two factions allied. `enemy(a, b)` is `!allied(a, b)` for two player factions.
+
+Used by: capture (allies never capture each other's buildings; allied points never count against the owner),
+garrisons (an ally may garrison, BLD-10), gates (PATH-12), arrows (`TownArrows` keeps shooting enemies only).
+
+### 2.2 The territory grid (TERR-01, 04 §10.6)
+
+- **Package** `core/sim/territory`. Tiles of 8 × 8 blocks; the first map is 48 × 48 tiles. Paged by 16 × 16
+  columns like the other grids (04 line 944), so a 1,024² map costs the same per tile.
+- **Sources.** Every COMPLETE building whose template has `TerritoryInfluence`: `weight`, `radius` in blocks,
+  `root`. Foundations give none. The radius passes through the stats (`blockValue`), so Town's +25 % on civic
+  centres is a tech effect (`phase_town.json`).
+- **Influence.** At a tile whose centre lies at distance d from the source's footprint centre: `weight × (r − d) / r`
+  for d < r, else 0, in integer fixed point (d by an integer square root of squared distances in blocks). Each tile's
+  owner is the faction with the highest summed influence above zero; a tie, or no influence, is neutral.
+- **Connectivity.** A tile is connected when it is 4-connected through tiles of the same owner to a tile holding
+  one of that owner's root sources. Unconnected tiles exist (they decay in TERR-04); M9 only shows them.
+- **Data** (×0.4 of 0 A.D.'s radii, rounded to blocks): civic centre weight 65,535, radius 56, root; house 16;
+  storehouse and farmstead 20; barracks, tower and arsenal 24; quarry and mines 12; fields none.
+- **`TerritoryKernel`** (pure, `@HotPath`): stamps each source into per-faction accumulators over its bounding box
+  only, then resolves owners and floods connectivity. `TerritoryReference` (tests) computes every tile against every
+  source, the naive way; `TerritoryReferenceTest` compares the two on 500 random layouts (seeded, 1–4 factions,
+  1–60 sources, maps 64² to 1,024²).
+
+### 2.3 The territory system (TERR-01, 04 line 742)
+
+- **`TerritorySystem`** in `WORLD`, after `VisionSystem`. It keeps the source set's version, bumped when a source
+  completes, is destroyed, changes owner or changes radius (a stats version change for its template).
+- **Cadence.** A recompute starts when the version moved and the last one started 20 or more ticks ago: at most one
+  per 20 ticks (the per-tick cap). It runs as a `PureJob` on a frozen copy of the sources, delivered by the
+  `JobExecutor`'s STRICT mode at the start tick + 1 (the path service's pattern), so a slow recompute never blocks a
+  tick and 0, 1 and 4 threads give the same grid on the same tick. Inline (0 threads) it runs at delivery.
+- **Readers** (placement, the AI, capture's future decay) read only the delivered grid: `Queries.territory(x, z)`
+  → owner and connected.
+- **Save, no hash** (§1.6 row 8). `Play.territory` saves the delivered grid's sources and a pending job's; a restore
+  recomputes both at once, so the next tick delivers what it would have. The grid is derived and not hashed.
+- **Tests.** `TerritoryThreadsTest` (0, 1, 4 threads; ADAPTIVE replay as `ThreadCountHashTest`),
+  `TerritoryCadenceTest` (ten completions in one tick cause one recompute; a change 5 ticks after a start waits
+  until tick 20).
+
+### 2.4 The territory payload (TERR-01 4)
+
+`strategos:territory` (S2C, the match's audience): `{matchId, tick, version, full, tiles[]}`. A full update at join
+and after a restore: the grid run-length coded (owner + connected bit per tile). Otherwise a delta: changed tiles as
+(index gap varint, value byte). The encoder splits an update larger than 7 KB into several payloads, sent on
+consecutive ticks, the last one flagged; the client applies a version only when all its parts arrived.
+`TerritoryCodecTest`: random churn on 384² and 1,024² maps stays under 8 KB per payload, a full checkerboard grid of
+1,024² splits and reassembles exactly. The client's `ClientTerritory` (core `client`) holds the grid for placement
+prediction, borders and the minimap.
+
+### 2.5 Ownership transfer (CMB-10's foundation)
+
+`BuildingStore.transfer(handle, faction)` and `BuildingLife.transfer(s, handle, to)`, the one way a building changes
+owner, in this order: eject the garrison (§2.7); `Production.lost(s, handle)` for the old owner (housing dropped,
+the queue refunded, the head's reservation returned); clear the rally point; change the faction; re-register the
+building's vision and territory sources and its stats (the new owner's modifiers); add housing for the new owner;
+emit a `NoticeKind` for both owners. Limits are checked only at placement: a captured second civic centre stays.
+`BuildingStore` is at 798 lines: T1 moves its queue and rally code to `BuildingQueues` first.
+
+### 2.6 Capture (CMB-10)
+
+- **State.** `CaptureStore`: per capturable building, points per faction (int, in thousandths), lazily created at
+  the first capture; a full owner's building has no entry. Saved in `Play.capture`.
+- **Data.** `Capturable/points`: civic centre 2,000 (its Health), barracks and tower 800, houses and storehouses
+  400, farmstead 300; fields, palisades, walls and gates have no `Capturable`. `Capturable/regen` per second: 5, 10
+  for barracks and towers, 30 for the civic centre. `Capture/strength` per second: worker 1.0, infantry and archer
+  2.5, horseman 1.75, ram 0. 0 A.D.'s ratios to Health and its worked examples (mechanics §1.12) carry over:
+  20 infantry take an empty, full-health civic centre in 2,000 / (50 − 30) = 100 s.
+- **Rate.** Each capturing unit in reach (melee reach of the building's footprint) adds its strength, divided by
+  `0.1 + 0.9 × health / maxHealth`, every second (every 20 ticks, at the building's phase offset). Capture takes the
+  points from the owner first; then from other non-allied factions in proportion. Regeneration (`regen` plus the
+  garrison, §2.7) moves points back to the owner from the others, in faction order.
+- **Ownership** changes only when the owner's points reach zero: to the faction holding the most points, ties to the
+  lowest faction index (`CaptureOwnershipTest`: a 60 % majority never flips it). Then `BuildingLife.transfer`, and
+  the new owner holds every point.
+- **The order.** `Capture(UnitSet units, int building)`, wire id 32: units with `Capture/strength` > 0 walk into
+  reach and capture; refused for allies' buildings, uncapturable templates and units without strength. UnitAi's new
+  `CAPTURE` activity; when the target changes owner to the unit's faction or an ally, the unit goes idle.
+- **Client.** The capture bar in `HudBuildingCard` and over the building in `HealthBarOverlay` (the owner's share and
+  each other faction's, in `HudTheme` colours), from `BuildingState.Entry`'s capture bytes; the capture key
+  (`key.strategos.capture`, N; §1.6 row 17) turns a right-click on a building into `Capture`.
+
+### 2.7 The garrison, finished (BLD-10)
+
+- **Healing.** `GarrisonHolder/heal` HP per second for each occupant: civic centre 1, houses and towers 0 (0 A.D.:
+  CC 1 HP/s). Applied every 20 ticks in `ECONOMY`, never above max.
+- **Ejection.** When a building's health falls below `GarrisonHolder/ejectBelow` (0.1) of its max, `ejectAll`.
+- **Capture regeneration.** Each occupant adds its `Capture/strength × Capturable/garrisonRegen` (1.0; Town +0.5 by
+  `phase_town.json`) to the building's regeneration.
+- **Rally into a building.** A rally point on a building of the owner or an ally with room garrisons the units
+  trained there, via `Garrison` on arrival.
+- **Data.** Houses: capacity 5, `Worker`; the sentry tower: 3, `Infantry`; the defence tower: 5, `Infantry`. Allies
+  may garrison (`Garrisons.admits` asks `Allies`).
+
+### 2.8 The sentry tower and upgrades (BLD-12)
+
+- **Sentry tower** (`building/sentry_tower`), Village: 100 wood, 400 health, one arrow plus one per garrisoned unit,
+  interval 40, range 24, vision 20, garrison 3, a 5 × 5 footprint like the defence tower.
+- **Defence tower** (BLD-17's `tower`) gains `GarrisonHolder` (5, `Infantry`) and `perGarrisoned 1`.
+- **Upgrade.** `Upgrade/to`, `Upgrade/Cost`, `Upgrade/time`, `Upgrade/requires`: the sentry tower upgrades to the
+  defence tower in Town for 50 wood, 100 stone, 50 s. `UpgradeBuilding(int building)`, wire id 33, puts an upgrade
+  entry at the head of the building's queue (training waits behind it; cancelling refunds it, as research). At its
+  end the building's template changes in place: the health ratio is kept, the garrison stays (any occupants over the
+  new capacity are ejected), the capture points are scaled by the new `points`. The mod replaces the blueprint's
+  blocks through the construction placer, in the same footprint.
+- **Blueprints.** `PlaceholderBlueprints.sentryTower()`; both towers in the construction and damage-stage suites.
+
+### 2.9 Gates in navigation (PATH-12)
+
+- **Gate overlay.** `GateOverlay` (core `sim/nav`): gate columns with their owner. In the base grid a gate column is
+  blocked, so `Components` split at it; each gate links the components on its two sides.
+- **Reachability per faction.** `Reach.reachable(from, to, faction)`: the same component, or connected through gates
+  whose owner is allied with the faction (a BFS over the small gate graph, cached by the gate set's version).
+- **Path search.** `GridAStar` takes the requester's faction: a gate column is passable at door cost for an allied
+  faction, blocked otherwise. The request key gains the faction only when the gate set is non-empty, so paths
+  without gates are shared as today.
+- **Door state.** A gate is open while an allied unit stands within 3 blocks of it; the state is in the core (for
+  the mod's blocks) and never lets an enemy through.
+
+### 2.10 Palisades and gates (BLD-13)
+
+- **Line.** `PlaceWall(TemplateId wall, int x1, int z1, int x2, int z2, List<Integer> gates, UnitSet builders)`, wire
+  id 34. `WallLine` (pure): a straight line becomes segments of `Wall/segment` blocks (4) that follow the floor (each
+  segment's base at its middle's floor; a step over 2 blocks between neighbours starts a new segment with its own
+  base); `gates` replaces the named segments by `palisade_gate`. Every segment is a foundation with its own
+  placement check (territory included); a refused segment leaves a gap, and the order's outcome lists the refused
+  ones.
+- **Data.** `palisade`: 1 × 4 blocks, 3 high, 300 health per segment, 14 wood, 8 s, Village, no `Capturable`;
+  `palisade_gate`: 1 × 4, 500 health, 20 wood, 10 s, its middle two columns a gate (§2.9).
+- **The mod.** The placement mode draws the line while the mouse is dragged and shows each segment's verdict; blocks
+  are fence posts and spruce fences; the gate's middle is two fence gates, opened and shut from the core's door
+  state.
+- **Enemies at a palisade.** An enemy's move or attack-move whose goal is unreachable for its faction gets the path
+  to the nearest reachable point; an attack-move then attacks the nearest blocking segment.
+
+### 2.11 Borders (TERR-03)
+
+- **Geometry, core.** `BorderGeometry` (`core/client/territory`, pure): from `ClientTerritory`, the edges between
+  tiles of different owners as quads 0.05 blocks over the floor, per 16 × 16 × 16 section, coloured by the owner
+  relative to the viewer (own, ally, enemy, neutral not drawn); unconnected tiles dashed. `BorderGeometryTest`: a test
+  layout's geometry equals its stored hash; a changed tile dirties only the sections its edges touch.
+  `BorderBench` (JMH, `@HotPath`): extracting one section, in `jmhCompare`.
+- **The mod.** `BorderRenderer` subscribes to `AddSectionGeometryEvent` and adds a renderer holding an immutable
+  copy of that section's quads (renderers run on chunk-build threads); a territory update calls
+  `LevelRenderer#setSectionDirty` for the dirty sections only.
+- **Minimap.** `MinimapImage` gains a border layer: tile edges in owner colours, rebuilt with the dirty tiles.
+
+### 2.12 The AI (AI-08)
+
+- **Placement.** `SiteFinder` asks `placementRefusal`, which now includes territory: no change but a test
+  (`AiTerritoryPlacementTest`: 100 seeded matches, no AI placement refused for territory; the AI's second civic
+  centre in Town goes to neutral land nearest its base).
+- **Capture.** `MilitaryManager`: a target building is captured instead of burnt when it is capturable and the
+  squad's capture rate, at the building's health, beats its regeneration plus garrison by 50 % (`AiCaptureTest`).
+  The mop-up after a centre falls captures barracks and towers, burns the rest.
+- **Defence.** `DefenceManager`: when a tower or a house is attacked and has room, nearby infantry (towers) or workers
+  (houses) garrison it, once per 200 ticks (`AiGarrisonTowerTest`); the bell (AI-04) is unchanged.
+
+### 2.13 The perf gate (PERF-16)
+
+`perf_territory` (`PerfTests`): four AI factions of 150 population on the first map's arena copy, with a churn
+driver that completes, destroys or transfers a building every 30 s and 40 garrisoned units, for 15 game minutes;
+budgets A–C and E (ADR-0019, ADR-0026's validity); `perf_territory_stress` doubles the churn and the garrisons and
+holds C p95 ≤ 50 ms. The report (`PerfVerdicts`) adds `systems.territory` (the `WORLD` phase's territory share and
+the jobs' time) and `systems.garrison`. **AFTER-M7:** PERF-10's four-client pass of the same scene.
+
+## 3. Build changes
+
+None to the build itself. New JMH benchmark `BorderBench`; the perf batches `perf_territory` and
+`perf_territory_stress` join `runGameTestPerf`.
+
+## 4. Tests per level
+
+| Level | New |
+|---|---|
+| L0 | ArchUnit: `sim.territory` imports no `client`; `Allies` is the only relation query in `sim` (no faction `==` in the new code) |
+| L1 | `TerritoryReferenceTest`, `TerritoryThreadsTest`, `TerritoryCadenceTest`, `PlacementTerritoryTest`, `BorderGeometryTest`, `CaptureMathsTest`, `CaptureOwnershipTest`, `TransferTest`, `GarrisonHealTest`, `GarrisonEjectTest`, `CaptureRegenTest`, `TowerDataTest`, `UpgradeTest`, `GateReachabilityTest`, `WallLineTest`, `AiCaptureTest`, `AiTerritoryPlacementTest`, `AiGarrisonTowerTest`; the save round trip with territory and capture |
+| L2 | `TerritoryCodecTest`; the new commands' and `BuildingState`'s caps |
+| L3 | `territorytests`, `capturetests`, `garrisontests` (rally), `towertests`, `walltests`, `pathtests.own_gate_no_stop`; the tower and palisade blueprints in `constructiontests`; `aisoak` stays green with territory and capture |
+| L4 | border goldens (vanilla, Sodium); PERF-14's border scene — consent |
+| L6 | `BorderBench`; `perf_territory`, `perf_territory_stress` |
+
+## 5. Measurements before building on them
+
+- T2: the kernel's cost per full recompute on 384² with 60 sources and on 1,024² with 200 (a JMH line in the branch
+  file); if one recompute passes 2 ms on the M4 Pro, the job stays off-thread by default, as designed.
+- T6: whether Sodium calls `AddSectionGeometryEvent` renderers (S-check in the consent batch; the fallback is a
+  translucent overlay drawn at `AFTER_TRANSLUCENT_BLOCKS`, recorded as a §1.6 row).
+
+## 6. Risks and fallbacks
+
+| Risk | Fallback |
+|---|---|
+| Sodium ignores `AddSectionGeometryEvent` | Draw borders in `RenderLevelStageEvent` from the same quads, culled by section |
+| Territory recompute too slow on 1,024² | Incremental stamping of the changed sources only (the accumulators kept) |
+| Gate links make reachability costly | The gate graph is per version and tiny (≤ 64 gates); measured in `GateReachabilityTest`'s timing line |
+| The upgrade's block swap leaves debris | The construction placer clears the footprint first, as a rebuild does |
+| M7's `DiplomacyView` lands with another shape | Only `Allies`' adapter changes (§2.1) |
+
+## 7. Task breakdown
+
+### 7.1 Order
+
+T1 → (T2 → T3 → T4 → T5 → T6) ∥ (T10 → T11) ∥ (T12) → T7 → T8 → T9 → T13 → T14 → T15 → T16 → T17 → T18 → T19 →
+T20. T10 needs T7 only for its regeneration criterion, which it finishes after T7.
+
+### 7.2 Tasks
+
+#### T1 · Health check moves (M6 follow-ups)
+Split `MotionSystem` (910) and `PathService` (837) under 800 lines and move `BuildingStore`'s queue and rally code to
+`BuildingQueues`, by moves only. Verify: `verify verifySlow`, the core's hash unchanged on the soak seeds. Size: 600
+moved lines. (M6's other first-task follow-up, a fake `DemoStage`, is T17's: `DemoStage` is bound to a
+`ServerLevel`, so the fake needs an interface over it, which the new chapters use first; §1.6 row 7.)
+
+#### T2 · TERR-01 · The kernel and the reference
+`Allies` (§2.1) and `FakeAllies`; `sim/territory`: `TerritoryGrid`, `TerritoryKernel`, `TerritoryReference`; the
+`TerritoryInfluence` data and provenance. Verify: `TerritoryReferenceTest`. Size: 700.
+
+#### T3 · TERR-01 · The system, the job and the save
+`TerritorySystem`, its cadence, the `PureJob` and its delivery, `Queries.territory`, `Play.territory`, the hash.
+Verify: `TerritoryThreadsTest`, `TerritoryCadenceTest`, the save round trip; `jmhCompare`. Size: 600.
+
+#### T4 · TERR-01 · The payload and the client grid
+`strategos:territory`, its codec and splitting, `ClientTerritory`, the mod's payload and audience. Verify:
+`TerritoryCodecTest`, `PayloadRoundTripTest`. Size: 500.
+
+#### T5 · TERR-02 · The build rule
+`PlacementRules.Rule.TERRITORY` in place of `REACH`, `Placement/territory`, a second civic centre in Town (its limit by
+`phase_town.json`), the client prediction, the refusal reason. Verify: `PlacementTerritoryTest`,
+`territorytests.refused_outside`, the M4–M6 placement and AI suites. Size: 500.
+
+#### T6 · TERR-03 · Borders
+`BorderGeometry`, `BorderBench`, `BorderRenderer`, the minimap layer; the engine names of §0.4. Verify:
+`BorderGeometryTest`, `jmhCompare`; the goldens wait for T19. Size: 700.
+
+#### T7 · CMB-10 · Transfer and capture maths
+`BuildingLife.transfer` (§2.5), `CaptureStore`, the rate and ownership rules, the `Capturable` and `Capture` data,
+`Play.capture`. Verify: `TransferTest`, `CaptureMathsTest`, `CaptureOwnershipTest`. Size: 700.
+
+#### T8 · CMB-10 · The capture order
+`Capture` (32), its rule, UnitAi's `CAPTURE` activity, `NetGateway`'s size case. Verify: L1 order tests,
+`CommandKindsTest`. Size: 500.
+
+#### T9 · CMB-10 · Capture in the game
+`BuildingState`'s capture bytes, the capture bar, the capture key, notices. Verify: `capturetests.*` (a captured
+barracks trains for its new owner). Size: 500.
+
+#### T10 · BLD-10 · The garrison finished
+Healing, ejection, rally into a building, houses and towers by data, `Allies` in `admits`; capture regeneration after
+T7. Verify: `GarrisonHealTest`, `GarrisonEjectTest`, `CaptureRegenTest`, `garrisontests.rally_garrisons`. Size: 500.
+
+#### T11 · BLD-12 · The sentry tower and upgrades
+The sentry tower, the defence tower's garrison, `UpgradeBuilding` (33), the in-place template change, the blueprint.
+Verify: `TowerDataTest`, `UpgradeTest`, `towertests.upgrade_keeps_garrison`, the construction and damage-stage
+suites. Size: 700.
+
+#### T12 · PATH-12 · Gates in navigation
+`GateOverlay`, the gate links, `Reach.reachable` per faction, `GridAStar`'s faction, the door state. Verify:
+`GateReachabilityTest`, the path suites; `verifySlow` (map tests). Size: 600.
+
+#### T13 · BLD-13 · Walls in the core
+`WallLine`, `PlaceWall` (34), the palisade and gate templates and provenance, per-segment foundations. Verify:
+`WallLineTest`, the placement tests. Size: 600.
+
+#### T14 · BLD-13 · Walls in the game
+The drag placement mode, the blueprints, the gate blocks and their states, enemies at a palisade. Verify:
+`walltests.*`, `pathtests.own_gate_no_stop`. Size: 700.
+
+#### T15 · AI-08 · The AI uses territory and capture
+§2.12. Verify: `AiCaptureTest`, `AiTerritoryPlacementTest`, `AiGarrisonTowerTest`; `:core:openingBalance` (QA-12
+still within its rows). Size: 500.
+
+#### T16 · PERF-16 · The perf gate
+`perf_territory`, `perf_territory_stress`, the report's costs. Verify: `tools/longrun.sh -- :mod:runGameTestPerf`
+on a quiet machine. Size: 400.
+
+#### T17 · The demo chapters
+`territory`, `capture`, `garrison_heal`, `towers`, `palisade` (§1.3); an interface over `DemoStage` and a fake of
+it, so each chapter's script runs at L1 (M6 row 72). Verify: `DemoCatalogTest`, the chapters' script tests. Size: 600.
+
+#### T18 · The close's long runs
+`verify verifySlow`; `verifySoak` (`tools/longrun.sh --shards 2`); `:core:jmh :core:jmhCompare`; the perf batch.
+Size: records.
+
+#### T19 · The consent batch
+§1.7. Size: records.
+
+#### T20 · The close
+Results, the health check, the hand-in. Size: records.
+
+### 7.3 Progress
+
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [x] T17 (2026-11-24) · [x] T18 (2026-11-24) · [x] T19 (2026-11-24) · [x] T20 (2026-11-25)
+
+## 8. Acceptance checklist (M9 exit)
+
+- [x] Every acceptance criterion of the ten cards passes at its level (§1.4), except the AFTER-M7 items of §1.5.
+- [x] L1: territory equals the reference; identical with 0, 1 and 4 threads; ownership only at zero owner points.
+- [x] L3: a garrison round trip keeps every unit's state; gates open for allies only (with `FakeAllies` until M7).
+- [x] L6: `perf_territory` within A–C and E; territory never blocks a tick; the stress pass holds.
+- [x] Consent batch: border goldens, also under Sodium; PERF-14's border scene.
+- [x] Cumulative: `verify verifySlow verifySoak`, `jmhCompare`, the earlier milestones' gates.
+- [ ] Owner: a playtest with the questionnaire; no P0 or P1 open.
+
+## 9. Owner inputs
+
+- The playtest (§1.3) after the hand-in.
+- A proposal: an owner banner on buildings (§1.6 row 5).
+
+## 10. Implementation results
+
+Written at the close (T20), 2026-11-24, on `dev/o-e-lytvynskyi/m9`.
+
+### 10.1 What was built
+
+All ten cards: TERR-01, TERR-02, TERR-03, CMB-10, BLD-10, BLD-12, BLD-13, PATH-12, AI-08 and PERF-16 are
+`done`. Their AFTER-M7 parts (allied capture, gates and garrisons in a real team match; PERF-16's
+four-client pass) wait for MATCH-06 and PERF-10 behind the `Allies` contract (§1.5, §2.1); the markers
+are listed in the branch file.
+
+### 10.2 Numbers
+
+| What | Result | Bound |
+|---|---|---|
+| `perf_territory` (18,000 ticks, 134 units, 156 buildings) | A p50 0.80 ms, A p99 7.19 ms, C p95 7.96 ms (T18: 0.93, 9.89, 9.12 before row 27), E ≤ 3.8 KB/s | 5, 10, 23 ms; 100 KB/s |
+| the cumulative `runGameTestPerf`, 26 scenes (after row 27) | green, 2 h 36 min, foreign load ≤ 4.4 %; `mvp_soak` A p50/p99 0.70/6.98 ms (M6: 0.70/8.86), C p95 7.27; `mvp_stress` C p95 9.05 | every earlier budget |
+| the territory system / the tick's join on its job | p99 16.5 µs / p99 0, max 25 µs; ≤ 1 recompute in 20 ticks | join p99 0.5 ms |
+| `perf_territory_stress` (223 units) | C p95 7.80 ms (T18: 9.0); territory p99 119 µs | 50 ms |
+| garrisons and capture in the soak scene | p99 24 µs, capture p99 1.4 µs | reported (R) |
+| `BorderBench.extractSection` | 0.069 µs/op, 0 B/op | baseline proposed |
+| `SpatialBench.rebuild1000` (now twice a tick) | 5.2 µs/op | — |
+| PERF-14 `rts_frame_borders`, vanilla / Sodium | frame p50 3.72 / 1.75 ms, p99 8.88 / 4.70 ms, ours 0.72 / 0.68 ms | F: 16.7, 25, 3 ms |
+| `m9_goldens`, macos and macos-sodium | six frames each, nmse 0 on rerun | 1e-5 |
+| the AI soak, 20 seeds | see §10.5 | every journal replays |
+| `verify verifySlow verifySoak` on the head | green, 3 h 16 min | — |
+| `verify` / `verify verifySlow` | 2 min 39 s / 5 min 14 s | 5 min for `verify` |
+
+### 10.3 Deviations
+
+Findings rows 1–27 (§1.6). The ones a reviewer should read first:
+
+- **Rows 23–24, the AI soak's replay divergence (T18).** The soak's seed 13 diverged 20 ticks after its
+  journal start: the journal ring had rolled, so the replay began from a mid-match snapshot, and two
+  things the live run held were not in it. `BreachLog` (the breach cooldowns) is now saved and hashed;
+  and the unit grid, rebuilt only where MOVEMENT ends, lagged the poses after a unit was set down later
+  in the tick (gate put-outs, garrison exits), so the core now rebuilds it before each tick's first phase
+  too. Both have L1 tests that save mid-behaviour, restore and step both runs to the same hash.
+- **Row 26, the third (T18).** With those fixed, seed 15 diverged on the first tick after its journal
+  start: the path store's "ask for a path" flag, set in MOVEMENT and the combat phases after the tick's
+  request pass, outlived its tick unsaved, and a restored archer gave its attack up as settled. It is
+  saved with the unit's path and hashed when set.
+- **Row 27, the tick's tail (T20).** The cumulative perf batch held 24 of 26 scenes: `territory_soak` and
+  `mvp_soak` broke budget A's p99 by about 2 %. The tail was the terrain rebuild, the same on `main`; a
+  rebuilt page hashed its slice twice for nothing. `VoxelSlice` hashes on first use, and the two soaks'
+  p99 fell to 7.19 and 6.98 ms; play is unchanged (the soak's matches end on the same ticks).
+- **Row 25, the borders under Sodium (T19).** Some first dirty marks were lost to section builds in
+  flight; the touched sections are dirtied again 10 client ticks later.
+- **Row 4,** territory deltas split above 7 KB: the card's 8 KB cannot hold a full 1,024² grid.
+- **Rows 8–9,** the grid is public and not hashed (a function of the saved sources).
+
+### 10.4 Follow-ups
+
+1. Split `MatchState` (815 lines, over the 800 limit): the territory, capture, gate and breach accessors
+   into a play-state facet. The first task of the next milestone that touches the core.
+2. AFTER-M7: the `Allies` adapter over `DiplomacyView.allied`, `GateOverlay.touch()` on a relation
+   change, the allied GameTests with real teams, and PERF-10's four-client pass of `perf_territory`.
+3. A shared check for "every store a step reads is saved": the three soak findings were state outside the
+   snapshot. Candidate: an L1 test that restores mid-match on every seeded scene and compares hashes over
+   the next ticks.
+4. Client tick work under Sodium in the border scene is p50 1.00 ms against F's 1 ms: at the edge; watch it
+   in the next client milestone.
+5. The demo chapters' L1 fake has no terrain (the palisade chapter's wall on a rock passed there).
+
+### 10.5 The AI soak
+
+`:mod:runGameTestSoak` on bade2c53, unsharded in a worktree, 3 h 12 min: green; again on the head with `verifySoak`, the same 20 endings. 20 matches of Normal
+against Normal, 18 by conquest (27.9–43.5 min, median about 34 min), seeds 7 and 8 at the 45-minute limit;
+856,314 game ticks in all; every journal replays to the live hash, the rolled ones from their mid-match
+start. Two earlier runs were red and each found a replay bug: 9f0c53f8 at seed 13 (rows 23–24) and
+1c819323 at seed 15 (row 26). The grid rebuild changes live play; the path-wish save does not, and the
+last two runs' seeds 1–14 ended on the same ticks.
+
+### 10.6 Planned against actual
+
+Twenty tasks, as planned; T6, T16 and T10 closed with parts moved to T19 and T18 as the plan said. The
+code tasks' sizes held their 400–700-line estimates within about a third; the surprise was T18, planned
+as runs only, which found the three replay bugs and took most of the close's time.

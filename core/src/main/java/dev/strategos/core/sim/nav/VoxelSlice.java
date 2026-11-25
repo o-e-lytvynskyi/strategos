@@ -19,7 +19,11 @@ public final class VoxelSlice {
     private final int height;
     private final short[] voxels;
     private final SliceMaterials materials;
-    private final long hash;
+    // Computed on first use: a rebuilt page decodes its slice and edits it, and neither copy's hash is ever read; the
+    // two hashes of every voxel were most of a terrain rebuild's cost, the soaks' slowest ticks (M9 spec §1.6 row 27).
+    // Benign race: every thread computes the same value; the volatile flag publishes the field written before it.
+    private long hash;
+    private volatile boolean hashed;
 
     /** {@code voxels} is copied; {@code POSITION_DEPENDENT} is cleared from every class. No materials. */
     public VoxelSlice(int height, short[] voxels) {
@@ -43,7 +47,6 @@ public final class VoxelSlice {
             this.voxels[i] = BlockClass.forSlice(voxels[i]);
         }
         this.materials = materials;
-        this.hash = computeHash();
     }
 
     public int height() {
@@ -139,6 +142,10 @@ public final class VoxelSlice {
 
     /** Equal slices have equal hashes. */
     public long hash() {
+        if (!hashed) {
+            hash = computeHash();
+            hashed = true;
+        }
         return hash;
     }
 
@@ -164,6 +171,6 @@ public final class VoxelSlice {
 
     @Override
     public int hashCode() {
-        return Long.hashCode(hash);
+        return Long.hashCode(hash());
     }
 }

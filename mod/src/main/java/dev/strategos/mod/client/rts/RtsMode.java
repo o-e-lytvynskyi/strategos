@@ -262,12 +262,17 @@ public final class RtsMode {
 
     /** The context order for the selection to what the cursor at window points picks; see {@link RtsOrders#order}. */
     public void order(double x, double y, boolean shift) {
-        orders.order(x, y, shift, false, false);
+        orders.order(x, y, shift, false, false, false);
     }
 
     /** As {@link #order(double, double, boolean)}, Ctrl forcing an attack on an own target and Alt spreading it (ORD-05). */
     public void order(double x, double y, boolean shift, boolean force, boolean spread) {
-        orders.order(x, y, shift, force, spread);
+        orders.order(x, y, shift, force, spread, false);
+    }
+
+    /** As above, with {@code capture} (the capture key held): an enemy building under the cursor is captured (CMB-10). */
+    public void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
+        orders.order(x, y, shift, force, spread, capture);
     }
 
     /** The focus the selected units share, for the ring and for scenarios; null for none. */

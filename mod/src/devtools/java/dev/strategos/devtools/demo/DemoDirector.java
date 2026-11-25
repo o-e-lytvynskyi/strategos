@@ -86,7 +86,7 @@ public final class DemoDirector {
     }
 
     /** A line under the screen's middle, and in the log. */
-    static void say(DemoStage stage, String line) {
+    static void say(Stage stage, String line) {
         LOG.info("DEMO say {}", line);
         SAYS.incrementAndGet();
         stage.command("title @a times 5 80 15");

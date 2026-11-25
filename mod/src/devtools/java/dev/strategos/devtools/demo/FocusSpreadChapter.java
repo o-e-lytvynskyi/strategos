@@ -29,7 +29,7 @@ final class FocusSpreadChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.ARCHER, 0, -12, 0, 8, 2);
                     st.units(Ids.INFANTRY, 1, 8, 0, FOES, 4);

@@ -4,16 +4,20 @@ import com.mojang.blaze3d.platform.NativeImage;
 import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.hud.DirtyTiles;
 import dev.strategos.core.client.hud.HudRect;
+import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.MinimapImage;
 import dev.strategos.core.client.hud.MinimapPings;
 import dev.strategos.core.client.pick.View;
+import dev.strategos.core.client.territory.BorderGeometry;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.platform.Ids;
 import java.util.Arrays;
+import java.util.BitSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -50,6 +54,7 @@ final class RtsMinimap {
 
     private long uploadedAt = -1_000; // "long ago", without the overflow Long.MIN_VALUE would give a subtraction
     private int visionRevision = -1;
+    private int territoryVersion = -1;
     private DirtyTiles dirtyTiles = new DirtyTiles(0, 0);
     private final MinimapPings pings = new MinimapPings();
 
@@ -100,6 +105,23 @@ final class RtsMinimap {
             Arrays.fill(tileHashes, 1); // fog changed: every chunk must be rewritten
             visionRevision = rev;
         }
+        TerritoryGrid grid = model.territory().grid();
+        int version = model.territory().version();
+        if (version != territoryVersion) { // TERR-03: the chunks whose borders may differ are rebuilt at once
+            territoryVersion = version;
+            if (grid != null) {
+                BitSet touched =
+                        BorderGeometry.sectionsTouched(model.territory().changed(), grid.tilesX(), grid.tilesZ());
+                int perRow = BorderGeometry.sectionsFor(grid.tilesX());
+                for (int s = touched.nextSetBit(0); s >= 0; s = touched.nextSetBit(s + 1)) {
+                    int c = (s / perRow) * chunksX + s % perRow; // a section column is a chunk of the image
+                    if (c < tileHashes.length) {
+                        tileHashes[c] = 1;
+                        dirtyTiles.mark(c);
+                    }
+                }
+            }
+        }
         MinimapImage.Columns columns = new Columns(level, join);
         // an observer (the admin's seat) has no vision grid and sees everything; a player's before its first delta sees
         // none
@@ -113,14 +135,14 @@ final class RtsMinimap {
         pings.observe(model.alerts(), model.alert(), model.waves(), model.wave(), now);
         int[] budget = {PER_TICK};
         dirtyTiles.drain(ticks, PER_TICK, c -> {
-            rebuild(image, columns, fog, c, chunksX);
+            rebuild(image, columns, fog, grid, c, chunksX);
             budget[0]--;
         });
         for (int k = 0; k < budget[0]; k++) {
             int c = next;
             next = (next + 1) % (chunksX * chunksZ);
             dirtyTiles.built(c, ticks);
-            rebuild(image, columns, fog, c, chunksX);
+            rebuild(image, columns, fog, grid, c, chunksX);
         }
         if (DirtyTiles.uploadDue(dirty, ticks, uploadedAt)) {
             t.upload();
@@ -129,10 +151,16 @@ final class RtsMinimap {
         }
     }
 
-    private void rebuild(NativeImage image, MinimapImage.Columns columns, MinimapImage.Fog fog, int c, int chunksX) {
+    private void rebuild(
+            NativeImage image,
+            MinimapImage.Columns columns,
+            MinimapImage.Fog fog,
+            @Nullable TerritoryGrid grid,
+            int c,
+            int chunksX) {
         int cx = c % chunksX;
         int cz = c / chunksX;
-        int[] tile = MinimapImage.tile(columns, fog, cx, cz, sizeX, sizeZ);
+        int[] tile = MinimapImage.tile(columns, fog, grid, HudTheme.DEFAULT, cx, cz, sizeX, sizeZ);
         int hash = Arrays.hashCode(tile);
         if (hash == tileHashes[c]) {
             return;
@@ -167,6 +195,7 @@ final class RtsMinimap {
         dirty = true;
         uploadedAt = -1_000;
         visionRevision = -1;
+        territoryVersion = -1;
     }
 
     private void close(Minecraft mc) {

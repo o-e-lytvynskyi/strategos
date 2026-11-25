@@ -21,6 +21,8 @@ public enum Action {
     ORDER_CONTEXT(false),
     ATTACK_MOVE(false),
     STOP(false),
+    /** Held while right-clicking an enemy building: the selection captures it instead of attacking it (CMB-10). */
+    CAPTURE(true),
     CONTROL_GROUP_SET(false),
     CONTROL_GROUP_SELECT(false),
     CONTROL_GROUP_ADD(false),

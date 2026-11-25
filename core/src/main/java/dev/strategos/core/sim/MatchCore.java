@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.vision.VisionSystem;
 import org.jspecify.annotations.Nullable;
@@ -28,6 +29,16 @@ public interface MatchCore {
 
     default @Nullable VisionSystem vision() {
         return null;
+    }
+
+    /** The delivered territory grid (TERR-01), or null before the first one. */
+    default @Nullable TerritoryGrid territory() {
+        return null;
+    }
+
+    /** How many territory grids were delivered: a new version for the clients whenever it moves (M9 spec §2.4). */
+    default long territoryVersion() {
+        return 0;
     }
 
     static MatchCore create(MatchConfig config, TemplateSet templates, CorePorts ports) {

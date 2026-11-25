@@ -10,16 +10,57 @@ import dev.strategos.core.shared.HotPath;
  */
 @HotPath
 public final class LineOfWalk {
+    /** The layer a walk that is inside a gate's columns has (it stands on none). */
+    private static final int GATE = -2;
+
+    /** The most a walk out of a gate may rise or fall from the floor it left, in sixteenths: a block. */
+    private static final int STEP = 16;
+
     private LineOfWalk() {}
+
+    /** The layer of column ({@code x}, {@code z}) whose passable surface is nearest {@code floor} within a block, or -1. */
+    static int landing(SurfaceGrid grid, int x, int z, int floor) {
+        if (x < 0 || z < 0 || x >= grid.sizeX() || z >= grid.sizeZ()) {
+            return -1;
+        }
+        int best = -1;
+        int distance = STEP + 1;
+        for (int layer = 0; layer < grid.count(x, z); layer++) {
+            int surface = grid.surface(x, z, layer);
+            int d = Math.abs(Surface.floor(surface) - floor);
+            if (Surface.passable(surface) && d < distance) {
+                best = layer;
+                distance = d;
+            }
+        }
+        return best;
+    }
 
     /**
      * The node the walk ends on, in the column of ({@code x1}, {@code z1}), starting on node {@code from}, whose
      * column holds ({@code x0}, {@code z0}); -1 if a step has no link. Match-local blocks.
      */
     public static int walk(SurfaceGrid grid, int from, double x0, double z0, double x1, double z1) {
+        return walk(grid, from, x0, z0, x1, z1, null);
+    }
+
+    /**
+     * As {@link #walk(SurfaceGrid, int, double, double, double, double)}, a faction's {@code gates} walkable too
+     * (PATH-12): an orthogonal step into a column of an allied gate, which has no surface, goes on through the gate's
+     * columns and ends on a surface within a block of the floor it left; null for no gates.
+     */
+    public static int walk(
+            SurfaceGrid grid,
+            int from,
+            double x0,
+            double z0,
+            double x1,
+            double z1,
+            GateLinks.@org.jspecify.annotations.Nullable Pass gates) {
         int cx = grid.nodeX(from);
         int cz = grid.nodeZ(from);
         int layer = SurfaceGrid.nodeLayer(from);
+        int floor = 0; // the floor a walk left for a gate, in sixteenths
         int ex = (int) Math.floor(x1);
         int ez = (int) Math.floor(z1);
         double dx = x1 - x0;
@@ -43,11 +84,23 @@ public final class LineOfWalk {
             } else {
                 dir = diagonal(sx, sz);
             }
-            int next = grid.neighbour(cx, cz, layer, dir);
-            if (next < 0) {
+            int next = layer < 0 ? -1 : grid.neighbour(cx, cz, layer, dir);
+            if (next < 0 && gates != null && !Dir.diagonal(dir)) {
+                int tx = cx + Dir.dx(dir);
+                int tz = cz + Dir.dz(dir);
+                if (gates.gate(tx, tz)) {
+                    if (layer >= 0) {
+                        floor = Surface.floor(grid.surface(cx, cz, layer)); // into a gate: no surface, the floor kept
+                    }
+                    next = GATE;
+                } else if (layer < 0) {
+                    next = landing(grid, tx, tz, floor); // out of the gate
+                }
+            }
+            if (next < 0 && next != GATE) {
                 return -1;
             }
-            layer = next;
+            layer = next == GATE ? -1 : next;
             if (dir != Dir.N && dir != Dir.S) {
                 cx += sx;
                 nextX += deltaX;
@@ -57,7 +110,7 @@ public final class LineOfWalk {
                 nextZ += deltaZ;
             }
         }
-        return grid.node(cx, cz, layer);
+        return layer < 0 ? -1 : grid.node(cx, cz, layer);
     }
 
     /** Whether the walk from {@code from} at its column's centre to node {@code to}'s centre ends on {@code to}. */

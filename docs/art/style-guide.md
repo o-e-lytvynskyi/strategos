@@ -66,6 +66,7 @@ blueprints may replace them later (an owner task); they keep the same ranges.
 | Tower (defence) | 5–7 | 7–12 | 100–260 | 5 × 9 × 5, 152 blocks (BLD-17) |
 | Arsenal (siege) | 9–13 | 6–9 | 250–500 | 11 × 7 × 9, 396 blocks, a doorway three wide for the rams (CMB-09) |
 | Deposit (quarry, iron mine) | 3–6 | 2–4 | 18–90 | 3 × 2 × 3, 18 blocks; 5 × 3 × 5, 59 blocks (ECO-08: spawned, never built) |
+| Wall (palisade segment, gate) | 4 | 3–4 | 12–16 | 4 × 3 × 1, 12 blocks; the gate 4 × 4 × 1, 16 blocks, two fence gates under a lintel (BLD-13) |
 
 - **They read at camera heights of 24–64 blocks**: a house is at least 4 blocks high, so its
   silhouette stands out from the ground at the top height; a civic centre is the largest thing in

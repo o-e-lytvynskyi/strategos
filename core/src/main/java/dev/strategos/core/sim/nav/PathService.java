@@ -305,8 +305,8 @@ public final class PathService {
             counters.joins++;
         }
         long latency = s.tick() - paths.lastRequest(i);
-        paths.follow(i, startFrom(s, i, fromNode, fromX, fromZ, w), r.status());
-        boolean broken = paths.lastPageChange() > q.tick() && !walkable(s, i);
+        paths.follow(i, PathRoutes.startFrom(s, i, fromNode, fromX, fromZ, w), r.status());
+        boolean broken = paths.lastPageChange() > q.tick() && !PathRoutes.walkable(s, i);
         s.bus().publish(new PathDelivered(handle, r.status()));
         if (broken) {
             s.bus().publish(new PathInvalidated(handle)); // terrain changed in flight and broke the route
@@ -358,7 +358,7 @@ public final class PathService {
                     continue;
                 }
             }
-            if (changed && !paths.repath(i) && crosses(s, i)) {
+            if (changed && !paths.repath(i) && PathRoutes.crosses(s, i)) {
                 s.bus().publish(new PathInvalidated(entities.handleAt(i))); // the unit's machine marks it to ask again
             }
             long last = paths.lastRequest(i);
@@ -666,7 +666,13 @@ public final class PathService {
                 .put(new PathStore.Pending(
                         r,
                         s.tick() + rules.pathK(),
-                        jobs.submit(new GroupJob(grid, r, standing, rules.joinCap(), joins))));
+                        jobs.submit(new GroupJob(
+                                grid,
+                                r,
+                                standing,
+                                rules.joinCap(),
+                                joins,
+                                s.gates().passFor(grid, s.identity().faction(members.getInt(0)), s.allies())))));
     }
 
     private void submit(MatchState s, int i, PathStore.Waiting w) {
@@ -677,7 +683,12 @@ public final class PathService {
         double x = motion.x(i);
         double z = motion.z(i);
         int from = startNode(grid, x, motion.y(i), z, s.config().bounds().minY());
+        GateLinks.Pass gates = s.gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
         if (from < 0) {
+            if (gates != null && gates.gate((int) Math.floor(x), (int) Math.floor(z))) {
+                busy(s, i); // in a gate's columns: it keeps its path across and asks again on the far side
+                return;
+            }
             decide(s, i, PathStore.Waypoints.NONE, PathStatus.NO_PATH); // it stands on no surface now
             return;
         }
@@ -693,7 +704,7 @@ public final class PathService {
                 rules.searchCap(),
                 0,
                 false);
-        paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r))));
+        paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r, gates))));
     }
 
     /** The queue is full: the unit keeps its path, or steers at its target, and asks again after {@code busyRetry}. */
@@ -748,90 +759,5 @@ public final class PathService {
     /** The column holding coordinate {@code v}, kept inside {@code 0 .. limit - 1}. */
     static int clampColumn(double v, int limit) {
         return Math.max(0, Math.min(limit - 1, (int) Math.floor(v)));
-    }
-
-    /**
-     * The waypoints a unit follows from where it now stands: a path searched from where it stood when it asked, which
-     * provisional steering may have left, gets that point first when the unit cannot walk straight to its first
-     * waypoint.
-     */
-    private static PathStore.Waypoints startFrom(
-            MatchState s, int i, int fromNode, double fromX, double fromZ, PathStore.Waypoints w) {
-        if (w.count() == 0 || Double.isNaN(fromX)) {
-            return w;
-        }
-        SurfaceGrid grid = s.surfacesFor(i);
-        double x = s.motion().x(i);
-        double z = s.motion().z(i);
-        int node = startNode(grid, x, s.motion().y(i), z, s.config().bounds().minY());
-        if (node >= 0 && LineOfWalk.walk(grid, node, x, z, w.x(0), w.z(0)) >= 0) {
-            return w;
-        }
-        if (SurfaceGrid.nodeLayer(fromNode) >= grid.count(grid.nodeX(fromNode), grid.nodeZ(fromNode))) {
-            return w; // QA-12: the ground it asked from has been built over since: the path stands as found
-        }
-        int keep = Math.min(w.count(), PathStore.Waypoints.MAX - 1);
-        double[] xs = new double[keep + 1];
-        double[] zs = new double[keep + 1];
-        int[] floors = new int[keep + 1];
-        xs[0] = fromX;
-        zs[0] = fromZ;
-        floors[0] = Surface.floor(
-                grid.surface(grid.nodeX(fromNode), grid.nodeZ(fromNode), SurfaceGrid.nodeLayer(fromNode)));
-        for (int k = 0; k < keep; k++) {
-            xs[k + 1] = w.x(k);
-            zs[k + 1] = w.z(k);
-            floors[k + 1] = w.floor(k);
-        }
-        return new PathStore.Waypoints(xs, zs, floors, w.truncated() || keep < w.count());
-    }
-
-    /** Whether unit {@code i}'s path can still be walked on the current grid, from where it stands. */
-    private static boolean walkable(MatchState s, int i) {
-        SurfaceGrid grid = s.surfacesFor(i);
-        PathStore.Waypoints w = s.paths().path(i);
-        double x = s.motion().x(i);
-        double z = s.motion().z(i);
-        int node = startNode(grid, x, s.motion().y(i), z, s.config().bounds().minY());
-        for (int k = 0; k < w.count() && node >= 0; k++) {
-            node = LineOfWalk.walk(grid, node, x, z, w.x(k), w.z(k));
-            x = w.x(k);
-            z = w.z(k);
-        }
-        return node >= 0;
-    }
-
-    /** Whether unit {@code i}'s route from where it stands to its target crosses a changed page (bounding boxes). */
-    private static boolean crosses(MatchState s, int i) {
-        PathStore paths = s.paths();
-        PathStore.Waypoints w = paths.path(i);
-        double x = s.motion().x(i);
-        double z = s.motion().z(i);
-        for (int k = paths.cursor(i); k < w.count(); k++) {
-            if (crosses(s, i, x, z, w.x(k), w.z(k))) {
-                return true;
-            }
-            x = w.x(k);
-            z = w.z(k);
-        }
-        boolean beyond = paths.cursor(i) >= w.count() || w.truncated() || paths.status(i) == PathStatus.PARTIAL;
-        return beyond && crosses(s, i, x, z, s.orders().targetX(i), s.orders().targetZ(i));
-    }
-
-    private static boolean crosses(MatchState s, int i, double x0, double z0, double x1, double z1) {
-        int pagesX = s.surfaces().pagesX();
-        int minX = (int) Math.floor(Math.min(x0, x1)) >> 4;
-        int maxX = (int) Math.floor(Math.max(x0, x1)) >> 4;
-        int minZ = (int) Math.floor(Math.min(z0, z1)) >> 4;
-        int maxZ = (int) Math.floor(Math.max(z0, z1)) >> 4;
-        for (int k = 0; k < s.changedPageCount(s.mobility(i)); k++) {
-            int page = s.changedPage(k, s.mobility(i));
-            int px = page % pagesX;
-            int pz = page / pagesX;
-            if (px >= minX && px <= maxX && pz >= minZ && pz <= maxZ) {
-                return true;
-            }
-        }
-        return false;
     }
 }

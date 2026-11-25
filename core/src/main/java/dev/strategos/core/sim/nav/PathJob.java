@@ -13,7 +13,13 @@ import org.jspecify.annotations.Nullable;
  * then string pulling. Pure: the grid is immutable (copy-on-write), and the search's scratch belongs to the thread that runs
  * it.
  */
-public record PathJob(SurfaceGrid grid, PathRequest request) implements PureJob<PathResult> {
+public record PathJob(SurfaceGrid grid, PathRequest request, GateLinks.@Nullable Pass gates)
+        implements PureJob<PathResult> {
+    /** A search that crosses no gates. */
+    public PathJob(SurfaceGrid grid, PathRequest request) {
+        this(grid, request, null);
+    }
+
     /**
      * Goals this many pages away or more are searched in two levels (PATH-08). A nearer one is searched flat, within
      * {@link #NEAR_CAP} expansions, and in two levels when that is not enough: a near goal behind a long detour.
@@ -29,6 +35,9 @@ public record PathJob(SurfaceGrid grid, PathRequest request) implements PureJob<
     public PathResult run(JobScratch scratch) {
         GridAStar search = scratch.get(GridAStar.class, GridAStar::new);
         BitSet reachable = grid.reachableFrom(request.fromNode());
+        if (gates != null) {
+            gates.extend(grid.components(), reachable); // PATH-12: and across the gates its faction may use
+        }
         Goal goal = makeGoalReachable(grid, reachable, request.goalX(), request.goalZ());
         int from = request.fromNode();
         int pages = Math.max(
@@ -36,7 +45,9 @@ public record PathJob(SurfaceGrid grid, PathRequest request) implements PureJob<
                 Math.abs((grid.nodeZ(from) >> 4) - (goal.columnZ() >> 4)));
         HierarchicalSearch hierarchical = scratch.get(HierarchicalSearch.class, HierarchicalSearch::new);
         GridAStar.Result found;
-        if (pages >= HIERARCHICAL_PAGES) {
+        if (gates != null) { // PATH-12: the portal graph knows no gates; a unit that may cross one searches flat
+            found = search.search(grid, from, goal.columnX(), goal.columnZ(), request.cap(), gates);
+        } else if (pages >= HIERARCHICAL_PAGES) {
             GridAStar.@Nullable Result far =
                     hierarchical.search(grid, search, from, goal.columnX(), goal.columnZ(), reachable, request.cap());
             found = far != null ? far : search.search(grid, from, goal.columnX(), goal.columnZ(), request.cap());

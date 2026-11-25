@@ -8,6 +8,7 @@ import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.BuildingTests;
 import dev.strategos.gametest.suites.CameraTests;
+import dev.strategos.gametest.suites.CaptureTests;
 import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
 import dev.strategos.gametest.suites.ConstructionTests;
@@ -37,7 +38,10 @@ import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
 import dev.strategos.gametest.suites.SkirmishTests;
 import dev.strategos.gametest.suites.TechTests;
+import dev.strategos.gametest.suites.TerritoryTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
+import dev.strategos.gametest.suites.TowerTests;
+import dev.strategos.gametest.suites.WallTests;
 import dev.strategos.gametest.suites.WriterTests;
 import java.util.List;
 
@@ -64,6 +68,7 @@ public final class Suites {
                         BuildingTests.class,
                         BodyTests.class,
                         CameraTests.class,
+                        CaptureTests.class,
                         ReplicationTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
@@ -72,6 +77,8 @@ public final class Suites {
                         CommandTests.class,
                         ContentTests.class,
                         ConstructionTests.class,
+                        TerritoryTests.class,
+                        TowerTests.class,
                         ProdTests.class,
                         DebugTests.class,
                         EcoTests.class,
@@ -89,6 +96,7 @@ public final class Suites {
                         ProtectionTests.class,
                         SkirmishTests.class,
                         TechTests.class,
+                        WallTests.class,
                         WriterTests.class);
         };
     }

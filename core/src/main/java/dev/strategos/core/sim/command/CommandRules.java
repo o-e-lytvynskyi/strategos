@@ -21,6 +21,7 @@ public final class CommandRules {
                 .register(new StanceRules.SetStanceRule())
                 .register(new GarrisonRules.GarrisonRule())
                 .register(new GarrisonRules.UngarrisonRule())
+                .register(new CaptureRule())
                 .register(new BellRules.RingBellRule())
                 .register(new BellRules.AllClearRule())
                 .register(new SpawnUnitsRule())
@@ -46,7 +47,9 @@ public final class CommandRules {
                 .register(new CancelBuildingRule())
                 .register(new DemolishRule())
                 .register(new SpawnDepositRule())
-                .register(new ResearchRules.ResearchRule());
+                .register(new ResearchRules.ResearchRule())
+                .register(new UpgradeRules.UpgradeBuildingRule())
+                .register(new PlaceWallRule());
     }
 
     /** A second rule for a kind throws. */

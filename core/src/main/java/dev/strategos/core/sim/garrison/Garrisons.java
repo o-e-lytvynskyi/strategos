@@ -48,7 +48,7 @@ public final class Garrisons {
         if (!b.alive(handle) || b.state(handle) != BuildingStore.COMPLETE || capacity(s, handle) == 0) {
             return false;
         }
-        if (b.faction(handle) != s.identity().faction(index)) {
+        if (!s.allies().allied(b.faction(handle), s.identity().faction(index))) {
             return false;
         }
         int path = s.stats().tokenPath(CorePaths.GARRISON_CLASSES);
@@ -62,6 +62,26 @@ public final class Garrisons {
             }
         }
         return false;
+    }
+
+    /** Building {@code handle}'s {@code GarrisonHolder/heal}: hit points a second for each occupant, 0 for none. */
+    public static double heal(MatchState s, int handle) {
+        return value(s, handle, CorePaths.GARRISON_HEAL, 0);
+    }
+
+    /** The share of its most hit points under which building {@code handle} lets everyone out; 0 for never. */
+    public static double ejectBelow(MatchState s, int handle) {
+        return value(s, handle, CorePaths.GARRISON_EJECT_BELOW, 0);
+    }
+
+    private static double value(MatchState s, int handle, String name, double absent) {
+        int path = s.stats().path(name);
+        if (path < 0) {
+            return absent;
+        }
+        double v = s.stats()
+                .blockValue(s.buildings().template(handle), s.buildings().faction(handle), path);
+        return Double.isFinite(v) ? v : absent;
     }
 
     /** Whether building {@code handle} has no room for one more. */
@@ -138,8 +158,9 @@ public final class Garrisons {
                 throw new IllegalArgumentException(
                         what + " names building " + Handle.toString(row.building()) + ", which is no finished holder");
             }
-            if (s.buildings().faction(row.building()) != s.identity().faction(index)) {
-                throw new IllegalArgumentException(what + " is in another faction's building");
+            if (!s.allies()
+                    .allied(s.buildings().faction(row.building()), s.identity().faction(index))) {
+                throw new IllegalArgumentException(what + " is in a building of a faction that is no ally");
             }
             if (!s.garrisoned(index)) {
                 throw new IllegalArgumentException(what + ", whose state is not GARRISONED");

@@ -25,7 +25,7 @@ final class StancesChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.INFANTRY, 0, -10, -16, 3, 1);
                     st.units(Ids.INFANTRY, 0, -10, 0, 3, 1);

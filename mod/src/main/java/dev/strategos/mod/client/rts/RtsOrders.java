@@ -122,9 +122,10 @@ final class RtsOrders {
      * enemy's body or building, a Build on an own unfinished building, else a Move to the block or unit there, or with
      * attack-move armed an AttackMove there, match-local, queued with Shift; one command per click. Attack-move disarms with the click.
      * With {@code force} (Ctrl) an own unit or building under the cursor is attacked too, and with {@code spread} (Alt)
-     * an enemy's attack is shared over the enemies round it (ORD-05).
+     * an enemy's attack is shared over the enemies round it (ORD-05); with {@code capture} (the capture key held) an
+     * enemy's building is captured instead of attacked (CMB-10).
      */
-    void order(double x, double y, boolean shift, boolean force, boolean spread) {
+    void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
         previewing = false;
         boolean armed = attackMove;
         attackMove = false;
@@ -183,30 +184,42 @@ final class RtsOrders {
                 ? struck // an own foundation: the builders help (M4 T2); a damaged building: they repair it (BLD-06)
                 : null;
         boolean help = site != null;
-        Command command = modified
-                ? OrderIntents.attack(
-                        mode.selection().handles(), ownTarget != 0 ? ownTarget : enemy, shift, ownTarget != 0, spread)
-                : site != null
-                        ? new Build(
-                                UnitSet.of(mode.selection().handles().stream()
-                                        .mapToInt(Integer::intValue)
-                                        .toArray()),
-                                site.handle(),
-                                shift ? QueueMode.QUEUE : QueueMode.REPLACE)
-                        : resource
-                                ? OrderIntents.gather(
-                                        mode.selection().handles(),
-                                        (int) Math.floor(pick.x()) - join.originX(),
-                                        (int) Math.floor(pick.y()),
-                                        (int) Math.floor(pick.z()) - join.originZ(),
-                                        shift)
-                                : OrderIntents.context(
-                                        mode.selection().handles(),
-                                        enemy,
-                                        wx - join.originX(),
-                                        wz - join.originZ(),
-                                        shift,
-                                        armed);
+        BuildingState.Entry taken = capture
+                        && !armed
+                        && struck != null
+                        && struck.faction() != join.slot().value()
+                ? struck
+                : null;
+        Command command = taken != null
+                ? OrderIntents.capture(mode.selection().handles(), taken.handle())
+                : modified
+                        ? OrderIntents.attack(
+                                mode.selection().handles(),
+                                ownTarget != 0 ? ownTarget : enemy,
+                                shift,
+                                ownTarget != 0,
+                                spread)
+                        : site != null
+                                ? new Build(
+                                        UnitSet.of(mode.selection().handles().stream()
+                                                .mapToInt(Integer::intValue)
+                                                .toArray()),
+                                        site.handle(),
+                                        shift ? QueueMode.QUEUE : QueueMode.REPLACE)
+                                : resource
+                                        ? OrderIntents.gather(
+                                                mode.selection().handles(),
+                                                (int) Math.floor(pick.x()) - join.originX(),
+                                                (int) Math.floor(pick.y()),
+                                                (int) Math.floor(pick.z()) - join.originZ(),
+                                                shift)
+                                        : OrderIntents.context(
+                                                mode.selection().handles(),
+                                                enemy,
+                                                wx - join.originX(),
+                                                wz - join.originZ(),
+                                                shift,
+                                                armed);
         if (command == null) {
             return;
         }

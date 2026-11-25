@@ -1,0 +1,9 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.palisade", "icon": "minecraft:crimson_fence", "classes": "+Wall +Decoration" },
+  "Building": { "blueprint": "strategos:palisade", "material": "wood" },
+  "Resistance": { "fire": 0 },
+  "Health": { "max": 300 },
+  "Cost": { "resources": { "wood": 14 }, "time": 8 },
+  "Wall": { "segment": 4 }
+}

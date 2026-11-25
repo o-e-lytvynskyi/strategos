@@ -38,6 +38,11 @@ public final class ClientPlacement {
         default boolean explored(int x, int z) {
             return true;
         }
+
+        /** The owner of the column's territory tile, -1 for neutral; {@link PlacementRules#NO_GRID} by default. */
+        default int territory(int x, int z) {
+            return PlacementRules.NO_GRID;
+        }
     }
 
     /**
@@ -107,6 +112,11 @@ public final class ClientPlacement {
             public List<PlacementRules.Centre> civicCentres() {
                 return civic;
             }
+
+            @Override
+            public int territory(int x, int z) {
+                return columns.territory(x, z);
+            }
         };
     }
 
@@ -130,11 +140,12 @@ public final class ClientPlacement {
         return new PlacementRules.Params(
                 t.classes().contains(CIVIC_CENTRE),
                 value(templates, template, "Placement/spacing"),
-                value(templates, template, "Placement/civicReach"),
+                (int) Math.round(value(templates, template, "Placement/territory")),
                 affordable);
     }
 
-    private static double value(TemplateSet templates, int template, String path) {
+    /** A template's value at {@code path} without modifiers, 0 for none. */
+    static double value(TemplateSet templates, int template, String path) {
         ValuePath p = templates.valuePaths().byPath(path);
         double v = p == null ? Double.NaN : templates.value(template, p.id());
         return Double.isFinite(v) ? Math.max(0, v) : 0;

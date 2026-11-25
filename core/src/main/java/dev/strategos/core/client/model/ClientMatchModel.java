@@ -1,5 +1,6 @@
 package dev.strategos.core.client.model;
 
+import dev.strategos.core.client.territory.ClientTerritory;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
@@ -7,6 +8,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.TerritoryUpdate;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
@@ -44,6 +46,7 @@ public final class ClientMatchModel {
     private long[] hitAt = new long[0]; // when a unit's hit points last fell, by index, in milliseconds
     private List<UnitDetail.Unit> details = List.of();
 
+    private final ClientTerritory territory = new ClientTerritory();
     private int visionCellsX;
     private int visionCellsZ;
     private long[] visibleBits = new long[0];
@@ -268,6 +271,18 @@ public final class ClientMatchModel {
         return details;
     }
 
+    /** The territory grid the server sent (TERR-01); empty before the first version. */
+    public ClientTerritory territory() {
+        return territory;
+    }
+
+    /** Takes a part of the joined match's territory; another match's is ignored. */
+    public void acceptTerritory(TerritoryUpdate update, int joinedMatch) {
+        if (update.matchId() == joinedMatch) {
+            territory.accept(update);
+        }
+    }
+
     /** Takes a vision delta of the joined match. */
     public void acceptVision(VisionDelta delta, int joinedMatch) {
         if (delta.matchId() != joinedMatch) {
@@ -380,6 +395,7 @@ public final class ClientMatchModel {
         visibleBits = new long[0];
         exploredBits = new long[0];
         visionRevision = 0;
+        territory.clear();
     }
 
     public List<UnitSummary.Entry> units() {

@@ -106,8 +106,10 @@ public final class ScenarioRunner {
             case "demo" -> new DemoScenario();
             case "arena_world" -> new ArenaWorldScenario();
             case "m6_goldens" -> new M6GoldensScenario();
+            case "m9_goldens" -> new M9GoldensScenario();
             case "skirmish_flow" -> new SkirmishFlowScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
+            case "rts_frame_borders" -> new RtsFrameScenario("rts_frame_borders", RtsFrameScenario.REVEALED, true);
             default -> null;
         };
     }

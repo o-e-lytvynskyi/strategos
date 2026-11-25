@@ -10,13 +10,22 @@ import java.util.List;
  * with where it stands, its state, progress and hit points (in 255ths of its most); its own faction's also carry what
  * only the owner sees: the production queue's template indices, the head's progress in thousandths and the rally
  * point, and for a field (ECO-09) the food its crop holds, in thousandths (-1 for no field), and the ticks it still
- * ripens; and for a farmstead its auto-reseed toggle (ECO-17). Until fog (M6) every building is
- * known. Sent to each seated player when it changes.
+ * ripens; and for a farmstead its auto-reseed toggle (ECO-17). A building with an open capture (CMB-10) carries, for
+ * every viewer, each faction's share of its capture points, a byte per faction from 0 to 255 (the owner's first by its
+ * index, trailing zeros left off): the capture bar. Until fog (M6) every building is known. Sent to each seated player
+ * when it changes.
  */
 @CoreApi
 public record BuildingState(int matchId, long tick, List<Entry> buildings) {
     public static final int MAX_BUILDINGS = 512;
     public static final int MAX_QUEUE = 8;
+    /** The most factions an entry's capture shares name. */
+    public static final int MAX_CAPTURE_FACTIONS = 16;
+    /** The share of a faction that holds every capture point. */
+    public static final int WHOLE_SHARE = 255;
+
+    /** The {@code own} byte's bit that says a building's capture shares follow its other fields. */
+    static final int CAPTURE_FLAG = 2;
 
     /**
      * A queue with a tech entry (TECH-01) writes its size with this bit set, then a byte with one bit per entry, set
@@ -47,7 +56,54 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             int fieldLeft,
             int fieldRipening,
             boolean autoReseed,
-            List<Integer> batches) {
+            List<Integer> batches,
+            List<Integer> captureShares) {
+        /** An entry with no capture open: every building but one being taken. */
+        public Entry(
+                int handle,
+                int template,
+                int faction,
+                int x,
+                int z,
+                int rotation,
+                int baseY,
+                int state,
+                int progress,
+                int health,
+                boolean own,
+                List<Integer> queue,
+                boolean rally,
+                int rallyX,
+                int rallyZ,
+                int trained,
+                int fieldLeft,
+                int fieldRipening,
+                boolean autoReseed,
+                List<Integer> batches) {
+            this(
+                    handle,
+                    template,
+                    faction,
+                    x,
+                    z,
+                    rotation,
+                    baseY,
+                    state,
+                    progress,
+                    health,
+                    own,
+                    queue,
+                    rally,
+                    rallyX,
+                    rallyZ,
+                    trained,
+                    fieldLeft,
+                    fieldRipening,
+                    autoReseed,
+                    batches,
+                    List.of());
+        }
+
         /** An entry whose queue holds single units (PROD-02's batches aside). */
         public Entry(
                 int handle,
@@ -140,8 +196,19 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             return index < batches.size() ? Math.max(1, batches.get(index)) : 1;
         }
 
+        /** Faction {@code f}'s share of the capture points, 0 to {@value #WHOLE_SHARE}; 0 for any not listed. */
+        public int captureShare(int f) {
+            return f >= 0 && f < captureShares.size() ? captureShares.get(f) : 0;
+        }
+
         public Entry {
             queue = List.copyOf(queue);
+            captureShares = List.copyOf(captureShares);
+            if (captureShares.size() > MAX_CAPTURE_FACTIONS
+                    || captureShares.stream().anyMatch(v -> v < 0 || v > WHOLE_SHARE)
+                    || (!captureShares.isEmpty() && captureShares.get(captureShares.size() - 1) == 0)) {
+                throw new IllegalArgumentException("capture shares out of range: " + handle);
+            }
             batches = batches.stream().anyMatch(n -> n > 1) ? List.copyOf(batches) : List.of(); // single ones: none
             if (queue.size() > MAX_QUEUE || health < 0 || health > UnitHud.WHOLE || rotation < 0 || rotation > 3) {
                 throw new IllegalArgumentException("a building entry out of range: " + handle);
@@ -187,7 +254,13 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         .writeZigZag(e.baseY())
                         .writeVarInt(e.progress())
                         .writeByte(e.health())
-                        .writeByte(e.own() ? 1 : 0);
+                        .writeByte((e.own() ? 1 : 0) | (e.captureShares().isEmpty() ? 0 : CAPTURE_FLAG));
+                if (!e.captureShares().isEmpty()) { // a byte per faction, the owner's and the takers' shares
+                    out.writeByte(e.captureShares().size());
+                    for (int share : e.captureShares()) {
+                        out.writeByte(share);
+                    }
+                }
                 if (e.own()) {
                     int techs = 0; // one bit per entry that is a tech (TECH-01), the store's -1 - index
                     for (int k = 0; k < e.queue().size(); k++) {
@@ -236,7 +309,24 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                 int baseY = in.readZigZagInt();
                 int progress = in.readVarInt();
                 int health = in.readUnsignedByte();
-                boolean own = in.readUnsignedByte() == 1;
+                int flags = in.readUnsignedByte();
+                if ((flags & ~(1 | CAPTURE_FLAG)) != 0) {
+                    throw new WireException("building flags " + flags);
+                }
+                boolean own = (flags & 1) != 0;
+                List<Integer> shares = new ArrayList<>();
+                if ((flags & CAPTURE_FLAG) != 0) {
+                    int f = in.readUnsignedByte();
+                    if (f == 0 || f > MAX_CAPTURE_FACTIONS) {
+                        throw new WireException("capture shares for " + f + " factions");
+                    }
+                    for (int j = 0; j < f; j++) {
+                        shares.add(in.readUnsignedByte());
+                    }
+                    if (shares.get(f - 1) == 0) { // only the one way to write it reads
+                        throw new WireException("capture shares with a trailing zero");
+                    }
+                }
                 List<Integer> queue = new ArrayList<>();
                 boolean rally = false;
                 int rx = 0;
@@ -298,7 +388,8 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         fieldLeft,
                         ripening,
                         autoReseed,
-                        batches));
+                        batches,
+                        shares));
             }
             return new BuildingState(matchId, tick, out);
         }
@@ -327,7 +418,9 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                                     + 5
                                     + 5
                                     + 1
-                                    + MAX_QUEUE);
+                                    + MAX_QUEUE
+                                    + 1
+                                    + MAX_CAPTURE_FACTIONS);
         }
     };
 }

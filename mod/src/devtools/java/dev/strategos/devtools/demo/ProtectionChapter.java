@@ -26,7 +26,7 @@ final class ProtectionChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> st.building(Ids.HOUSE, 0, 0, 0))
                 .look(0, 0, 24)
                 .until("the house", 10, st -> RepairChapter.house(st) != null)
@@ -70,7 +70,7 @@ final class ProtectionChapter implements DemoChapter {
                 .pause(4);
     }
 
-    private static BuildingView house(DemoStage st) {
+    private static BuildingView house(Stage st) {
         BuildingView h = RepairChapter.house(st);
         if (h == null) {
             throw new IllegalStateException("no house");

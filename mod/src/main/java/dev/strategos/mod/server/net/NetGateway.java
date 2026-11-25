@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.AttackSpread;
+import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
@@ -19,6 +20,7 @@ import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.PlaceWall;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
@@ -366,6 +368,8 @@ public final class NetGateway {
             case AttackSpread spread -> spread.units().size();
             case SetStance stance -> stance.units().size();
             case Garrison garrison -> garrison.units().size();
+            case Capture capture -> capture.units().size();
+            case PlaceWall wall -> wall.builders().size();
             case Ungarrison ungarrison ->
                 ungarrison.units().size() == 0
                         ? EVERYONE_INSIDE

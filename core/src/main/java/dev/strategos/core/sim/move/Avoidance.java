@@ -137,7 +137,7 @@ final class Avoidance {
         crowd += agentCrowd;
         select(crowd > CROWD ? range : Double.POSITIVE_INFINITY);
         if (crowd > CROWD) {
-            separate(agents, prefX, prefZ, idle ? MotionSystem.idleSpeed(s, i) : maxSpeed);
+            separate(agents, prefX, prefZ, idle ? MotionMoves.idleSpeed(s, i) : maxSpeed);
             return;
         }
         double radius = radius(s, i);
@@ -147,7 +147,7 @@ final class Avoidance {
             return;
         }
         if (idle) {
-            maxSpeed = MotionSystem.idleSpeed(s, i);
+            maxSpeed = MotionMoves.idleSpeed(s, i);
         }
         orca.clear();
         limits(s, i, radius, prefX, prefZ);
@@ -320,7 +320,7 @@ final class Avoidance {
         double edgeRadius = s.mobility(i) == dev.strategos.core.sim.nav.MobilityClass.LARGE ? 0 : radius;
         int cx = (int) Math.floor(selfX);
         int cz = (int) Math.floor(selfZ);
-        int layer = MotionSystem.layerOf(grid, cx, cz, floor);
+        int layer = MotionMoves.layerOf(grid, cx, cz, floor);
         if (layer < 0) {
             return;
         }

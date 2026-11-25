@@ -28,7 +28,7 @@ final class FieldChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.FARMSTEAD, 0, -8, 0);
                     st.building(Ids.FIELD, 0, 4, 0);
@@ -67,7 +67,7 @@ final class FieldChapter implements DemoChapter {
                 .pause(5);
     }
 
-    private static @Nullable BuildingView field(DemoStage st) {
+    private static @Nullable BuildingView field(Stage st) {
         List<BuildingView> fields = st.buildings(0, Ids.FIELD);
         return fields.isEmpty() ? null : fields.getFirst();
     }
