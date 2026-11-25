@@ -102,12 +102,22 @@ on 2026-11-25. The automated coalition and ping evidence remains recorded above.
 
 ## Acceptance record
 
-On 2026-11-25 both real clients reached the dedicated Strategos Arena match
-on the M7 candidate. The server recorded a 219-second disconnect-to-login
-interval for player B, within the default 300-second grace period. The seat,
-camera, group, continuing orders and private view require per-client observations
-to complete the reclaim check. LAN and the other unchecked observations remain
-part of the full acceptance record.
+On 2026-11-25 the owner confirmed that both clients started the match on
+Dedicated Strategos Arena without problems and that the reconnect worked. The
+server recorded a 219-second disconnect-to-login interval for player B within
+the default 300-second grace period. Camera pose, group, continuing orders and
+the private-view refresh were not recorded separately.
+
+The opponent check reported visible building blocks during construction and
+no other issue. Visibility of physical building blocks above shroud is the
+existing FOW-06 limitation. The owner reported that the RTS controls worked
+and that pause worked by command. The dedicated server limits match pause to
+operator commands under the current MATCH-05 policy. F9 is for the owner of
+an unpublished singleplayer world.
+
+In a fresh dedicated arena the owner confirmed that both clients could issue
+orders for the same faction. Grant and revoke between separate factions were
+not recorded individually. LAN entry and the allied victory round remain open.
 
 Copy the following fields once per session. Add observations from both
 clients and a link to evidence for every failed or ambiguous row. Escalate P0

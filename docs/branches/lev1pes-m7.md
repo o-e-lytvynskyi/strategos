@@ -45,6 +45,10 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-25 — Record partial two-client acceptance
+
+The owner confirmed match start, opponent isolation observations, shared-faction orders and reconnect on the dedicated arena. The server recorded a 219-second rejoin interval. Physical structures visible above shroud follow the existing FOW-06 limitation. The dedicated pause command behaved as expected under MATCH-05. Separate alliance victory and Open to LAN remain open, along with any unreported per-client details. See the [acceptance record](../testing/m7-multiplayer.md#acceptance-record).
+
 ### 2026-11-25 — Close T21 integration and compatibility
 
 Client-profile Verify 45632292032 on `869f3884` and ordinary Verify 45634199109 on `180bbec2` each passed 3,096 tests with no skips or failures. Both included 323 GameTests. Full S 45629092616 validated all 23 jobs, 249 nightly tests and exact-commit replay for all 20 seeds (896,421 ticks, 17 conquests and three game-limit runs). The T20 evidence commit changed only documentation and the performance reports. The separate T25 playtest remains open.
