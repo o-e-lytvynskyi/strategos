@@ -452,6 +452,16 @@
     "effects/4/value": "One more civic centre from Town: 0 A.D.'s second centre comes with the phase, a choice of where to expand (TERR-02)",
     "effects/5/value": "Half a point more garrison regeneration a unit in Town, 0 A.D.'s phase bonus (BLD-10)"
   },
+  "strategos:phase_city": {
+    "cost/food": "800 food: a step above Town's 500 as Town is above Village; the classic City asks for stone and metal alone (docs/research/mechanics.md §1.7), ours also keeps a farm in the bill; our own starting value, to tune against QA-12",
+    "cost/wood": "900 wood: three hundred above Town's 600, the same step the food takes; our own starting value, to tune against QA-12",
+    "cost/stone": "600 stone: double Town's 300; the classic City costs 750 stone (docs/research/mechanics.md §1.7), a little less here as the food and wood are dearer; our own starting value, to tune against QA-12",
+    "cost/iron": "400 iron: double Town's 200; the classic City costs 750 metal (docs/research/mechanics.md §1.7), iron is the scarcest resource here, so less of it; our own starting value, to tune against QA-12",
+    "time": "Ninety seconds: half as long again as Town's 60, as the classic City's 60 s is twice its Town's 30 s (docs/research/mechanics.md §1.7); our own starting value, to tune against QA-12",
+    "requires/all/1/buildings/count": "Three Town buildings: the classic City phase requires three Town-class structures (docs/research/mechanics.md §1.7); ours are the tower, the arsenal and the temple, which Town unlocks",
+    "effects/0/value": "A third more territory around a civic centre: the classics' phases give a quarter each (docs/research/mechanics.md §1.7), ours is a single step at City; ours is a little larger as it is the only one",
+    "effects/1/value": "Two more arrows a volley for the civic centre and the towers: the classics' phases harden structures' ranged damage by a fifth (docs/research/mechanics.md §1.7), ours counts arrows so a garrison's one-per-unit stays the larger part; our own starting value, to tune against QA-12"
+  },
   "strategos:phase_village": {
     "time": "One second, never run: Village is the phase of a faction with none researched, so the tech exists only for its name and icon (spec row 19)"
   },

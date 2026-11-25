@@ -496,3 +496,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 |---|---|---|
 | UNIT-05 | `perftests.idle_300_costs_a_third` steps the standing and the walking match together, tick by tick, in two rounds that swap which match steps first (200 warm-up ticks and 300 samples per mode a round, 600 a mode in all); the walking match stands in a copy of the arena 52 blocks east. Replaces 2026-10-27's sequential measurement after a disposable precondition. The 300 units, the orders and the 30 % limit are unchanged | Measured one after the other, the two modes saw different background load on a desktop Mac and the ratio failed on main itself (0.31–0.35 at foreign CPU 0.11–0.13, 0.155 on a quiet machine); stepped together both see the same load. The first-stepped match pays the cold caches, hence the swap. Interleaved: 0.297 and 0.294 under foreign CPU 0.11–0.18 |
 
+
+### 2026-11-25 — M10: City's arrows at L1
+
+| Card | Change | Why |
+|---|---|---|
+| TECH-04 | Criterion 3 ("a GameTest phase-up to City applies the bonuses"): the GameTest `phasetests.city_bonuses` checks the territory bonus in the real level (tiles change owner as the civic centre's radius grows); the arrows bonus (+2 on the civic centre and the towers) is checked at L1 in `CityTerritoryTest` | The core's queries expose no building stat to a GameTest, and counting volleys would make the L3 test timing-bound; both bonuses ride the same modifier path the L1 test reads |

@@ -119,6 +119,7 @@ class BundledTemplatesTest {
                         "strategos:gather_stone_1",
                         "strategos:gather_wood_1",
                         "strategos:iron_weapons",
+                        "strategos:phase_city",
                         "strategos:phase_town",
                         "strategos:phase_village");
 
@@ -169,7 +170,7 @@ class BundledTemplatesTest {
                 .isTrue();
         assertThat(server.techTable().indexOf(new TechId("strategos:gather_wood_1")))
                 .isZero();
-        assertThat(server.techTable().indexOf(new TechId("aaa:early"))).isEqualTo(9);
+        assertThat(server.techTable().indexOf(new TechId("aaa:early"))).isEqualTo(10);
         assertThat(server.set().tech(new TechId("strategos:gather_wood_1")).netIndex())
                 .isZero();
     }

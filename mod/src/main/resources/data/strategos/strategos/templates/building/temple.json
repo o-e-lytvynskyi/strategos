@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.temple", "icon": "minecraft:golden_apple", "classes": "+Temple" },
+  "Identity": { "name": "strategos.building.temple", "icon": "minecraft:golden_apple", "classes": "+Temple +Town" },
   "Building": { "blueprint": "strategos:temple" },
   "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
   "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },

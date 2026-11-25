@@ -88,7 +88,8 @@ class TemplateSetTest {
                         "strategos:gather_farm_1",
                         "strategos:gather_iron_1",
                         "strategos:gather_stone_1",
-                        "strategos:iron_weapons");
+                        "strategos:iron_weapons",
+                        "strategos:phase_city"); // M10 T15's, appended
         assertThat(set.techByIndex(0)).isSameAs(tech);
         assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
         assertThat(tech.ticks()).isEqualTo(600);
@@ -195,7 +196,7 @@ class TemplateSetTest {
     // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10); M9 T11: the sentry tower,
     // its blueprint, its place on the Village worker's list and its Upgrade (BLD-12); M9 T13: the palisade and its
     // gate, the worker's list (BLD-13). Rebaselined after merging M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "bb89243830a2c64252f9e41459fe923f5ee98a737c4d67753182e7eb4ca86d2e";
+    private static final String BUILTIN_VERSION = "1a27f72e0b3e04d06f616b5eeaef07cc890cf1d915670c901c428237cce16e85";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

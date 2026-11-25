@@ -34,6 +34,7 @@ import dev.strategos.gametest.suites.PacingTests;
 import dev.strategos.gametest.suites.PathTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
+import dev.strategos.gametest.suites.PhaseTests;
 import dev.strategos.gametest.suites.ProdTests;
 import dev.strategos.gametest.suites.ProtectionTests;
 import dev.strategos.gametest.suites.ReplicationTests;
@@ -100,6 +101,7 @@ public final class Suites {
                         NetTests.class,
                         OrderTests.class,
                         PathTests.class,
+                        PhaseTests.class,
                         PacingTests.class,
                         ProtectionTests.class,
                         SkirmishTests.class,

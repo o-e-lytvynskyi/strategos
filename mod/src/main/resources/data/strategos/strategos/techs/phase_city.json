@@ -1,0 +1,13 @@
+{
+  "name": "strategos.tech.phase_city",
+  "icon": "minecraft:beacon",
+  "classes": ["Phase"],
+  "ordinal": 2,
+  "cost": { "food": 800, "wood": 900, "stone": 600, "iron": 400 },
+  "time": 90,
+  "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
+  "effects": [
+    { "path": "TerritoryInfluence/radius", "op": "mul", "value": 1.3, "filter": "CivicCentre" },
+    { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" }
+  ]
+}

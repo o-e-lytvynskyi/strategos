@@ -122,7 +122,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The territory radius bonus applies on completion (L1).
   3. A GameTest phase-up to City applies the bonuses (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TECH-02, TERR-01 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-25 — 1 `CityPhaseTest` (eight requirement rows; City is phase 2 through the civilisation's rule; the HUD names it); 2 `CityTerritoryTest` (the civic centre's radius ×1.3 on completion, the arrows +2); 3 `phasetests.city_bonuses` (the territory bonus in the real level; the arrows at L1, refinement of 2026-11-25 in docs/design/roadmap-changes.md §8). M10 T15.
 
 #### TECH-05 · Technology tree and tree screen
 - **Value:** Real strategic choices across three phases, with upgrades you can see (P2, P4).

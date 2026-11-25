@@ -294,7 +294,7 @@ final class BuiltinTemplates {
     static final String TOWER = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
+              "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower +Town" },
               "Building": { "blueprint": "strategos:tower" },
               "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
@@ -359,7 +359,7 @@ final class BuiltinTemplates {
     static final String ARSENAL = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
+              "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal +Town" },
               "Building": { "blueprint": "strategos:arsenal" },
               "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
@@ -372,7 +372,7 @@ final class BuiltinTemplates {
     static final String TEMPLE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.temple", "icon": "minecraft:golden_apple", "classes": "+Temple" },
+              "Identity": { "name": "strategos.building.temple", "icon": "minecraft:golden_apple", "classes": "+Temple +Town" },
               "Building": { "blueprint": "strategos:temple" },
               "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
@@ -567,9 +567,26 @@ final class BuiltinTemplates {
                 { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
                 { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal +strategos:building/temple", "filter": "Builder" },
                 { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
-                { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" }
+                { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:phase_city", "filter": "CivicCentre" }
               ],
-              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple"]
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple", "strategos:phase_city"]
+            }
+            """;
+
+    static final String PHASE_CITY = """
+            {
+              "name": "strategos.tech.phase_city",
+              "icon": "minecraft:beacon",
+              "classes": ["Phase"],
+              "ordinal": 2,
+              "cost": { "food": 800, "wood": 900, "stone": 600, "iron": 400 },
+              "time": 90,
+              "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
+              "effects": [
+                { "path": "TerritoryInfluence/radius", "op": "mul", "value": 1.3, "filter": "CivicCentre" },
+                { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" }
+              ]
             }
             """;
 
@@ -668,7 +685,8 @@ final class BuiltinTemplates {
             new TechId("strategos:gather_farm_1"),
             new TechId("strategos:gather_iron_1"),
             new TechId("strategos:gather_stone_1"),
-            new TechId("strategos:iron_weapons")));
+            new TechId("strategos:iron_weapons"),
+            new TechId("strategos:phase_city"))); // M10 T15
 
     /**
      * The default civilisation (CIV-01, ADR-0028): today's content and behaviour. The mod ships the same definition as
@@ -800,6 +818,7 @@ final class BuiltinTemplates {
                                 tech("strategos:iron_weapons", IRON_WEAPONS),
                                 tech("strategos:chainmail", CHAINMAIL),
                                 tech("strategos:phase_town", PHASE_TOWN),
+                                tech("strategos:phase_city", PHASE_CITY),
                                 tech("strategos:phase_village", PHASE_VILLAGE))
                         : List.of(),
                 withTechs ? List.of(defaultCivFile()) : List.of(),
@@ -844,7 +863,11 @@ final class BuiltinTemplates {
             JsonObject identity = object.getAsJsonObject("Identity");
             if (identity != null) { // the soldier base (CMB-11) names no classes
                 identity.addProperty(
-                        "classes", identity.get("classes").getAsString().replace(" +Village", ""));
+                        "classes",
+                        identity.get("classes")
+                                .getAsString()
+                                .replace(" +Village", "")
+                                .replace(" +Town", ""));
             }
         }
         String path = id.substring(id.indexOf(':') + 1);

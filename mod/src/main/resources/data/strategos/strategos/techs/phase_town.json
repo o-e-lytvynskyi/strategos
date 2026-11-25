@@ -12,7 +12,8 @@
     { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
     { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal +strategos:building/temple", "filter": "Builder" },
     { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
-    { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" }
+    { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:phase_city", "filter": "CivicCentre" }
   ],
-  "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple"]
+  "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple", "strategos:phase_city"]
 }
