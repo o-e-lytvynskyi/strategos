@@ -121,7 +121,8 @@ public final class ContentTests {
     public static void reloadMissingBuildingKeepsSetAndTable(GameTestHelper h) {
         StrategosServer server = StrategosServer.get();
         MatchRuntime rt = match(h);
-        TemplateId house = new TemplateId("strategos:building/house");
+        // A large quarry: no role or tech names it, so the set may lose it (the default civilisation needs its roles).
+        TemplateId house = new TemplateId("strategos:building/quarry_large");
         rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 8, 8, 0));
         var before = server.templates().set();
         var table = server.templates().table();
@@ -160,7 +161,7 @@ public final class ContentTests {
     private static void terminalMatchDoesNotBlockReload(GameTestHelper h, boolean faulted) {
         StrategosServer server = StrategosServer.get();
         MatchRuntime rt = match(h);
-        TemplateId house = new TemplateId("strategos:building/house");
+        TemplateId house = new TemplateId("strategos:building/quarry_large");
         rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 4, 4, 0));
         h.startSequence()
                 .thenWaitUntil(() -> check(core(rt).queries().buildings().size() == 1, "no building yet"))
@@ -199,7 +200,7 @@ public final class ContentTests {
                 h,
                 dev.strategos.gametest.MatchFixture.options(dev.strategos.core.testkit.SimHarness.DEFAULT_SEED, h)
                         .withFaultPolicy(dev.strategos.mod.server.match.FaultPolicy.CONTAIN));
-        TemplateId house = new TemplateId("strategos:building/house");
+        TemplateId house = new TemplateId("strategos:building/quarry_large");
         h.startSequence()
                 .thenExecute(() -> {
                     server.matches().pause(rt.id());

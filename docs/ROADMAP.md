@@ -502,7 +502,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CIV-01 | Civilisation framework and the default civilisation | M | DATA-03, MATCH-02 | specified |
+| CIV-01 | Civilisation framework and the default civilisation | M | DATA-03, MATCH-02 | in_progress |
 | CIV-05 | Civilisation rules: gameplay that differs | L | CIV-01 | specified |
 | CIV-02 | Civilisation 2: roster, bonuses and abilities | L | CIV-01, UNIT-10, D-03 | deferred (M14) |
 | ART-04 | Civilisation 2 art set | L | CIV-02, ART-03 | deferred (M14) |

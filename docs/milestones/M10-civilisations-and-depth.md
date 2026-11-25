@@ -27,9 +27,10 @@ vision must take the night radius. M10 never edits M7's or M8's files.
 M9 §0.2 holds, with these changes:
 - **The default civilisation is invisible.** Every task of the civilisation chain (T2–T9b) keeps every pinned
   state hash, golden and replay of M0–M9 as it is: the soak seeds' hashes, `:core:openingBalance`'s results, the
-  journals under test resources. A changed state hash in that chain is a bug, never a re-pin. The content SHA is
-  another matter: adding the default civilisation to the built-in and shipped sets re-pins `TemplateSetTest`'s
-  versions once in T2, like every content change (a save's template-set hash mismatch only warns, `Snapshots`).
+  journals under test resources. A changed state hash in that chain is a bug, never a re-pin. The content SHA holds
+  too: the default civilisation is *implied* — while a set's civilisations are exactly the built-in default, its
+  canonical form has no `$civs` entry, so `TemplateSetTest`'s pinned versions and every saved template-set hash stay
+  as they are (§2.1).
 - **Windows.** Every L4 check of M10 runs in the consent batch (T30).
 - **Order.** T1 first; then the civilisation chain T2–T9b, because every later content task adds to the default
   civilisation's roster; then the depth cards in the order of §7.1. The AI (T25), the balance matrix (T26) and the
@@ -167,8 +168,10 @@ scene two or three times, never more (D-22).
   roster, a role pointing outside the roster, a role naming no template, an unknown rule id or bad rule parameters, a
   missing role that a selected rule needs (the `house` role is required only under the default
   `PopulationRule`). `TemplateSet` gains
-  `civs()` and a `$civs` canonical entry only when non-empty. The client view (`TemplateSetView`) carries the full
-  canonical civilisation JSON behind a mark like the technologies' `+t` (`+c`), so `toSet()` reproduces the server's
+  `civs()` and a `$civs` canonical entry only when its civilisations are not exactly the built-in default (the implied
+  default, §0.2). When `$civs` is present, the client view (`TemplateSetView`) carries the full
+  canonical civilisation JSON behind a mark like the technologies' `+t` (`+c`); without it the client takes the
+  built-in default, so `toSet()` reproduces the server's
   version and a journaled `ContentSwap` keeps passing `InputCodec`'s check; `MAX_BYTES` (256 KB) is measured with
   the default civilisation and TECH-05's technologies (T16).
 - **The default civilisation** (`civs/default.json`): `name` "Settlers" (a lang key); `phases` Village, Town, City;
@@ -176,8 +179,8 @@ scene two or three times, never more (D-22).
   `centreClass` `CivicCentre`; `roles` from today's content (`centre` civic_centre, `house`, `worker`, `infantry`, `ranged` archer, `cavalry`
   horseman, `siege` ram, `barracks`, `tower`, `farmstead`, `field`, `storehouse`, `wall` palisade, `gate`
   palisade_gate; T13 adds `temple` and `healer` with their templates); `start` today's first-skirmish civilisation
-  entities; no bonuses; no rules (all defaults); `ai` the `skirmish` profile. The built-in fallback set gains the same definition, so a set without data
-  files still has the default.
+  entities; no bonuses; no rules (all defaults); `ai` the `skirmish` profile. The built-in fallback set holds the same definition, so a set without data
+  files still has the default; `ShippedCivsTest` pins the shipped file equal to it.
 - **The roster rule.** `Production.trains`, `Placing.listed` and `ResearchRules` add one check, `roster.has(...)` of
   the faction's civilisation (a bitset over template and tech indices, built at binding); the command card hides what
   the roster lacks. The roster belongs to the faction, not the building: a captured building (M9) trains only what
@@ -556,7 +559,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-25)
-- [ ] T2
+- [x] T2 (2026-11-25)
 - [ ] T3
 - [ ] T4
 - [ ] T5

@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 1 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 2 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T1 (2026-11-25).
-- **Next task:** T2 · CIV-01 · Civilisations as content.
+- **Last finished task:** M10 T2 (2026-11-25).
+- **Next task:** T3 · CIV-01 · Binding, roster and bonuses.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-25 — M10 T1
+### 2026-11-25 — M10 T1–T2
 
+- **M10 T2 · Civilisations as content** — CIV-01 in progress. `CivId`, `RawCiv`, `CivDef`, `CivRoles`, `StartKit`, `CivChecks`; `strategos/civs` read, compiled after templates and techs, linted (11 cases); `TemplateSet.civs()`; the default civilisation `strategos:default` ("Settlers") in `civs/default.json` and built in, 14 roles, today's first-skirmish civilisation entities as its kit. **The implied default:** a set whose civilisations are exactly the built-in default has no `$civs` entry, so no template-set version or pin changed; any other set carries `$civs` and the view a `+c` mark. Tests: `CivDefLoadTest` 7, `CivLintTest` 11, `CivSetVersionTest` 5, `TemplateSetViewTest` +6, `ShippedCivsTest` 5 (L2), payload size +1. `verify` green, 134 s.
 - **M10 T1 · Health check moves** — M9 §10.4 items 1 and 3. `MatchState` 815 → 761 lines: the capture, gate, breach and territory state moved by moves only into `PlayState` (78 lines), reached by `MatchState.play()`; 34 files, callers renamed. New `RestoreEqualsLiveTest`: all 200 seeds of `m0-200` restored at tick 1,000 through the save codec and stepped 500 ticks beside the live match, and the proving-ground soak scene restored at 600 of 1,200, hashes equal at every tick; 8 s, so in `verify`; no divergence. `verify verifySlow` green, 275 s.
 - **Next:** T2.
 
@@ -61,6 +62,9 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · The probe civilisation lives in the test fixtures only — it proves the seams without shipping content the owner has not designed — undo: move it into `src/main` data.
 - 2026-11-25 · Ranks replace each other, they do not compound (spec §2.8) — the card asks for an explicit choice; replacing keeps balance readable — undo: compound in `RankModifiers`.
 - 2026-11-25 · trial reviewer: pass — the spec review found twelve real points, each checked against the code before applying.
+- 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
+- 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
+- 2026-11-25 · trial implementer: pass — M10 T2, green on the first hand-back; it reported the GameTest change it had to make instead of hiding it.
 - 2026-11-25 · trial implementer: pass — M10 T1's moves and the restore check, green on the first hand-back, diff read.
 - 2026-11-25 · `docs/design/roadmap-changes.md` is left as it is: its §1 records the draft-to-roadmap conversion of 2026-10-21 and its §8 holds scope-neutral refinements; M10's reshape is an owner-approved change, recorded under the ROADMAP's M10 table and in the spec's §1.5–1.6 — undo: add a dated block there.
 - 2026-11-25 · The milestone is named "Civilisations foundation and depth"; the card file keeps its path — links stay valid — undo: rename back.

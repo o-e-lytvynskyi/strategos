@@ -1,6 +1,7 @@
 package dev.strategos.mod.server.content;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TechDef;
@@ -80,8 +81,20 @@ public final class ServerTemplates {
             RegistryAccess registries,
             Collection<MatchRuntime> matches,
             Map<String, Blueprint> blueprints) {
+        return load(raws, techs, List.of(), readProblems, registries, matches, blueprints);
+    }
+
+    /** As above, with the civilisations (CIV-01): none means the implied default. */
+    public Outcome load(
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<RawCiv> civs,
+            List<TemplateProblem> readProblems,
+            RegistryAccess registries,
+            Collection<MatchRuntime> matches,
+            Map<String, Blueprint> blueprints) {
         loads++;
-        TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, table, techTable, blueprints);
+        TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, civs, table, techTable, blueprints);
         List<TemplateProblem> found = new ArrayList<>(readProblems);
         found.addAll(result.problems());
         found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t), t -> techFileOf(techs, t)));

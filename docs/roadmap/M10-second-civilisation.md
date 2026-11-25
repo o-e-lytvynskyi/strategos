@@ -63,7 +63,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. A match where the factions play different civilisations (the default and the probe) runs in a GameTest (L3).
   5. Old saves and journals load as the default civilisation, and every pinned hash holds (L1).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** DATA-03, MATCH-02 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### CIV-05 · Civilisation rules: gameplay that differs
 - **Value:** Later civilisations can play differently — no houses, no drop-off, buildings that raise themselves,

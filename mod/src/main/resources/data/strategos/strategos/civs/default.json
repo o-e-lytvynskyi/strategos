@@ -1,0 +1,36 @@
+{
+  "name": "strategos.civ.default",
+  "phases": ["strategos.phase.0", "strategos.phase.1", "strategos.phase.2"],
+  "roster": { "templates": "*", "techs": "*" },
+  "centreClass": "CivicCentre",
+  "roles": {
+    "centre": "strategos:building/civic_centre",
+    "house": "strategos:building/house",
+    "worker": "strategos:unit/worker",
+    "infantry": "strategos:unit/infantry",
+    "ranged": "strategos:unit/archer",
+    "cavalry": "strategos:unit/horseman",
+    "siege": "strategos:unit/ram",
+    "barracks": "strategos:building/barracks",
+    "tower": "strategos:building/tower",
+    "farmstead": "strategos:building/farmstead",
+    "field": "strategos:building/field",
+    "storehouse": "strategos:building/storehouse",
+    "wall": "strategos:building/palisade",
+    "gate": "strategos:building/palisade_gate"
+  },
+  "start": {
+    "resources": { "food": 300, "stone": 100, "iron": 100 },
+    "entities": [
+      { "role": "centre" },
+      { "role": "worker", "dz": 9, "count": 5, "spread": 2 },
+      { "role": "cavalry", "dx": -6, "dz": 10 },
+      { "template": "strategos:unit/sheep", "dx": 9, "dz": 3, "count": 4, "spread": 2 },
+      { "template": "strategos:unit/pig", "dx": -9, "dz": 3, "count": 2, "spread": 1.5 },
+      { "template": "strategos:unit/chicken", "dx": 5, "dz": 11, "count": 3, "spread": 1.5 }
+    ]
+  },
+  "bonuses": [],
+  "rules": {},
+  "ai": { "profile": "skirmish" }
+}

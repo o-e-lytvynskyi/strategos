@@ -92,6 +92,20 @@ public final class TemplateCompiler {
             TemplateIdTable table,
             TechIdTable techTable,
             Map<String, Blueprint> blueprints) {
+        return compile(raws, rawTechs, List.of(), table, techTable, blueprints);
+    }
+
+    /**
+     * As above, with the civilisations (CIV-01), compiled after the templates and techs they name; a set without any
+     * has the implied default ({@link TemplateSet#civs()}).
+     */
+    public static Result compile(
+            List<RawTemplate> raws,
+            List<RawTech> rawTechs,
+            List<RawCiv> rawCivs,
+            TemplateIdTable table,
+            TechIdTable techTable,
+            Map<String, Blueprint> blueprints) {
         List<TemplateProblem> problems = new ArrayList<>();
         Map<String, RawTemplate> byId = new TreeMap<>();
         for (RawTemplate raw : raws) {
@@ -178,8 +192,14 @@ public final class TemplateCompiler {
                 problems);
         TechIdTable techNext = techTable.with(drafts.stream().map(TechDef::id).toList());
         List<TechDef> techs = placed(drafts, techNext);
+        List<CivDef> civs = CivChecks.compile(rawCivs, flats, techIds(techs), problems);
         return new Result(
-                set(flats, units, techs), flattened, List.copyOf(problems), next, List.copyOf(derivations), techNext);
+                set(flats, units, techs, civs),
+                flattened,
+                List.copyOf(problems),
+                next,
+                List.copyOf(derivations),
+                techNext);
     }
 
     /** A set from flattened templates only; technologies are empty (tests and M5 paths without TECH-01). */
@@ -192,6 +212,11 @@ public final class TemplateCompiler {
      * journal's or a client's copy, so the set has the sha it had. The problems name each template by its id.
      */
     public static Result fromFlattened(List<Flat> flats, List<TechFlat> techFlats) {
+        return fromFlattened(flats, techFlats, List.of());
+    }
+
+    /** As above, with the civilisations as a journal's or a client's copy holds them (each file named by its id). */
+    public static Result fromFlattened(List<Flat> flats, List<TechFlat> techFlats, List<RawCiv> civFiles) {
         List<TemplateProblem> problems = new ArrayList<>();
         List<UnitTemplate> units = new ArrayList<>();
         List<Flat> kept = new ArrayList<>();
@@ -235,13 +260,20 @@ public final class TemplateCompiler {
                     .findFirst()
                     .orElse(new TechId("strategos:retired/" + k)));
         }
+        List<CivDef> civs = CivChecks.compile(civFiles, kept, techIds(drafts), problems);
         return new Result(
-                set(kept, units, drafts),
+                set(kept, units, drafts, civs),
                 flattened,
                 List.copyOf(problems),
                 new TemplateIdTable(ids),
                 List.of(),
                 new TechIdTable(techIds));
+    }
+
+    private static Set<TechId> techIds(List<TechDef> techs) {
+        Set<TechId> ids = new TreeSet<>((a, b) -> a.value().compareTo(b.value()));
+        techs.forEach(t -> ids.add(t.id()));
+        return ids;
     }
 
     /** The techs at their indices in {@code table}, ascending. */
@@ -255,7 +287,7 @@ public final class TemplateCompiler {
     }
 
     /** The decoded units at their flats' net indices, ascending. */
-    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units, List<TechDef> techs) {
+    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units, List<TechDef> techs, List<CivDef> civs) {
         List<Integer> order = new ArrayList<>();
         for (int k = 0; k < flats.size(); k++) {
             order.add(k);
@@ -268,7 +300,7 @@ public final class TemplateCompiler {
             placed.add(units.get(k).atIndex(flats.get(k).netIndex()));
             json.add(flats.get(k).json());
         }
-        return new TemplateSet(placed, json, techs);
+        return new TemplateSet(placed, json, techs, civs);
     }
 
     /** The ids some template lists as a mixin: they are overlays, never compiled on their own. */

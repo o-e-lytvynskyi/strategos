@@ -2,6 +2,7 @@ package dev.strategos.core.content;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
@@ -559,6 +560,76 @@ final class BuiltinTemplates {
             new TechId("strategos:gather_stone_1"),
             new TechId("strategos:iron_weapons")));
 
+    /**
+     * The default civilisation (CIV-01, ADR-0028): today's content and behaviour. The mod ships the same definition as
+     * {@code civs/default.json}; a set whose civilisations are exactly this one has no {@code $civs} in its hash.
+     */
+    static final String DEFAULT_CIV_JSON = """
+            {
+              "name": "strategos.civ.default",
+              "phases": ["strategos.phase.0", "strategos.phase.1", "strategos.phase.2"],
+              "roster": { "templates": "*", "techs": "*" },
+              "centreClass": "CivicCentre",
+              "roles": {
+                "centre": "strategos:building/civic_centre",
+                "house": "strategos:building/house",
+                "worker": "strategos:unit/worker",
+                "infantry": "strategos:unit/infantry",
+                "ranged": "strategos:unit/archer",
+                "cavalry": "strategos:unit/horseman",
+                "siege": "strategos:unit/ram",
+                "barracks": "strategos:building/barracks",
+                "tower": "strategos:building/tower",
+                "farmstead": "strategos:building/farmstead",
+                "field": "strategos:building/field",
+                "storehouse": "strategos:building/storehouse",
+                "wall": "strategos:building/palisade",
+                "gate": "strategos:building/palisade_gate"
+              },
+              "start": {
+                "resources": { "food": 300, "stone": 100, "iron": 100 },
+                "entities": [
+                  { "role": "centre" },
+                  { "role": "worker", "dz": 9, "count": 5, "spread": 2 },
+                  { "role": "cavalry", "dx": -6, "dz": 10 },
+                  { "template": "strategos:unit/sheep", "dx": 9, "dz": 3, "count": 4, "spread": 2 },
+                  { "template": "strategos:unit/pig", "dx": -9, "dz": 3, "count": 2, "spread": 1.5 },
+                  { "template": "strategos:unit/chicken", "dx": 5, "dz": 11, "count": 3, "spread": 1.5 }
+                ]
+              },
+              "bonuses": [],
+              "rules": {},
+              "ai": { "profile": "skirmish" }
+            }
+            """;
+
+    static final CivId DEFAULT_CIV_ID = new CivId("strategos:default");
+
+    /** {@link #DEFAULT_CIV_JSON} decoded. */
+    static final CivDef DEFAULT_CIV = defaultCiv();
+
+    /** The canonical {@code $civs} of a set that has only the default: what a set's civilisations are compared to. */
+    static final String DEFAULT_CIVS_CANONICAL = canonicalCivs(DEFAULT_CIV);
+
+    private static CivDef defaultCiv() {
+        List<TemplateProblem> problems = new ArrayList<>();
+        CivDef civ = CivDef.fromJson(
+                DEFAULT_CIV_ID,
+                JsonParser.parseString(DEFAULT_CIV_JSON).getAsJsonObject(),
+                "builtin/civs/default.json",
+                problems);
+        if (civ == null) {
+            throw new IllegalStateException("the builtin civilisation does not decode: " + problems);
+        }
+        return civ;
+    }
+
+    private static String canonicalCivs(CivDef civ) {
+        JsonObject o = new JsonObject();
+        o.add(civ.id().value(), civ.toJson());
+        return CanonicalJson.write(o);
+    }
+
     private BuiltinTemplates() {}
 
     static TemplateSet compile() {
@@ -616,6 +687,7 @@ final class BuiltinTemplates {
                                 tech("strategos:phase_town", PHASE_TOWN),
                                 tech("strategos:phase_village", PHASE_VILLAGE))
                         : List.of(),
+                withTechs ? List.of(defaultCivFile()) : List.of(),
                 PINNED,
                 PINNED_TECHS,
                 PlaceholderBlueprints.byId());
@@ -623,6 +695,13 @@ final class BuiltinTemplates {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }
         return result.set();
+    }
+
+    private static RawCiv defaultCivFile() {
+        return new RawCiv(
+                DEFAULT_CIV_ID,
+                "builtin/civs/default.json",
+                JsonParser.parseString(DEFAULT_CIV_JSON).getAsJsonObject());
     }
 
     private static RawTech tech(String id, String json) {

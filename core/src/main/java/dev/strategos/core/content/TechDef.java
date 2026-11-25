@@ -104,21 +104,7 @@ public record TechDef(
         if (supersedes != null) {
             o.addProperty("supersedes", supersedes.value());
         }
-        JsonArray list = new JsonArray();
-        for (TechEffect e : effects) {
-            JsonObject fx = new JsonObject();
-            fx.addProperty("path", e.path());
-            fx.addProperty("op", e.op().name().toLowerCase(Locale.ROOT));
-            if (e.op() == TechEffect.Op.TOKENS) {
-                fx.addProperty("tokens", e.tokens());
-            } else {
-                fx.addProperty("value", e.value());
-            }
-            fx.addProperty("filter", e.filter());
-            fx.addProperty("stage", e.stage());
-            fx.addProperty("priority", e.priority());
-            list.add(fx);
-        }
+        JsonArray list = effectsJson(effects);
         o.add("effects", list);
         if (ordinal != NO_ORDINAL) {
             o.addProperty("ordinal", ordinal);
@@ -209,20 +195,7 @@ public record TechDef(
                 }
             }
         }
-        List<TechEffect> effects = new ArrayList<>();
-        JsonElement fx = json.get("effects");
-        if (fx != null) {
-            if (!fx.isJsonArray()) {
-                problems.add(TemplateProblem.error(file, "/effects", "expected an array of effects"));
-            } else {
-                for (int i = 0; i < fx.getAsJsonArray().size(); i++) {
-                    TechEffect e = effect(fx.getAsJsonArray().get(i), file, "/effects/" + i, problems);
-                    if (e != null) {
-                        effects.add(e);
-                    }
-                }
-            }
-        }
+        List<TechEffect> effects = effects(json.get("effects"), file, "/effects", problems);
         int ordinal = NO_ORDINAL;
         JsonElement ord = json.get("ordinal");
         if (ord != null) {
@@ -295,6 +268,45 @@ public record TechDef(
     /** Whether the unlocks added to token list {@code path} name templates, not techs. */
     static boolean unlockingTemplates(String path) {
         return path.equals("Trainer/units") || path.equals("Builder/buildings");
+    }
+
+    /** The effects array {@code fx} at pointer {@code at} (null when the key is absent); each bad entry is a problem. */
+    static List<TechEffect> effects(@Nullable JsonElement fx, String file, String at, List<TemplateProblem> problems) {
+        List<TechEffect> effects = new ArrayList<>();
+        if (fx == null) {
+            return effects;
+        }
+        if (!fx.isJsonArray()) {
+            problems.add(TemplateProblem.error(file, at, "expected an array of effects"));
+            return effects;
+        }
+        for (int i = 0; i < fx.getAsJsonArray().size(); i++) {
+            TechEffect e = effect(fx.getAsJsonArray().get(i), file, at + "/" + i, problems);
+            if (e != null) {
+                effects.add(e);
+            }
+        }
+        return effects;
+    }
+
+    /** The canonical JSON of {@code effects}: every field written out. */
+    static JsonArray effectsJson(List<TechEffect> effects) {
+        JsonArray list = new JsonArray();
+        for (TechEffect e : effects) {
+            JsonObject fx = new JsonObject();
+            fx.addProperty("path", e.path());
+            fx.addProperty("op", e.op().name().toLowerCase(Locale.ROOT));
+            if (e.op() == TechEffect.Op.TOKENS) {
+                fx.addProperty("tokens", e.tokens());
+            } else {
+                fx.addProperty("value", e.value());
+            }
+            fx.addProperty("filter", e.filter());
+            fx.addProperty("stage", e.stage());
+            fx.addProperty("priority", e.priority());
+            list.add(fx);
+        }
+        return list;
     }
 
     private static @Nullable TechEffect effect(
