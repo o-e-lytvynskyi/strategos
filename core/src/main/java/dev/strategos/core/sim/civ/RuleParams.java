@@ -37,6 +37,18 @@ public final class RuleParams {
         return integer(params, key, 0);
     }
 
+    /** A required finite number parameter. */
+    public static double requiredNumber(JsonObject params, String key) {
+        JsonElement e = params.get(key);
+        if (e == null) {
+            throw new RuleFactory.BadParams("/params/" + key + ": required");
+        }
+        if (e instanceof JsonPrimitive p && p.isNumber() && Double.isFinite(p.getAsDouble())) {
+            return p.getAsDouble();
+        }
+        throw bad(key, "a number", e);
+    }
+
     /** A string parameter, {@code fallback} when absent. */
     public static String string(JsonObject params, String key, String fallback) {
         JsonElement e = params.get(key);

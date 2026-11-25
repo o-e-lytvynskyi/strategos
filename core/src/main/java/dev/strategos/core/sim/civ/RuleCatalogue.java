@@ -5,6 +5,7 @@ import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.PlacementRule;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.build.Construction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -60,7 +61,15 @@ public final class RuleCatalogue {
         }));
         add(m, SeamKind.DELIVERY, RuleFactory.fixed(DEFAULT_ID, DeliveryRule.class, DeliveryRule.DEFAULT));
         add(m, SeamKind.DELIVERY, RuleFactory.fixed("direct", DeliveryRule.class, DeliveryRule.DIRECT));
-        add(m, SeamKind.CONSTRUCTION, RuleFactory.fixed(DEFAULT_ID, Object.class, new Object())); // T7
+        add(m, SeamKind.CONSTRUCTION, RuleFactory.fixed(DEFAULT_ID, ConstructionRule.class, ConstructionRule.DEFAULT));
+        add(m, SeamKind.CONSTRUCTION, RuleFactory.of("self", ConstructionRule.class, p -> {
+            double rate = RuleParams.requiredNumber(p, "rate");
+            if (!(rate > 0) || Math.round(Construction.MICRO * rate) < 1 || rate > 1_000_000) {
+                throw new RuleFactory.BadParams(
+                        "/params/rate: expected a number above 0 (at least 0.000001, at most 1000000), got " + rate);
+            }
+            return ConstructionRule.selfBuilding(rate);
+        }));
         add(m, SeamKind.UPKEEP, RuleFactory.fixed(DEFAULT_ID, UpkeepRule.class, UpkeepRule.DEFAULT));
         add(m, SeamKind.RESOURCES, RuleFactory.fixed(DEFAULT_ID, ResourceRule.class, ResourceRule.DEFAULT));
         add(m, SeamKind.PHASE, RuleFactory.fixed(DEFAULT_ID, PhaseRule.class, PhaseRule.DEFAULT));
@@ -115,6 +124,7 @@ public final class RuleCatalogue {
         return new CivRules(
                 create(civ, SeamKind.POPULATION, PopulationRule.class),
                 create(civ, SeamKind.DELIVERY, DeliveryRule.class),
+                create(civ, SeamKind.CONSTRUCTION, ConstructionRule.class),
                 create(civ, SeamKind.UPKEEP, UpkeepRule.class),
                 create(civ, SeamKind.RESOURCES, ResourceRule.class),
                 create(civ, SeamKind.PHASE, PhaseRule.class),

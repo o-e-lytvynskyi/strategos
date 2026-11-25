@@ -271,9 +271,13 @@ public final class Construction {
      */
     public static void step(MatchState s, int handle) {
         BuildingStore buildings = s.buildings();
-        long add = work(buildings.tickBuilders(handle), buildings.tickRates(handle));
+        if (buildings.state(handle) != BuildingStore.CONSTRUCTING) {
+            buildings.clearTick(handle);
+            return;
+        }
+        long add = s.civs().rules(buildings.faction(handle)).construction().progress(s, handle);
         buildings.clearTick(handle);
-        if (add == 0 || buildings.state(handle) != BuildingStore.CONSTRUCTING) {
+        if (add == 0) {
             return;
         }
         long need = needed(s, handle);

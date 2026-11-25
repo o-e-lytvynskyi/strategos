@@ -75,6 +75,7 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         int handle = state.buildings()
                 .create(template.netIndex(), faction, at, Placing.baseY(state, b, at), BuildingStore.FOUNDATION, 0);
         state.buildings().setSlots(handle, Placing.slots(state, at));
+        state.civs().rules(faction).construction().onPlaced(state, handle);
         Tally tally = Builders.assign(envelope, state, builders, handle, at, place.mode());
         if (builders.size() == 0) {
             return Tally.acceptAll(envelope, kind(), 0); // a foundation for later, with no builder yet

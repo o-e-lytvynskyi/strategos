@@ -573,7 +573,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T4 (2026-11-25)
 - [x] T5 (2026-11-25)
 - [x] T6 (2026-11-25)
-- [ ] T7
+- [x] T7 (2026-11-25)
 - [ ] T8
 - [ ] T9a
 - [ ] T9b

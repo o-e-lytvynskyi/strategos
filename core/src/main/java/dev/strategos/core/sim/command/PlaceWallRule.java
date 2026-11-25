@@ -119,6 +119,7 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
             int baseY = segment.baseY() == Integer.MIN_VALUE ? Placing.baseY(state, b, at) : segment.baseY();
             int handle = state.buildings().create(template.netIndex(), faction, at, baseY, BuildingStore.FOUNDATION, 0);
             state.buildings().setSlots(handle, Placing.slots(state, at));
+            state.civs().rules(faction).construction().onPlaced(state, handle);
             if (builders.size() > 0) {
                 Builders.assign(envelope, state, builders, handle, at, laid == 0 ? QueueMode.REPLACE : QueueMode.QUEUE);
             }

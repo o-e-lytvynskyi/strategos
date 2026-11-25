@@ -15,6 +15,7 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchFactionView;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.build.Construction;
 import dev.strategos.core.sim.prod.Techs;
 import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.testkit.SimHarness;
@@ -164,6 +165,27 @@ class SeamDefaultsTest {
 
         assertThat(s.civs().rules(0).delivery()).isSameAs(DeliveryRule.DEFAULT);
         assertThat(DeliveryRule.DEFAULT.creditInPlace(s, 0)).isFalse();
+    }
+
+    @Test
+    void theConstructionDefaultCommitsNothingAtPlacementAndIsTheBuildersWorkOfTheTick() {
+        SimHarness h = match();
+        MatchState s = KernelAccess.state(h.core());
+        int house = CivScene.building(h, 0, CivScene.HOUSE, 30, 30);
+
+        assertThat(s.civs().rules(0).construction()).isSameAs(ConstructionRule.DEFAULT);
+        for (int n : new int[] {0, 1, 2, 5, 10}) {
+            for (int k = 0; k < n; k++) {
+                s.buildings().contribute(house, 1.5);
+            }
+            assertThat(ConstructionRule.DEFAULT.progress(s, house))
+                    .as("n=%d", n)
+                    .isEqualTo(Construction.work(n, 1.5 * n));
+            s.buildings().clearTick(house);
+        }
+        long before = h.stateHash();
+        ConstructionRule.DEFAULT.onPlaced(s, house);
+        assertThat(h.stateHash()).as("nothing is written").isEqualTo(before);
     }
 
     @Test

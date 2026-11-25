@@ -29,6 +29,7 @@ class RuleCatalogueTest {
                             switch (k) {
                                 case POPULATION -> List.of("default", "fixed");
                                 case DELIVERY -> List.of("default", "direct");
+                                case CONSTRUCTION -> List.of("default", "self");
                                 default -> List.of("default");
                             });
         }
@@ -144,6 +145,27 @@ class RuleCatalogueTest {
         }
         assertThat(c.problems(civ("{\"delivery\":{\"id\":\"direct\",\"params\":{\"x\":1}}}")))
                 .as("direct takes none")
+                .hasSize(1);
+    }
+
+    @Test
+    void theSelfConstructionRuleNeedsAPositiveRate() {
+        RuleCatalogue c = RuleCatalogue.DEFAULT;
+        assertThat(c.problems(civ("{\"construction\":{\"id\":\"self\",\"params\":{\"rate\":0.5}}}")))
+                .isEmpty();
+        assertThat(c.problems(civ("{\"construction\":{\"id\":\"self\",\"params\":{\"rate\":3}}}")))
+                .isEmpty();
+        List<TemplateProblem> missing = c.problems(civ("{\"construction\":{\"id\":\"self\"}}"), "f.json");
+        assertThat(missing).hasSize(1);
+        assertThat(missing.get(0).pointer()).isEqualTo("/rules/construction/params");
+        assertThat(missing.get(0).message()).contains("/params/rate").contains("required");
+        for (String bad : List.of("\"x\"", "{}", "[1]", "0", "-1", "true", "null", "1e-9", "1e12")) {
+            assertThat(c.problems(civ("{\"construction\":{\"id\":\"self\",\"params\":{\"rate\":" + bad + "}}}")))
+                    .as("rate %s", bad)
+                    .hasSize(1);
+        }
+        assertThat(c.problems(civ("{\"construction\":{\"id\":\"default\",\"params\":{\"rate\":1}}}")))
+                .as("default takes none")
                 .hasSize(1);
     }
 

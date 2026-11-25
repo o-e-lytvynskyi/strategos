@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 6 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 7 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T6 (2026-11-25).
-- **Next task:** T7 · CIV-05 · Construction.
+- **Last finished task:** M10 T7 (2026-11-25).
+- **Next task:** T8 · CIV-05 · Roles and the vocabulary.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-25 — M10 T1–T6
+### 2026-11-25 — M10 T1–T7
 
+- **M10 T7 · Construction** — CIV-05 in progress. `ConstructionRule`: `onPlaced` (called where `PlaceBuildingRule` and `PlaceWallRule` create a foundation) and `progress` (asked by `Construction.step`); `default` is today's builder work, moved bit for bit; `self{rate}` commits the foundation at placement through `Construction.commit` (world writes, eviction) and adds a fixed work per tick with no builders, builders adding nothing; walls and gates alike; `EconomySystem` already steps every site. Tests: `ConstructionSelfTest` 6 (committed at placement, on time with no builders, walls and gates, a default faction beside it, replay and codec restore), `SeamDefaultsTest` +1, `RuleCatalogueTest` +1. No pinned hash changed. `verify verifySlow :core:soak` green, 275 s (an earlier run that overlapped another Gradle build in the same copy was red and was rerun alone, green).
 - **M10 T6 · Population and delivery** — CIV-05 in progress. `PopulationRule` owns the cap and the population part of production's reservation with its refusal: `default` (today's housing + `base` under the match maximum, HOUSING_NEEDED) and `fixed{cap}` (no houses, a new POPULATION_CAP notice, wire code 8, "Population limit reached"); the cap's every reader (production, replication, the AI) asks it. `DeliveryRule`: Gathering's six entries into GATHER_RETURNING now go through one `turnHome`; `default` walks home, `direct` credits the carry as `gathered` where the gatherer stands (conservation holds). Tests: `PopulationFixedTest` 7, `DeliveryDirectTest` 4 (both replay and restore through the save codec to the live hashes), `SeamDefaultsTest` +2, `RuleCatalogueTest` +1. No pinned hash changed. `verify` 2 min 11 s; `verifySlow :core:soak` green, 3 min 46 s. `jmhCompare` still owed on a quiet machine (Gathering is per tick).
 - **M10 T5 · The catalogue and the quiet seams** — CIV-05 in progress. `core.sim.civ`: `SeamKind`, `RuleFactory` (with `RuleParams`), `RuleCatalogue` (`DEFAULT` with a pinned id set, `with`, `problems`), `CivRules`; five seams with today's code moved behind them — `PhaseRule` (phase and `reached`, the only source: techs, requirements, replication and the client), `DefeatRule` (`holds`, the latch kept in `VictoryCheck`), `PlacementRule` (a parameter of the pure `PlacementRules`, server and client preview alike), `ResourceRule` (one `MatchState.canGather` for gathering, gather and slaughter commands, rallies and the AI), `UpkeepRule` (per faction per economy step); one centre class per civilisation (`FactionCivs.centreClass`) for defeat, placement and the AI; the catalogue threaded through create, restore, replay and swap; the lint in `ServerTemplates` reports and never throws. Two review rounds (the resource and phase seams were not yet the single source; lint could crash on wrong-shaped parameters; seam-less overloads removed). Tests: `RuleCatalogueTest`, `SeamDefaultsTest`, `SeamVariantsTest` (a test variant per seam, journaled replays, a negative control through the wrong catalogue, client parity for placement, walls and phases), `ViewerRulesTest`. No pinned hash changed. `verify verifySlow` green, 4 min 41 s. `jmhCompare`: T3's hash guard allocated an iterator (`ShotBench.hashActive300` 32 B/op), fixed; the last run had no allocation or regression failure, but six benchmarks were invalid for foreign CPU load (7.6–11.5 %, ADR-0026), so the comparison is not a pass yet — rerun on a quiet machine, at the latest in T29.
 - **M10 T4 · Setup and start kits** — CIV-01 in progress. `SkirmishSetup.civs` (a trailing optional field, written only when one is not the default), per-slot civilisation buttons on the skirmish screen, `/strategos skirmish … civ=<id>[,<id>]`, unknown civilisations refused before the match is created, the computer's profile from its civilisation's `ai.profile`. Scenarios: a slot's `civ` and `kit`, an entry's `"civ": true`; a slot playing the civilisation it was written for emits its list as written, another civilisation's kit replaces the flagged entries in place, turned by the slot's yaw (spec §1.6 rows 12–13); `first_skirmish` flags its civilisation entries in both slots. Tests: `ScenarioKitTest` 7, `SkirmishSetupTest` +2, `SkirmishOptionsTest` +1, `SkirmishCivsTest` 4, the setup's size pin. No pinned hash changed. `verify verifySlow` green, 4 min 49 s.
@@ -68,6 +69,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · trial reviewer: pass — the spec review found twelve real points, each checked against the code before applying.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
+- 2026-11-25 · trial implementer: pass — M10 T7, green; it reported the overlapping-build red run instead of hiding it.
 - 2026-11-25 · trial implementer: pass — M10 T6, green; one follow-up round (restores through the save codec, the new wire code pinned).
 - 2026-11-25 · T6 went in without a reviewer pass: two small seams on T5's reviewed pattern, the diff read by the orchestrator, every hash and the soak unchanged — undo: a review at the close.
 - 2026-11-25 · trial reviewer: pass — M10 T5's review found the resource and phase seams still bypassed in four and two places, and a lint crash path.
