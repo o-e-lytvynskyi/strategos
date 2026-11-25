@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_wood_3",
+  "icon": "minecraft:netherite_axe",
+  "cost": { "food": 300, "wood": 150 },
+  "time": 60,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_wood_2" }] },
+  "supersedes": "strategos:gather_wood_2",
+  "effects": [
+    { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.6, "filter": "Worker" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "strategos.tech.diamond_weapons",
+  "icon": "minecraft:diamond_sword",
+  "cost": { "food": 300, "wood": 150, "iron": 250 },
+  "time": 80,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:iron_weapons" }] },
+  "supersedes": "strategos:iron_weapons",
+  "effects": [
+    { "path": "Attack/Melee/hack", "op": "add", "value": 2, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Melee/pierce", "op": "add", "value": 2, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Ranged/pierce", "op": "add", "value": 2, "filter": "Archer" },
+    { "path": "Look/weapon", "op": "add", "value": 2, "filter": "Infantry Cavalry" }
+  ]
+}

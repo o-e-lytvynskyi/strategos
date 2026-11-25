@@ -1,0 +1,12 @@
+{
+  "name": "strategos.tech.skirmish_drill",
+  "icon": "minecraft:leather_boots",
+  "cost": { "food": 250, "wood": 150, "iron": 100 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "excludes": ["strategos:phalanx"],
+  "effects": [
+    { "path": "UnitMotion/walkSpeed", "op": "mul", "value": 1.1, "filter": "Infantry Cavalry" },
+    { "path": "Attack/Ranged/range", "op": "add", "value": 3, "filter": "Archer" }
+  ]
+}

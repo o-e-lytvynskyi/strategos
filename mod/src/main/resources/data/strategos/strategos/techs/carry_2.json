@@ -1,0 +1,14 @@
+{
+  "name": "strategos.tech.carry_2",
+  "icon": "minecraft:chest",
+  "cost": { "food": 300, "wood": 200 },
+  "time": 55,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:carry_1" }] },
+  "supersedes": "strategos:carry_1",
+  "effects": [
+    { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 10, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 10, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 10, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 10, "filter": "Worker" }
+  ]
+}

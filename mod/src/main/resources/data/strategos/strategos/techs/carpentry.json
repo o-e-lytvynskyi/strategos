@@ -1,0 +1,10 @@
+{
+  "name": "strategos.tech.carpentry",
+  "icon": "minecraft:crafting_table",
+  "cost": { "food": 150, "wood": 200 },
+  "time": 50,
+  "requires": { "phase": "town" },
+  "effects": [
+    { "path": "Builder/rate", "op": "mul", "value": 1.25, "filter": "Worker" }
+  ]
+}

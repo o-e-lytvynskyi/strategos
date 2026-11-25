@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.guild_lumber",
+  "icon": "minecraft:oak_log",
+  "cost": { "food": 250, "wood": 250, "stone": 100 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "excludes": ["strategos:guild_mining"],
+  "effects": [
+    { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.3, "filter": "Worker" }
+  ]
+}

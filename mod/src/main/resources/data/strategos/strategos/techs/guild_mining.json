@@ -1,0 +1,12 @@
+{
+  "name": "strategos.tech.guild_mining",
+  "icon": "minecraft:stone_pickaxe",
+  "cost": { "food": 250, "wood": 250, "stone": 100 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "excludes": ["strategos:guild_lumber"],
+  "effects": [
+    { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.25, "filter": "Worker" },
+    { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.25, "filter": "Worker" }
+  ]
+}

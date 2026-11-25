@@ -9,5 +9,5 @@
   "Loot": { "resources": { "wood": 40, "stone": 20, "iron": 10 } },
   "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
   "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 },
-  "Researcher": { "techs": "" }
+  "Researcher": { "techs": "strategos:phalanx strategos:skirmish_drill" }
 }

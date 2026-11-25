@@ -512,6 +512,168 @@
     "effects/1/value": "One more pierce resistance for soldiers (TECH-03, spec 2.16), as the hack's; our own starting value, tuned against QA-12 in M6 T23",
     "effects/2/value": "One tier: the armour the unit renderer draws moves from leather to chainmail (TECH-03, row 5); a tier, not a balance number"
   },
+  "strategos:gather_wood_2": {
+    "cost/food": "200 food: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "100 wood: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "45 seconds: longer than the 30 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "40% faster felling in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_wood_3": {
+    "cost/food": "300 food: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "150 wood: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "60 seconds: longer than the 45 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "60% faster felling in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_farm_2": {
+    "cost/food": "100 food: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "200 wood: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "45 seconds: longer than the 30 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "40% faster farming in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_farm_3": {
+    "cost/food": "150 food: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "300 wood: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "60 seconds: longer than the 45 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "60% faster farming in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_stone_2": {
+    "cost/food": "200 food: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "200 wood: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "50 seconds: longer than the 35 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "40% faster quarrying in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_stone_3": {
+    "cost/food": "300 food: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "300 wood: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "65 seconds: longer than the 50 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "60% faster quarrying in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_iron_2": {
+    "cost/food": "200 food: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "200 wood: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/stone": "100 stone: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "55 seconds: longer than the 40 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "40% faster mining in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:gather_iron_3": {
+    "cost/food": "300 food: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "300 wood: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/stone": "150 stone: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "70 seconds: longer than the 55 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "60% faster mining in all, not on top of the tier before (which stops contributing when this one is researched): the first tier gives a fifth, each tier another fifth of the base rate, where the classics add a quarter a tier (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:carry_2": {
+    "cost/food": "300 food: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "200 wood: twice the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "55 seconds: longer than the 40 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "10 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/1/value": "10 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/2/value": "10 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/3/value": "10 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:carry_3": {
+    "cost/food": "450 food: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "cost/wood": "300 wood: three times the first tier's, a multiple of the first step as the classics' tiers each cost a step more (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "time": "70 seconds: longer than the 55 of the tier before, as the classics' tiers take longer each (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/0/value": "15 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/1/value": "15 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/2/value": "15 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12",
+    "effects/3/value": "15 more of every resource a trip in all, not on top of the tier before (which stops contributing when this one is researched): five a tier as the classics' carrying techs (docs/research/mechanics.md §1.3); our own starting value, to tune against QA-12"
+  },
+  "strategos:diamond_weapons": {
+    "cost/food": "300 food: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/wood": "150 wood: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/iron": "250 iron: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "time": "Eighty seconds: a step above the first tier's sixty; our own starting value, to tune against QA-12",
+    "effects/0/value": "Two more hack per blow in all for spearmen and horsemen, not on top of the first tier (which stops contributing): the first tier gives one, a third more for a spearman's three, the second two; our own starting value, to tune against QA-12",
+    "effects/1/value": "Two more pierce per blow in all for spearmen and horsemen, as the hack's; our own starting value, to tune against QA-12",
+    "effects/2/value": "Two more pierce per arrow in all for archers, an eighth of their sixteen; our own starting value, to tune against QA-12",
+    "effects/3/value": "Tier 2: the weapon the unit renderer draws moves from iron to diamond (TECH-05); a tier, not a balance number"
+  },
+  "strategos:netherite_weapons": {
+    "cost/food": "450 food: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/wood": "250 wood: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/iron": "350 iron: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "time": "A hundred seconds: a step above the second tier's eighty, as the City phase's ninety is above Town's sixty; our own starting value, to tune against QA-12",
+    "effects/0/value": "Three more hack per blow in all for spearmen and horsemen, not on top of the tier before; a spearman's blow doubles over the starting one at the end of the line, which two phases of iron and a hundred seconds pay for; our own starting value, to tune against QA-12",
+    "effects/1/value": "Three more pierce per blow in all for spearmen and horsemen, as the hack's; our own starting value, to tune against QA-12",
+    "effects/2/value": "Three more pierce per arrow in all for archers, a fifth of their sixteen; our own starting value, to tune against QA-12",
+    "effects/3/value": "Tier 3: the weapon the unit renderer draws moves from diamond to netherite (TECH-05); a tier, not a balance number"
+  },
+  "strategos:iron_armour": {
+    "cost/food": "300 food: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/wood": "150 wood: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/iron": "250 iron: tier 2 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of diamond needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "time": "Eighty seconds, as the second tier of the weapons; our own starting value, to tune against QA-12",
+    "effects/0/value": "Two hack resistance in all for soldiers, not on top of the chainmail's one (which stops contributing): 0.9^2 lets 81 % of a blow through; our own starting value, to tune against QA-12",
+    "effects/1/value": "Two pierce resistance in all for soldiers, as the hack's; our own starting value, to tune against QA-12",
+    "effects/2/value": "Tier 2: the armour the unit renderer draws moves from chainmail to vanilla's iron (TECH-05); a tier, not a balance number"
+  },
+  "strategos:diamond_armour": {
+    "cost/food": "450 food: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/wood": "250 wood: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "cost/iron": "350 iron: tier 3 of the equipment costs more than the one before it, and is paid in iron, the scarcest resource, so an army of netherite needs a mine first (TECH-03); our own starting value, to tune against QA-12",
+    "time": "A hundred seconds, as the third tier of the weapons; our own starting value, to tune against QA-12",
+    "effects/0/value": "Three hack resistance in all for soldiers, not on top of the tier before: 0.9^3 lets 73 % of a blow through; our own starting value, to tune against QA-12",
+    "effects/1/value": "Three pierce resistance in all for soldiers, as the hack's; our own starting value, to tune against QA-12",
+    "effects/2/value": "Tier 3: the armour the unit renderer draws moves from iron to vanilla's diamond (TECH-05); a tier, not a balance number"
+  },
+  "strategos:masonry_1": {
+    "cost/wood": "200 wood: scaffolds and sledges; our own starting value, to tune against QA-12",
+    "cost/stone": "200 stone: a wall's worth of dressed blocks, so the tech is paid from the quarry, not only the farm; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, a Town-sized research as the iron weapons'; our own starting value, to tune against QA-12",
+    "effects/0/value": "A fifth more hit points for every building but fields, on top of Town's tenth: the classics' structure techs give a tenth to a fifth (docs/research/mechanics.md §1.7); our own starting value, to tune against QA-12"
+  },
+  "strategos:masonry_2": {
+    "cost/wood": "300 wood: one and a half times the first tier's; our own starting value, to tune against QA-12",
+    "cost/stone": "400 stone: twice the first tier's; our own starting value, to tune against QA-12",
+    "cost/iron": "100 iron: clamps and gate hinges, the City tier's first call on iron for a building; our own starting value, to tune against QA-12",
+    "time": "Ninety seconds, as the City phase; our own starting value, to tune against QA-12",
+    "effects/0/value": "Half as many hit points again for every building but fields, in all, not on top of the first tier (which stops contributing): a sacked building takes a siege and not a squad; our own starting value, to tune against QA-12"
+  },
+  "strategos:arrow_slits": {
+    "cost/wood": "150 wood: shutters and shafts; our own starting value, to tune against QA-12",
+    "cost/stone": "150 stone: the cut openings; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, a Town-sized research; our own starting value, to tune against QA-12",
+    "effects/0/value": "One more arrow a volley for the civic centre and the towers, as the City phase gives two (docs/research/mechanics.md §1.7): a smaller step for a cheaper tech, so a garrison's one-per-unit stays the larger part; our own starting value, to tune against QA-12"
+  },
+  "strategos:carpentry": {
+    "cost/food": "150 food: the carpenters' keep; our own starting value, to tune against QA-12",
+    "cost/wood": "200 wood: saws, planes and pegs; our own starting value, to tune against QA-12",
+    "time": "Fifty seconds; our own starting value, to tune against QA-12",
+    "effects/0/value": "A quarter faster building for workers, 0 A.D.'s build-speed techs give a quarter too (docs/research/mechanics.md §1.7); our own starting value, to tune against QA-12"
+  },
+  "strategos:guild_lumber": {
+    "cost/food": "250 food: a guild's dues; our own starting value, to tune against QA-12",
+    "cost/wood": "250 wood: its hall; our own starting value, to tune against QA-12",
+    "cost/stone": "100 stone: foundations, as the pair's other half; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, a Town-sized research; our own starting value, to tune against QA-12",
+    "effects/0/value": "A further third on felling, on top of the line's tier: one half of a choose-one-of-two pair (docs/research/mechanics.md §1.7, pair techs), which locks out the miners' guild; our own starting value, to tune against QA-12"
+  },
+  "strategos:guild_mining": {
+    "cost/food": "250 food: the pair's price, as the timber guild's; our own starting value, to tune against QA-12",
+    "cost/wood": "250 wood: its hall, as the timber guild's; our own starting value, to tune against QA-12",
+    "cost/stone": "100 stone: as the timber guild's; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, as the timber guild's; our own starting value, to tune against QA-12",
+    "effects/0/value": "A quarter more on quarrying, on top of the line's tier: the other half of the pair, which locks out the timber guild; two resources get a quarter where one gets a third, so the halves weigh about alike; our own starting value, to tune against QA-12",
+    "effects/1/value": "A quarter more on mining, as the quarrying's; our own starting value, to tune against QA-12"
+  },
+  "strategos:phalanx": {
+    "cost/food": "250 food: as the second tier of the equipment's food; our own starting value, to tune against QA-12",
+    "cost/wood": "150 wood: shields; our own starting value, to tune against QA-12",
+    "cost/iron": "100 iron: bosses and rims; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, a Town-sized research; our own starting value, to tune against QA-12",
+    "effects/0/value": "Two more hack resistance for spearmen alone: the pair's defensive half (docs/research/mechanics.md §1.7, pair techs), locking out the light drill; our own starting value, to tune against QA-12",
+    "effects/1/value": "Two more pierce resistance for spearmen alone, as the hack's; our own starting value, to tune against QA-12"
+  },
+  "strategos:skirmish_drill": {
+    "cost/food": "250 food: as the shield wall's; our own starting value, to tune against QA-12",
+    "cost/wood": "150 wood: as the shield wall's; our own starting value, to tune against QA-12",
+    "cost/iron": "100 iron: as the shield wall's; our own starting value, to tune against QA-12",
+    "time": "Sixty seconds, as the shield wall's; our own starting value, to tune against QA-12",
+    "effects/0/value": "A tenth faster soldiers afoot and mounted: the pair's mobile half, locking out the shield wall; our own starting value, to tune against QA-12",
+    "effects/1/value": "Three blocks more range for archers, an eighth of their twenty-four; our own starting value, to tune against QA-12"
+  },
   "strategos:template/unit_soldier": {
     "Promotion/thresholds": "Two hundred, five hundred and a thousand experience for the three ranks: two, then five, then ten kills of a hundred-resource soldier (a point of experience is a resource of what a unit has destroyed), so a rank is earned over a fight and the last over a campaign, and a soldier that is not at the front stays a recruit; our own starting values, to be tuned against QA-16 (CMB-11)",
     "Promotion/ranks": "Per rank, hit points and attack times 1.05, 1.10 and 1.15: each rank is about half an equipment tier (the iron weapons and chainmail technologies are each about a tenth), and since hit points and damage both rise an elite is about 1.15 x 1.15 = 1.32 times as strong, the worth of three equipment tiers and no more, so a veteran army tells without deciding the match alone (a first try at 1.1, 1.2 and 1.3, an elite near 1.69, stalled the Ford battle bots); the sets replace one another and never compound, so rank 3 is 1.15 and not 1.05 times 1.10 times 1.15 (spec 2.8); melee hack and pierce and ranged pierce stand for every soldier's weapon, a path a unit lacks being 0 times the factor; our own starting values, to be tuned against QA-16 (CMB-11)"

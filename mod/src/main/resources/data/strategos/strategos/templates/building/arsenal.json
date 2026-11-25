@@ -7,5 +7,6 @@
   "Health": { "max": 1500 },
   "Loot": { "resources": { "wood": 40, "stone": 30 } },
   "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
-  "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
+  "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 },
+  "Researcher": { "techs": "" }
 }

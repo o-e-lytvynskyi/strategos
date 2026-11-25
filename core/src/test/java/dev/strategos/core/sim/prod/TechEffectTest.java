@@ -88,8 +88,14 @@ class TechEffectTest {
             boolean raises = tech.effects().stream().anyMatch(e -> e.path().startsWith("Look/"));
             assertThat(raises)
                     .as(tech.id() + " raises a tier")
-                    .isEqualTo(tech.id().value().endsWith("iron_weapons")
-                            || tech.id().value().endsWith("chainmail"));
+                    .isEqualTo(List.of(
+                                    "iron_weapons",
+                                    "diamond_weapons",
+                                    "netherite_weapons",
+                                    "chainmail",
+                                    "iron_armour",
+                                    "diamond_armour")
+                            .contains(tech.id().value().substring("strategos:".length())));
         }
         ProdScene p = ProdScene.of(0, 0);
         assertThat(p.h.core().queries().factionLooks()).containsOnly(FactionLook.BASE);

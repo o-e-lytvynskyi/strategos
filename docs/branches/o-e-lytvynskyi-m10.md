@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 16 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 17 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T15 (2026-11-25).
-- **Next task:** T16 · TECH-05 · The technology set.
+- **Last finished task:** M10 T16 (2026-11-26).
+- **Next task:** T17 · TECH-05 · The tree screen (and the card's effective research lists).
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -28,6 +28,10 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-26 — M10 T16
+
+- **M10 T16 · The technology set** — TECH-05 in progress. 32 technologies (22 new): five resource lines to three tiers (×1.2/×1.4/×1.6, carry +5/+10/+15; tier 2 Town, tier 3 City, each superseding the last), weapons and armour to three tiers (armour to vanilla's IRON and DIAMOND, weapons to diamond and netherite through `Look`), masonry 1–2, arrow slits, carpentry, two exclusive pairs (lumber or mining guild; phalanx or skirmish drill); researched at the storehouse, farmstead, barracks and arsenal; City's unlocks filled. `excludes` in `TechDef`, linted both ways, refused by `ResearchRules` (queued or researched), shown on the card as "Locked by …". Content mirrored and the version re-pinned (1a27f72e… → 303c703b…, this content only). Tests: `TechEffectsTest` (34, one generated case per technology), `TechPairsTest`, `techtests.economy/military/buildings`, the balance sheet's tiers, the view under 128 KB; count and list pins grown for the new techs. No state hash, golden or replay changed. `verify verifySlow` green, 296 s. Found: the card lists only base research lists, so phase-added techs never show (since M6) — first in T17.
 
 ### 2026-11-25 — M10 T1–T15
 
@@ -80,6 +84,9 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-26 · trial implementer: pass — M10 T16, green apart from the pin; it found the card's base-list gap.
+- 2026-11-26 · The excluded half of a pair is refused with the existing `RejectReason.LIMIT` (no wire change) — undo: append a dedicated reason.
+- 2026-11-26 · The third weapon tier shows a netherite sword — undo: another look in `UnitLook`.
 - 2026-11-25 · trial implementer: pass — M10 T15, green apart from the pin; it reported the L3 limit on the arrows instead of faking it.
 - 2026-11-25 · City's arrows bonus names its shooters (`CivicCentre Tower`) instead of `Structure`: an `add` on a template without the stat would give it arrows — undo: a filter on the stat's presence if the pipeline gains one.
 - 2026-11-25 · trial implementer: pass — M10 T14, green apart from the pin; it had not rerun the full gate after its last fix, so the orchestrator did.

@@ -507,7 +507,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | CIV-02 | Civilisation 2: roster, bonuses and abilities | L | CIV-01, UNIT-10, D-03 | deferred (M14) |
 | ART-04 | Civilisation 2 art set | L | CIV-02, ART-03 | deferred (M14) |
 | TECH-04 | City phase | M | TECH-02, TERR-01 | done |
-| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | specified |
+| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | in_progress |
 | UNIT-10 | Abilities | M | CORE-03, DATA-02 | done |
 | CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | in_progress |
 | CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | done |

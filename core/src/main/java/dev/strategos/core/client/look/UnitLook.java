@@ -9,9 +9,10 @@ import java.util.List;
  * holds. A worker wears the tunic alone and holds the tools and loads its work gives it; a spearman wears an iron
  * helmet and dyed leggings too, holds a trident, the nearest vanilla spear, and a shield whose banner is its faction's
  * dye. An archer holds a bow and no shield, a horseman a sword with a shield in the off hand (UNIT-07). Item ids are vanilla's; an empty id is nothing.
- * The faction's equipment tiers (TECH-03) change the gear: at weapon tier 1 a horseman's stone sword is iron (the
- * spearman's trident and the archer's bow are their own at every tier), at armour tier 1 the leather tunic and
- * leggings are chainmail, which is not dyed, so the shield still carries the colour. {@code dye} is the leather's RGB, {@code shieldDye} the name of
+ * The faction's equipment tiers (TECH-03, TECH-05) change the gear: a horseman's stone sword is iron at weapon tier 1,
+ * diamond at 2 and netherite at 3 (the spearman's trident and the archer's bow are their own at every tier); the
+ * leather tunic and leggings are chainmail at armour tier 1, vanilla's iron at 2 and diamond at 3, none dyed, so the
+ * shield still carries the colour. {@code dye} is the leather's RGB, {@code shieldDye} the name of
  * the dye colour nearest the faction's. A body of no {@code Organic} class, the debug walker, is a test body and wears
  * nothing, so the goldens of M1 and M2 keep their look.
  */
@@ -23,6 +24,12 @@ public record UnitLook(
     public static final String CHAIN_LEGGINGS = "minecraft:chainmail_leggings";
     public static final String STONE_SWORD = "minecraft:stone_sword";
     public static final String IRON_SWORD = "minecraft:iron_sword";
+    public static final String DIAMOND_SWORD = "minecraft:diamond_sword";
+    public static final String NETHERITE_SWORD = "minecraft:netherite_sword";
+    public static final String IRON_TUNIC = "minecraft:iron_chestplate";
+    public static final String IRON_LEGGINGS = "minecraft:iron_leggings";
+    public static final String DIAMOND_TUNIC = "minecraft:diamond_chestplate";
+    public static final String DIAMOND_LEGGINGS = "minecraft:diamond_leggings";
 
     /** The look of a unit of template classes {@code classes} and faction {@code faction} at the starting tiers. */
     public static UnitLook of(List<String> classes, int faction) {
@@ -31,8 +38,14 @@ public record UnitLook(
 
     /** The look at the faction's weapon tier and armour tier (TECH-03): 0 is the starting gear. */
     public static UnitLook of(List<String> classes, int faction, int weaponTier, int armourTier) {
-        String tunic = armourTier > 0 ? CHAIN_TUNIC : TUNIC;
-        String leggings = armourTier > 0 ? CHAIN_LEGGINGS : LEGGINGS;
+        String tunic =
+                armourTier >= 3 ? DIAMOND_TUNIC : armourTier == 2 ? IRON_TUNIC : armourTier == 1 ? CHAIN_TUNIC : TUNIC;
+        String leggings = armourTier >= 3
+                ? DIAMOND_LEGGINGS
+                : armourTier == 2 ? IRON_LEGGINGS : armourTier == 1 ? CHAIN_LEGGINGS : LEGGINGS;
+        String sword = weaponTier >= 3
+                ? NETHERITE_SWORD
+                : weaponTier == 2 ? DIAMOND_SWORD : weaponTier == 1 ? IRON_SWORD : STONE_SWORD;
         int dye = HudTheme.DEFAULT.faction(faction) & 0xFFFFFF;
         String shieldDye = dyeName(faction);
         if (!classes.contains("Organic")) {
@@ -42,15 +55,7 @@ public record UnitLook(
             return new UnitLook("", tunic, leggings, "", "minecraft:bow", "", dye, shieldDye);
         }
         if (classes.contains("Cavalry")) {
-            return new UnitLook(
-                    "minecraft:iron_helmet",
-                    tunic,
-                    "",
-                    "",
-                    weaponTier > 0 ? IRON_SWORD : STONE_SWORD,
-                    "minecraft:shield",
-                    dye,
-                    shieldDye);
+            return new UnitLook("minecraft:iron_helmet", tunic, "", "", sword, "minecraft:shield", dye, shieldDye);
         }
         if (classes.contains("Spearman") || classes.contains("Infantry")) {
             return new UnitLook(

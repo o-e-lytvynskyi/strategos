@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchFactionView;
@@ -17,8 +18,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Research (TECH-01, spec §2.1): an own finished building whose {@code Researcher/techs} holds the tech queues it beside
- * unit batches, paying its cost, unless the faction has the tech or any of its buildings queues it, its requirements
- * are unmet, the queue is full or the stock falls short.
+ * unit batches, paying its cost, unless the faction has the tech or any of its buildings queues it, has or queues a
+ * tech it excludes (TECH-05, a pair: {@code LIMIT}), its requirements are unmet, the queue is full or the stock falls
+ * short.
  */
 final class ResearchRules {
     private ResearchRules() {}
@@ -60,6 +62,13 @@ final class ResearchRules {
             for (TechDef later : state.templates().techs()) { // a tech a researched or pending one supersedes is moot
                 if (tech.id().equals(later.supersedes())
                         && (state.progress().researched(faction, later.id()) || Techs.pending(state, faction, later))) {
+                    return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
+                }
+            }
+            for (TechId other : tech.excludes()) { // its pair is taken: researched, or queued anywhere (TECH-05)
+                TechDef pair = state.templates().tech(other);
+                if (state.progress().researched(faction, other)
+                        || (pair != null && Techs.pending(state, faction, pair))) {
                     return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
                 }
             }

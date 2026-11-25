@@ -283,7 +283,7 @@ final class BuiltinTemplates {
               "Loot": { "resources": { "wood": 40, "stone": 20, "iron": 10 } },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
               "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 },
-              "Researcher": { "techs": "" }
+              "Researcher": { "techs": "strategos:phalanx strategos:skirmish_drill" }
             }
             """;
 
@@ -366,7 +366,8 @@ final class BuiltinTemplates {
               "Health": { "max": 1500 },
               "Loot": { "resources": { "wood": 40, "stone": 30 } },
               "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
-              "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
+              "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 },
+              "Researcher": { "techs": "" }
             }
             """;
     static final String TEMPLE = """
@@ -444,7 +445,7 @@ final class BuiltinTemplates {
               "Loot": { "resources": { "wood": 20, "stone": 10 } },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
               "Dropsite": { "resources": "wood stone iron" },
-              "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1" }
+              "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1 strategos:guild_lumber strategos:guild_mining" }
             }
             """;
 
@@ -542,6 +543,330 @@ final class BuiltinTemplates {
             }
             """;
 
+    static final String GATHER_WOOD_2 = """
+            {
+              "name": "strategos.tech.gather_wood_2",
+              "icon": "minecraft:diamond_axe",
+              "cost": { "food": 200, "wood": 100 },
+              "time": 45,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_wood_1" }] },
+              "supersedes": "strategos:gather_wood_1",
+              "effects": [
+                { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.4, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_WOOD_3 = """
+            {
+              "name": "strategos.tech.gather_wood_3",
+              "icon": "minecraft:netherite_axe",
+              "cost": { "food": 300, "wood": 150 },
+              "time": 60,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_wood_2" }] },
+              "supersedes": "strategos:gather_wood_2",
+              "effects": [
+                { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.6, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_FARM_2 = """
+            {
+              "name": "strategos.tech.gather_farm_2",
+              "icon": "minecraft:diamond_hoe",
+              "cost": { "food": 100, "wood": 200 },
+              "time": 45,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_farm_1" }] },
+              "supersedes": "strategos:gather_farm_1",
+              "effects": [
+                { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.4, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_FARM_3 = """
+            {
+              "name": "strategos.tech.gather_farm_3",
+              "icon": "minecraft:netherite_hoe",
+              "cost": { "food": 150, "wood": 300 },
+              "time": 60,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_farm_2" }] },
+              "supersedes": "strategos:gather_farm_2",
+              "effects": [
+                { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.6, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_STONE_2 = """
+            {
+              "name": "strategos.tech.gather_stone_2",
+              "icon": "minecraft:diamond_pickaxe",
+              "cost": { "food": 200, "wood": 200 },
+              "time": 50,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_stone_1" }] },
+              "supersedes": "strategos:gather_stone_1",
+              "effects": [
+                { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.4, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_STONE_3 = """
+            {
+              "name": "strategos.tech.gather_stone_3",
+              "icon": "minecraft:netherite_pickaxe",
+              "cost": { "food": 300, "wood": 300 },
+              "time": 65,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_stone_2" }] },
+              "supersedes": "strategos:gather_stone_2",
+              "effects": [
+                { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.6, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_IRON_2 = """
+            {
+              "name": "strategos.tech.gather_iron_2",
+              "icon": "minecraft:iron_ingot",
+              "cost": { "food": 200, "wood": 200, "stone": 100 },
+              "time": 55,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_iron_1" }] },
+              "supersedes": "strategos:gather_iron_1",
+              "effects": [
+                { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.4, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_IRON_3 = """
+            {
+              "name": "strategos.tech.gather_iron_3",
+              "icon": "minecraft:iron_block",
+              "cost": { "food": 300, "wood": 300, "stone": 150 },
+              "time": 70,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_iron_2" }] },
+              "supersedes": "strategos:gather_iron_2",
+              "effects": [
+                { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.6, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String CARRY_2 = """
+            {
+              "name": "strategos.tech.carry_2",
+              "icon": "minecraft:chest",
+              "cost": { "food": 300, "wood": 200 },
+              "time": 55,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:carry_1" }] },
+              "supersedes": "strategos:carry_1",
+              "effects": [
+                { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 10, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 10, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 10, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 10, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String CARRY_3 = """
+            {
+              "name": "strategos.tech.carry_3",
+              "icon": "minecraft:ender_chest",
+              "cost": { "food": 450, "wood": 300 },
+              "time": 70,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:carry_2" }] },
+              "supersedes": "strategos:carry_2",
+              "effects": [
+                { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 15, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 15, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 15, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 15, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String DIAMOND_WEAPONS = """
+            {
+              "name": "strategos.tech.diamond_weapons",
+              "icon": "minecraft:diamond_sword",
+              "cost": { "food": 300, "wood": 150, "iron": 250 },
+              "time": 80,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:iron_weapons" }] },
+              "supersedes": "strategos:iron_weapons",
+              "effects": [
+                { "path": "Attack/Melee/hack", "op": "add", "value": 2, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Melee/pierce", "op": "add", "value": 2, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Ranged/pierce", "op": "add", "value": 2, "filter": "Archer" },
+                { "path": "Look/weapon", "op": "add", "value": 2, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String NETHERITE_WEAPONS = """
+            {
+              "name": "strategos.tech.netherite_weapons",
+              "icon": "minecraft:netherite_sword",
+              "cost": { "food": 450, "wood": 250, "iron": 350 },
+              "time": 100,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:diamond_weapons" }] },
+              "supersedes": "strategos:diamond_weapons",
+              "effects": [
+                { "path": "Attack/Melee/hack", "op": "add", "value": 3, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Melee/pierce", "op": "add", "value": 3, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Ranged/pierce", "op": "add", "value": 3, "filter": "Archer" },
+                { "path": "Look/weapon", "op": "add", "value": 3, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String IRON_ARMOUR = """
+            {
+              "name": "strategos.tech.iron_armour",
+              "icon": "minecraft:iron_chestplate",
+              "cost": { "food": 300, "wood": 150, "iron": 250 },
+              "time": 80,
+              "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:chainmail" }] },
+              "supersedes": "strategos:chainmail",
+              "effects": [
+                { "path": "Resistance/hack", "op": "add", "value": 2, "filter": "Infantry Cavalry" },
+                { "path": "Resistance/pierce", "op": "add", "value": 2, "filter": "Infantry Cavalry" },
+                { "path": "Look/armour", "op": "add", "value": 2, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String DIAMOND_ARMOUR = """
+            {
+              "name": "strategos.tech.diamond_armour",
+              "icon": "minecraft:diamond_chestplate",
+              "cost": { "food": 450, "wood": 250, "iron": 350 },
+              "time": 100,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:iron_armour" }] },
+              "supersedes": "strategos:iron_armour",
+              "effects": [
+                { "path": "Resistance/hack", "op": "add", "value": 3, "filter": "Infantry Cavalry" },
+                { "path": "Resistance/pierce", "op": "add", "value": 3, "filter": "Infantry Cavalry" },
+                { "path": "Look/armour", "op": "add", "value": 3, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String MASONRY_1 = """
+            {
+              "name": "strategos.tech.masonry_1",
+              "icon": "minecraft:stone_bricks",
+              "cost": { "wood": 200, "stone": 200 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Health/max", "op": "mul", "value": 1.2, "filter": "Structure+!Field" }
+              ]
+            }
+            """;
+
+    static final String MASONRY_2 = """
+            {
+              "name": "strategos.tech.masonry_2",
+              "icon": "minecraft:deepslate_bricks",
+              "cost": { "wood": 300, "stone": 400, "iron": 100 },
+              "time": 90,
+              "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:masonry_1" }] },
+              "supersedes": "strategos:masonry_1",
+              "effects": [
+                { "path": "Health/max", "op": "mul", "value": 1.5, "filter": "Structure+!Field" }
+              ]
+            }
+            """;
+
+    static final String ARROW_SLITS = """
+            {
+              "name": "strategos.tech.arrow_slits",
+              "icon": "minecraft:arrow",
+              "cost": { "wood": 150, "stone": 150 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Attack/Building/arrows", "op": "add", "value": 1, "filter": "CivicCentre Tower" }
+              ]
+            }
+            """;
+
+    static final String CARPENTRY = """
+            {
+              "name": "strategos.tech.carpentry",
+              "icon": "minecraft:crafting_table",
+              "cost": { "food": 150, "wood": 200 },
+              "time": 50,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Builder/rate", "op": "mul", "value": 1.25, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GUILD_LUMBER = """
+            {
+              "name": "strategos.tech.guild_lumber",
+              "icon": "minecraft:oak_log",
+              "cost": { "food": 250, "wood": 250, "stone": 100 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "excludes": ["strategos:guild_mining"],
+              "effects": [
+                { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.3, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GUILD_MINING = """
+            {
+              "name": "strategos.tech.guild_mining",
+              "icon": "minecraft:stone_pickaxe",
+              "cost": { "food": 250, "wood": 250, "stone": 100 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "excludes": ["strategos:guild_lumber"],
+              "effects": [
+                { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.25, "filter": "Worker" },
+                { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.25, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String PHALANX = """
+            {
+              "name": "strategos.tech.phalanx",
+              "icon": "minecraft:shield",
+              "cost": { "food": 250, "wood": 150, "iron": 100 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "excludes": ["strategos:skirmish_drill"],
+              "effects": [
+                { "path": "Resistance/hack", "op": "add", "value": 2, "filter": "Spearman" },
+                { "path": "Resistance/pierce", "op": "add", "value": 2, "filter": "Spearman" }
+              ]
+            }
+            """;
+
+    static final String SKIRMISH_DRILL = """
+            {
+              "name": "strategos.tech.skirmish_drill",
+              "icon": "minecraft:leather_boots",
+              "cost": { "food": 250, "wood": 150, "iron": 100 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "excludes": ["strategos:phalanx"],
+              "effects": [
+                { "path": "UnitMotion/walkSpeed", "op": "mul", "value": 1.1, "filter": "Infantry Cavalry" },
+                { "path": "Attack/Ranged/range", "op": "add", "value": 3, "filter": "Archer" }
+              ]
+            }
+            """;
+
     static final String PHASE_VILLAGE = """
             {
               "name": "strategos.tech.phase_village",
@@ -564,13 +889,16 @@ final class BuiltinTemplates {
               "effects": [
                 { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
                 { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
-                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail +strategos:diamond_weapons +strategos:iron_armour", "filter": "Barracks" },
                 { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal +strategos:building/temple", "filter": "Builder" },
                 { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
                 { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" },
-                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:phase_city", "filter": "CivicCentre" }
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:phase_city", "filter": "CivicCentre" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_wood_2 +strategos:gather_stone_2 +strategos:gather_iron_2 +strategos:carry_2", "filter": "Storehouse" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_farm_2", "filter": "Farmstead" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:masonry_1 +strategos:arrow_slits +strategos:carpentry", "filter": "Arsenal" }
               ],
-              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple", "strategos:phase_city"]
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple", "strategos:phase_city", "strategos:diamond_weapons", "strategos:iron_armour", "strategos:gather_wood_2", "strategos:gather_stone_2", "strategos:gather_iron_2", "strategos:carry_2", "strategos:gather_farm_2", "strategos:masonry_1", "strategos:arrow_slits", "strategos:carpentry"]
             }
             """;
 
@@ -585,8 +913,13 @@ final class BuiltinTemplates {
               "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
               "effects": [
                 { "path": "TerritoryInfluence/radius", "op": "mul", "value": 1.3, "filter": "CivicCentre" },
-                { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" }
-              ]
+                { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_wood_3 +strategos:gather_stone_3 +strategos:gather_iron_3 +strategos:carry_3", "filter": "Storehouse" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_farm_3", "filter": "Farmstead" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:netherite_weapons +strategos:diamond_armour", "filter": "Barracks" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:masonry_2", "filter": "Arsenal" }
+              ],
+              "unlocks": ["strategos:gather_wood_3", "strategos:gather_stone_3", "strategos:gather_iron_3", "strategos:carry_3", "strategos:gather_farm_3", "strategos:netherite_weapons", "strategos:diamond_armour", "strategos:masonry_2"]
             }
             """;
 
@@ -686,7 +1019,29 @@ final class BuiltinTemplates {
             new TechId("strategos:gather_iron_1"),
             new TechId("strategos:gather_stone_1"),
             new TechId("strategos:iron_weapons"),
-            new TechId("strategos:phase_city"))); // M10 T15
+            new TechId("strategos:phase_city"), // M10 T15
+            new TechId("strategos:gather_wood_2"),
+            new TechId("strategos:gather_wood_3"),
+            new TechId("strategos:gather_farm_2"),
+            new TechId("strategos:gather_farm_3"),
+            new TechId("strategos:gather_stone_2"),
+            new TechId("strategos:gather_stone_3"),
+            new TechId("strategos:gather_iron_2"),
+            new TechId("strategos:gather_iron_3"),
+            new TechId("strategos:carry_2"),
+            new TechId("strategos:carry_3"),
+            new TechId("strategos:diamond_weapons"),
+            new TechId("strategos:netherite_weapons"),
+            new TechId("strategos:iron_armour"),
+            new TechId("strategos:diamond_armour"),
+            new TechId("strategos:masonry_1"),
+            new TechId("strategos:masonry_2"),
+            new TechId("strategos:arrow_slits"),
+            new TechId("strategos:carpentry"),
+            new TechId("strategos:guild_lumber"),
+            new TechId("strategos:guild_mining"),
+            new TechId("strategos:phalanx"),
+            new TechId("strategos:skirmish_drill"))); // M10 T16
 
     /**
      * The default civilisation (CIV-01, ADR-0028): today's content and behaviour. The mod ships the same definition as
@@ -818,6 +1173,28 @@ final class BuiltinTemplates {
                                 tech("strategos:iron_weapons", IRON_WEAPONS),
                                 tech("strategos:chainmail", CHAINMAIL),
                                 tech("strategos:phase_town", PHASE_TOWN),
+                                tech("strategos:gather_wood_2", GATHER_WOOD_2),
+                                tech("strategos:gather_wood_3", GATHER_WOOD_3),
+                                tech("strategos:gather_farm_2", GATHER_FARM_2),
+                                tech("strategos:gather_farm_3", GATHER_FARM_3),
+                                tech("strategos:gather_stone_2", GATHER_STONE_2),
+                                tech("strategos:gather_stone_3", GATHER_STONE_3),
+                                tech("strategos:gather_iron_2", GATHER_IRON_2),
+                                tech("strategos:gather_iron_3", GATHER_IRON_3),
+                                tech("strategos:carry_2", CARRY_2),
+                                tech("strategos:carry_3", CARRY_3),
+                                tech("strategos:diamond_weapons", DIAMOND_WEAPONS),
+                                tech("strategos:netherite_weapons", NETHERITE_WEAPONS),
+                                tech("strategos:iron_armour", IRON_ARMOUR),
+                                tech("strategos:diamond_armour", DIAMOND_ARMOUR),
+                                tech("strategos:masonry_1", MASONRY_1),
+                                tech("strategos:masonry_2", MASONRY_2),
+                                tech("strategos:arrow_slits", ARROW_SLITS),
+                                tech("strategos:carpentry", CARPENTRY),
+                                tech("strategos:guild_lumber", GUILD_LUMBER),
+                                tech("strategos:guild_mining", GUILD_MINING),
+                                tech("strategos:phalanx", PHALANX),
+                                tech("strategos:skirmish_drill", SKIRMISH_DRILL),
                                 tech("strategos:phase_city", PHASE_CITY),
                                 tech("strategos:phase_village", PHASE_VILLAGE))
                         : List.of(),

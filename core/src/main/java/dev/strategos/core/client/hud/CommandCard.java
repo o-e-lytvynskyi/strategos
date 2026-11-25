@@ -412,6 +412,8 @@ public record CommandCard(Page page, List<Button> buttons) {
                 research = disabled(research, "Queue full");
             } else if (!Requirements.evaluate(tech.requires(), view)) {
                 research = disabled(research, "Needs " + unmet(Requirements.checklist(tech.requires(), view)));
+            } else if (lockedBy(in.templates(), view, b.queue(), tech) != null) {
+                research = disabled(research, "Locked by " + lockedBy(in.templates(), view, b.queue(), tech));
             }
             out.add(research);
         }
@@ -563,6 +565,20 @@ public record CommandCard(Page page, List<Button> buttons) {
             }
         }
         return out;
+    }
+
+    /**
+     * The name of the tech {@code tech} excludes (TECH-05, a pair) that the faction has researched or this building
+     * queues, null for none: the card shows the locked half of a pair with that name.
+     */
+    static @Nullable String lockedBy(TemplateSet templates, ClientFactionView view, List<Integer> queue, TechDef tech) {
+        for (TechId other : tech.excludes()) {
+            TechDef def = templates.tech(other);
+            if (view.researched(other) || (def != null && queue.contains(QueueEntry.techEntry(def.netIndex())))) {
+                return other.value().substring(other.value().indexOf(':') + 1);
+            }
+        }
+        return null;
     }
 
     /** The techs building template {@code building} researches, by its {@code Researcher/techs}, in their order there. */

@@ -21,7 +21,7 @@ class TemplateSetViewTest {
         TemplateSet set = TemplateSet.builtin();
         TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
 
-        assertThat(view.techs()).hasSize(10);
+        assertThat(view.techs()).hasSize(32); // TECH-05: ten before, twenty-two techs in T16
         assertThat(view.techs().get(0).id().value()).isEqualTo("strategos:gather_wood_1");
         TemplateSet back = view.toSet();
         assertThat(back.version()).isEqualTo(set.version());
@@ -32,6 +32,17 @@ class TemplateSetViewTest {
         assertThat(read).isEqualTo(view);
         assertThat(read.toSet().version()).isEqualTo(set.version());
     }
+
+    /** TECH-05: the view with all thirty-odd techs fits the wire's cap with room to spare; the ceiling is a pin. */
+    @Test
+    void theViewWithAllTheTechsFitsUnderTheCapWithRoomToSpare() {
+        byte[] bytes = WireCodec.encode(
+                TemplateSetView.WIRE, TemplateSetView.of(TemplateSet.builtin(), TemplateIdTable.EMPTY));
+        assertThat(bytes.length).as("the encoded view").isLessThan(TemplateSetView.MAX_BYTES);
+        assertThat(bytes.length).as("the pinned ceiling, half the cap").isLessThan(CEILING);
+    }
+
+    private static final int CEILING = 128 * 1024;
 
     @Test
     void aViewWrittenWithoutTechsIsTheOldWireFormAndReadsWithNone() {

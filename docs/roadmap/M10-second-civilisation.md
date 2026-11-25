@@ -138,7 +138,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. Tree-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-04, UI-13, TECH-03 · **Size:** L ·
   **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-10 · Abilities
 - **Value:** Units with special actions, the cheapest asymmetry between civilisations, without a

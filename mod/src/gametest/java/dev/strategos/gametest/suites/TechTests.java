@@ -248,6 +248,146 @@ public final class TechTests {
         return TemplateCompiler.fromFlattened(flats, techs).set();
     }
 
+    /**
+     * TECH-05 acceptance 2, the economy family: two tiers of a resource line researched through the command at the
+     * storehouse. The first tier lifts a worker's wood rate by a fifth, the second supersedes it and stands at 1.4
+     * times the base, not on top of the fifth.
+     */
+    @StrategosTest(batch = "tech", timeoutTicks = 600)
+    public static void economy(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        TechId wood2 = new TechId("strategos:gather_wood_2");
+        rt.queueSwap(new ContentSwap(fast(
+                "strategos:building/storehouse",
+                "strategos:gather_wood_1 strategos:gather_wood_2",
+                List.of(WOOD_1.value(), wood2.value()))));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(STOREHOUSE, new FactionSlot(0), 4, 4, 0));
+        for (String resource : List.of("food", "wood")) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), resource, 1_000));
+        }
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(24, 24), 1, 1));
+        h.startSequence()
+                .thenWaitUntil(() -> check(storehouse(rt) != null && handles(rt).length == 1, "not ready"))
+                .thenExecute(() -> rt.submit(P0, new Research(storehouse(rt).handle(), WOOD_1)))
+                .thenWaitUntil(() -> check(Math.abs(rate(rt) - 0.72) < 1e-9, "tier 1: the rate is " + rate(rt)))
+                .thenExecute(() -> rt.submit(P0, new Research(storehouse(rt).handle(), wood2)))
+                .thenWaitUntil(() -> check(Math.abs(rate(rt) - 0.84) < 1e-9, "tier 2: the rate is " + rate(rt)))
+                .thenSucceed();
+    }
+
+    /**
+     * TECH-05 acceptance 2, the military family: the shield wall lifts a spearman's hack resistance by two, and its
+     * pair, the light drill, is then refused and changes nothing.
+     */
+    @StrategosTest(batch = "tech", timeoutTicks = 600)
+    public static void military(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        TechId phalanx = new TechId("strategos:phalanx");
+        TechId drill = new TechId("strategos:skirmish_drill");
+        TemplateId barracks = new TemplateId("strategos:building/barracks");
+        rt.queueSwap(new ContentSwap(fast(
+                barracks.value(), phalanx.value() + " " + drill.value(), List.of(phalanx.value(), drill.value()))));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(barracks, new FactionSlot(0), 4, 4, 0));
+        for (String resource : List.of("food", "wood", "iron")) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), resource, 1_000));
+        }
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(24, 24), 1, 1));
+        List<TechId> done = new ArrayList<>();
+        rt.addListener(out -> out.events().stream()
+                .filter(TechResearched.class::isInstance)
+                .map(TechResearched.class::cast)
+                .forEach(t -> done.add(t.tech())));
+        double[] base = {0};
+        long[] refusedAt = {0};
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(!core(rt).queries().buildings().isEmpty() && handles(rt).length == 1, "not ready"))
+                .thenExecute(() -> {
+                    base[0] = hackResistance(rt);
+                    rt.submit(
+                            P0,
+                            new Research(core(rt).queries().buildings().get(0).handle(), phalanx));
+                })
+                .thenWaitUntil(() -> check(
+                        Math.abs(hackResistance(rt) - (base[0] + 2)) < 1e-9,
+                        "the resistance is " + hackResistance(rt) + ", not " + (base[0] + 2)))
+                .thenExecute(() -> {
+                    rt.submit(
+                            P0,
+                            new Research(core(rt).queries().buildings().get(0).handle(), drill));
+                    refusedAt[0] = core(rt).queries().tick();
+                })
+                .thenWaitUntil(() -> check(core(rt).queries().tick() >= refusedAt[0] + 40, "waiting for the refusal"))
+                .thenExecute(() -> {
+                    check(done.equals(List.of(phalanx)), "researched " + done + ", the pair was not refused");
+                    check(core(rt).queries().buildings().get(0).queue().isEmpty(), "the pair was queued");
+                })
+                .thenSucceed();
+    }
+
+    /** TECH-05 acceptance 2, the buildings family: masonry at the arsenal raises its hit points by a fifth. */
+    @StrategosTest(batch = "tech", timeoutTicks = 600)
+    public static void buildings(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        TechId masonry = new TechId("strategos:masonry_1");
+        TemplateId arsenal = new TemplateId("strategos:building/arsenal");
+        rt.queueSwap(new ContentSwap(fast(arsenal.value(), masonry.value(), List.of(masonry.value()))));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(arsenal, new FactionSlot(0), 4, 4, 0));
+        for (String resource : List.of("wood", "stone")) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), resource, 1_000));
+        }
+        double[] base = {0};
+        h.startSequence()
+                .thenWaitUntil(() -> check(!core(rt).queries().buildings().isEmpty(), "not ready"))
+                .thenExecute(() -> {
+                    base[0] = core(rt).queries().buildings().get(0).maxHitPoints();
+                    rt.submit(
+                            P0,
+                            new Research(core(rt).queries().buildings().get(0).handle(), masonry));
+                })
+                .thenWaitUntil(() -> check(
+                        Math.abs(core(rt).queries().buildings().get(0).maxHitPoints() - base[0] * 1.2) < 1e-6,
+                        "the hit points are "
+                                + core(rt).queries().buildings().get(0).maxHitPoints() + ", not " + base[0] * 1.2))
+                .thenSucceed();
+    }
+
+    private static double hackResistance(MatchRuntime rt) {
+        StatBreakdown b = core(rt).queries().stats(handles(rt)[0], "Resistance/hack");
+        return b == null ? Double.NaN : b.result();
+    }
+
+    /**
+     * The built-in set with {@code researcher} researching exactly {@code list}, and each of {@code fast} taking a
+     * second with no phase to reach (a tech it names stays required, its phase does not).
+     */
+    private static TemplateSet fast(String researcher, String list, List<String> fast) {
+        TemplateSet b = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : b.all()) {
+            JsonObject json = b.flattened(t.id()).deepCopy();
+            if (t.id().value().equals(researcher)) {
+                json.getAsJsonObject("Researcher").addProperty("techs", list);
+            }
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
+        }
+        List<TemplateCompiler.TechFlat> techs = new ArrayList<>();
+        for (TechDef t : b.techs()) {
+            JsonObject json = t.toJson();
+            if (fast.contains(t.id().value())) {
+                json.addProperty("time", 1);
+                json.remove("requires");
+                if (t.supersedes() != null) {
+                    var req = new JsonObject();
+                    req.addProperty("tech", t.supersedes().value());
+                    json.add("requires", req);
+                }
+            }
+            techs.add(new TemplateCompiler.TechFlat(t.id(), t.netIndex(), json));
+        }
+        return TemplateCompiler.fromFlattened(flats, techs).set();
+    }
+
     /** The built-in set with {@code phase_town} researched in {@code seconds}. */
     private static TemplateSet withTownIn(double seconds) {
         TemplateSet b = TemplateSet.builtin();

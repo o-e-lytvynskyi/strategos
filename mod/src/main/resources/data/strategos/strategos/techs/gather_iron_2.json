@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_iron_2",
+  "icon": "minecraft:iron_ingot",
+  "cost": { "food": 200, "wood": 200, "stone": 100 },
+  "time": 55,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_iron_1" }] },
+  "supersedes": "strategos:gather_iron_1",
+  "effects": [
+    { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.4, "filter": "Worker" }
+  ]
+}

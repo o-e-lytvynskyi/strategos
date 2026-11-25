@@ -1,0 +1,14 @@
+{
+  "name": "strategos.tech.netherite_weapons",
+  "icon": "minecraft:netherite_sword",
+  "cost": { "food": 450, "wood": 250, "iron": 350 },
+  "time": 100,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:diamond_weapons" }] },
+  "supersedes": "strategos:diamond_weapons",
+  "effects": [
+    { "path": "Attack/Melee/hack", "op": "add", "value": 3, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Melee/pierce", "op": "add", "value": 3, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Ranged/pierce", "op": "add", "value": 3, "filter": "Archer" },
+    { "path": "Look/weapon", "op": "add", "value": 3, "filter": "Infantry Cavalry" }
+  ]
+}

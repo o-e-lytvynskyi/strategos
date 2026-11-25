@@ -8,6 +8,11 @@
   "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
   "effects": [
     { "path": "TerritoryInfluence/radius", "op": "mul", "value": 1.3, "filter": "CivicCentre" },
-    { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" }
-  ]
+    { "path": "Attack/Building/arrows", "op": "add", "value": 2, "filter": "CivicCentre Tower" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_wood_3 +strategos:gather_stone_3 +strategos:gather_iron_3 +strategos:carry_3", "filter": "Storehouse" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_farm_3", "filter": "Farmstead" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:netherite_weapons +strategos:diamond_armour", "filter": "Barracks" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:masonry_2", "filter": "Arsenal" }
+  ],
+  "unlocks": ["strategos:gather_wood_3", "strategos:gather_stone_3", "strategos:gather_iron_3", "strategos:carry_3", "strategos:gather_farm_3", "strategos:netherite_weapons", "strategos:diamond_armour", "strategos:masonry_2"]
 }

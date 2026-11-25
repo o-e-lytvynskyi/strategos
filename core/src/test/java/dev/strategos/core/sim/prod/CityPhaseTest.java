@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * TECH-04 in L1: the City phase's requirements (Town reached, three Town-tier buildings), its price above Town's, that
- * it unlocks nothing yet, that it becomes phase 2 through the civilisation's phase rule and that the HUD names it.
+ * it unlocks the third tiers, that it becomes phase 2 through the civilisation's phase rule and that the HUD names it.
  */
 class CityPhaseTest {
     static final TechId TOWN = new TechId("strategos:phase_town");
@@ -173,7 +173,7 @@ class CityPhaseTest {
     }
 
     @Test
-    void cityCostsAndTakesMoreThanTownAndUnlocksNothingYet() {
+    void cityCostsAndTakesMoreThanTownAndUnlocksTheThirdTiers() {
         TemplateSet set = TemplateSet.builtin();
         TechDef town = set.tech(TOWN);
         TechDef city = set.tech(CITY);
@@ -186,7 +186,17 @@ class CityPhaseTest {
                     .isGreaterThan(town.cost().get(resource));
         }
         assertThat(city.ticks()).isGreaterThan(town.ticks());
-        assertThat(city.unlocks()).as("T16 adds the City technologies").isEmpty();
+        assertThat(city.unlocks())
+                .as("TECH-05: City opens the third tier of each line, equipment and masonry")
+                .containsExactlyInAnyOrder(
+                        "strategos:gather_wood_3",
+                        "strategos:gather_stone_3",
+                        "strategos:gather_iron_3",
+                        "strategos:carry_3",
+                        "strategos:gather_farm_3",
+                        "strategos:netherite_weapons",
+                        "strategos:diamond_armour",
+                        "strategos:masonry_2");
         assertThat(town.unlocks())
                 .as("Town puts City on the civic centre's list")
                 .contains(CITY.value());

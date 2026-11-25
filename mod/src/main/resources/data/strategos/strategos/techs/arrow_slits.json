@@ -1,0 +1,10 @@
+{
+  "name": "strategos.tech.arrow_slits",
+  "icon": "minecraft:arrow",
+  "cost": { "wood": 150, "stone": 150 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "effects": [
+    { "path": "Attack/Building/arrows", "op": "add", "value": 1, "filter": "CivicCentre Tower" }
+  ]
+}

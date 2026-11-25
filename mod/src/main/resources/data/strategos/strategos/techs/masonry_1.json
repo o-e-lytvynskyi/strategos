@@ -1,0 +1,10 @@
+{
+  "name": "strategos.tech.masonry_1",
+  "icon": "minecraft:stone_bricks",
+  "cost": { "wood": 200, "stone": 200 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "effects": [
+    { "path": "Health/max", "op": "mul", "value": 1.2, "filter": "Structure+!Field" }
+  ]
+}

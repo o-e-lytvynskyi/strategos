@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_stone_2",
+  "icon": "minecraft:diamond_pickaxe",
+  "cost": { "food": 200, "wood": 200 },
+  "time": 50,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_stone_1" }] },
+  "supersedes": "strategos:gather_stone_1",
+  "effects": [
+    { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.4, "filter": "Worker" }
+  ]
+}

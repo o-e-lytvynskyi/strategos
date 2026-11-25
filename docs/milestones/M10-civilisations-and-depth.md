@@ -520,7 +520,11 @@ About 30 technologies, `excludes`, generated tests, the sheet's tiers, the defau
 `:core:balanceSheet`. Size: 800 (mostly data).
 
 #### T17 · TECH-05 · The tree screen
-`TechTreeScreen`, the L3 family samples. Verify: `verify`. Size: 600.
+`TechTreeScreen` with phases as columns, opened from the phase panel. First, the command card's research buttons: they
+list a building's base `Researcher/techs` only, so the technologies a phase adds by tokens (Town's and City's tiers,
+`iron_weapons`, `chainmail`) never show (found in T16; true since M6) — the card and the screen read the faction's
+effective lists (the client's own `StatService` over its template copy and research, ADR-0013's client prediction).
+Verify: `verify`. Size: 600.
 
 #### T18 · ORD-06 · Formations in the core
 `FormationMove`, `FormationController`, `FormationStore`, `FORMATION_MEMBER`, dissolving and re-slotting; the slot
@@ -592,7 +596,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T13 (2026-11-25)
 - [x] T14 (2026-11-25)
 - [x] T15 (2026-11-25)
-- [ ] T16
+- [x] T16 (2026-11-26)
 - [ ] T17
 - [ ] T18
 - [ ] T19

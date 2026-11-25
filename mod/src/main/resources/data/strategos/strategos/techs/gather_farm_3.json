@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_farm_3",
+  "icon": "minecraft:netherite_hoe",
+  "cost": { "food": 150, "wood": 300 },
+  "time": 60,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_farm_2" }] },
+  "supersedes": "strategos:gather_farm_2",
+  "effects": [
+    { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.6, "filter": "Worker" }
+  ]
+}

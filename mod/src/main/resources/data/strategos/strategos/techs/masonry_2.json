@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.masonry_2",
+  "icon": "minecraft:deepslate_bricks",
+  "cost": { "wood": 300, "stone": 400, "iron": 100 },
+  "time": 90,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:masonry_1" }] },
+  "supersedes": "strategos:masonry_1",
+  "effects": [
+    { "path": "Health/max", "op": "mul", "value": 1.5, "filter": "Structure+!Field" }
+  ]
+}
