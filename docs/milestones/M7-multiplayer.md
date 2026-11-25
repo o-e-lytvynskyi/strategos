@@ -1067,7 +1067,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T22 (2026-11-22) · [Roman assets](../art/roman.md) and engine coverage; Verify [45062739294](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062739294) passes 3,095 cases. T23 holds the visual verdict.
 - [x] T23 (2026-11-22) · The owner approved Roman styling, silhouettes and three 60-block frames. [Canonical comparison 45063579435](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063579435) passes all frames and rejects all three inverted controls.
 - [ ] T24 · Floating platform gate (independent; not in M7 Done).
-- [ ] T25 · Milestone handoff and owner acceptance.
+- [ ] T25 · Milestone handoff and owner acceptance. Team Skirmish and the 2v2 lobby now ship alongside the existing solo and two-player routes. [L4 45646136029](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45646136029) passed all seven references and rejected all seven altered controls. [Server Slow 45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed the ten-second admission and allied-victory checks on the shipped map. The new GameTest completed in 9.102 s. The [live record](../testing/m7-multiplayer.md#acceptance-record) is incomplete.
 
 ## 6. Acceptance checklist
 

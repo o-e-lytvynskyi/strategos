@@ -6,7 +6,7 @@
 
 ## Now
 
-- **In progress since 2026-11-25:** T25 shipped 2v2 launch path. The owner delegated the decision to finish the required allied match. Keep the original solo package and two-player lobby available and ship a separate four-start team package.
+- **T25 in progress:** Team Skirmish ships a four-start map and a separate 2v2 lobby preset. The solo map and two-player lobby remain available. [Slow/Soak 45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed all 29 server slow tests, including the team launch, admission within ten seconds and terminal victory for both allied recipients. Live acceptance remains open.
 
 - **Milestone:** M7 Multiplayer; 26 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
@@ -46,6 +46,10 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-25 — Confirm the optimized import and lobby visuals
+
+On `442efe8f`, client-profile Verify [45650068357](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45650068357) passed and published the production playtest jar. On the same runtime, canonical L4 [45650588329](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45650588329) passed both the normal and altered-golden checks. Full-ci [45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed all 29 GameTests in its server slow job. The shipped Team Skirmish case completed in 9.102 seconds, including its 10-second admission check and allied victory. Existing co-op and four-human admission cases completed in 5.522 and 4.829 seconds. Core replay soak passed. The twenty-seed AI aggregate and live T25 observations remain open at this checkpoint.
 
 ### 2026-11-25 — Verify the shipped team skirmish and optimize map import
 
@@ -570,7 +574,7 @@ The owner accepted 45088024574. The archive passes `tools/m7_perf_reports.py` an
 
 9. D-03 and artwork scope resolved 2026-11-22. The first civilisation is Roman antiquity. The owner described M6 as playable but difficult and delegated all ART-03 assets to this session. The existing vanilla-faithful D-04 direction applies. QA-13 retains its other release-candidate checks.
 
-10. **T25 Step 3 is blocked.** The production lobby exposes two seats and the shipped map and scenario provide two faction starts. The acceptance route needs two human allied factions and an opposing AI. The owner deferred expanding the shipped lobby and content on 2026-11-25. Keep the L7 step and M7 hand-in open.
+10. **T25 live acceptance remains open.** The owner approved the separate Team Skirmish package and 2v2 lobby preset on 2026-11-25 after the initial deferral. Server-side admission and allied victory pass. The team lobby opened in the local production-jar session before Computer Use stopped. Record a complete live allied round, separate-faction grant and revoke, LAN entry and outstanding per-client observations before hand-in.
 
 ## Decisions taken
 
