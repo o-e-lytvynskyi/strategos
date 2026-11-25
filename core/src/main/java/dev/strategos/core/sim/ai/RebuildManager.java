@@ -57,18 +57,11 @@ final class RebuildManager implements AiModule {
                 continue; // not yet, or the site is taken: the next loss may do
             }
             Footprint f = Footprint.of(bp, l.x(), l.z(), l.rotation());
-            List<Integer> builders =
-                    BuildManager.nearestWorkers(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
-            if (builders.isEmpty() || !budget.spend(20)) {
+            UnitSet crew = BuildManager.crew(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
+            if (crew == null || !budget.spend(20)) {
                 return;
             }
-            sink.send(new PlaceBuilding(
-                    id,
-                    l.x(),
-                    l.z(),
-                    l.rotation(),
-                    UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray()),
-                    QueueMode.REPLACE));
+            sink.send(new PlaceBuilding(id, l.x(), l.z(), l.rotation(), crew, QueueMode.REPLACE));
             memory.set(Slots.REBUILD, tick + 1);
             return;
         }

@@ -21,6 +21,14 @@ public interface PopulationRule {
     /** The notice that says why a product that does not fit waits. */
     NoticeKind refusal();
 
+    /**
+     * The AI hints this rule implies, a mask of {@link AiHint}s (the default needs housing). A later variant brings its
+     * own hints by overriding this method; {@link CivRules} combines the seams' masks once at bind.
+     */
+    default int hints() {
+        return AiHint.NEEDS_HOUSING.mask();
+    }
+
     /** Whether {@code amount} more fits under the faction's cap. */
     default boolean fits(Population pop, int faction, int amount) {
         return pop.used(faction) + amount <= cap(pop, faction);
@@ -52,6 +60,11 @@ public interface PopulationRule {
             @Override
             public NoticeKind refusal() {
                 return NoticeKind.POPULATION_CAP;
+            }
+
+            @Override
+            public int hints() {
+                return 0; // no house raises the cap: the AI builds none
             }
         };
     }

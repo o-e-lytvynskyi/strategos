@@ -156,6 +156,8 @@ view and the first Minecraft twist, day and night.
 | 13 | Kit resources (T4) | A kit's starting resources replace the slot's when the kit has any |
 | 15 | T5's shapes | A rule reference is `CivDef.Rule` (no separate `RuleRef`); systems reach a faction's rules by `s.civs().rules(f)`, not `MatchState.civRules()`; `PlacementRule` lives in `core.content` beside the pure `PlacementRules`, because `core.client` may not depend on `core.sim`; the load-time lint runs in the mod's `ServerTemplates` (`core.content` cannot see `core.sim.civ`); `PhaseRule` answers both `phase` and `reached(name)`, the default keeping today's exact-researched test; population, delivery and construction are placeholder ids in `RuleCatalogue.DEFAULT` until T6–T7 |
 | 16 | The centre class (T5, from T8) | `Placing`, `ClientPlacement` and `ai/Base` read the civilisation's `centreClass` in T5 with `DefeatRule`, so one civilisation never has two centre classes |
+| 17 | The AI and refusal reasons (T9a) | The AI sends commands through a `CommandSink` with no feedback, so it does not read refusal notices: it reads the same facts from state through `AiView` (population used against the rule's cap; its hints). The notices carry their reasons for the HUD. A command-result channel to the AI belongs to AI-10's manager architecture (M11) |
+| 18 | Hints (T9a) | Each seam's rule declares `hints()` (a bitmask of `AiHint`), the variants clearing their own; `CivRules` combines them at bind. Under direct delivery the farmstead stays in the build order (it reseeds fields), every other dropsite step is skipped |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -575,7 +577,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T6 (2026-11-25)
 - [x] T7 (2026-11-25)
 - [x] T8 (2026-11-25)
-- [ ] T9a
+- [x] T9a (2026-11-25)
 - [ ] T9b
 - [ ] T10
 - [ ] T11

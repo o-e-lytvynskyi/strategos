@@ -26,6 +26,14 @@ public interface ConstructionRule {
         }
     };
 
+    /**
+     * The AI hints this rule implies, a mask of {@link AiHint}s (the default needs builders). A later variant brings its
+     * own hints by overriding this method; {@link CivRules} combines the seams' masks once at bind.
+     */
+    default int hints() {
+        return AiHint.NEEDS_BUILDERS.mask();
+    }
+
     /** Called as the placement command creates foundation {@code site}, before any builder is assigned. */
     void onPlaced(MatchState s, int site);
 
@@ -47,6 +55,11 @@ public interface ConstructionRule {
             @Override
             public long progress(MatchState s, int site) {
                 return perTick;
+            }
+
+            @Override
+            public int hints() {
+                return 0; // a foundation builds itself: the AI assigns no builder
             }
         };
     }

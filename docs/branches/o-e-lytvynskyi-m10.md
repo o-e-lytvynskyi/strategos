@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 8 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 9 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T8 (2026-11-25).
-- **Next task:** T9a · CIV-05, AI-09 · The AI's hints.
+- **Last finished task:** M10 T9a (2026-11-25).
+- **Next task:** T9b · CIV-05 · The probe civilisation.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-25 — M10 T1–T8
+### 2026-11-25 — M10 T1–T9a
 
+- **M10 T9a · The AI's hints** — CIV-05 and AI-09 in progress. `AiHint` (needs housing, dropsites, builders) declared by each seam's rule (`hints()`, the variants clearing their own) and combined in `CivRules` at bind; `AiView.needs`. The managers branch on hints: no houses and a back-off at the cap without housing; no dropsite steps without drop-off (the farmstead stays, it reseeds fields); foundations placed with no crew without builders. The AI reads refusal facts from state, not notices (spec §1.6 rows 17–18). Tests: `AiHintsTest` 5 (each variant against the default AI, 3 seeds × 12 minutes, growing and never stalling; checked to fail without the change); `AiRolesTest`'s house setup moved to the default rules. No pinned hash or AI result changed; `:core:openingBalance` every criterion holds, summary identical (11.6 min). `verify verifySlow` green, 4 min 44 s.
 - **M10 T8 · Roles and the vocabulary** — CIV-05 in progress. The AI's template-id constants became the faction's civilisation roles through `MatchQueries.role` and `AiView.civRole` (house, centre, siege, ranged, cavalry; the scripts' omitted `worker`/`soldier` resolve to the `worker`/`infantry` roles at use); a missing role skips its behaviour. Guards: `CivBoundaryArchTest` (the systems' packages do not depend on `CivId`/`CivDef`; no violation existed) and `TemplateIdLiteralTest` (no template-id literal in the core's rules or client outside the built-in set and migrations). Architecture §8.9 lists the engine's 18 class tokens with their readers. Tests: `AiRolesTest` 7. No pinned hash or AI result changed; `:core:openingBalance` 1,000 matches, every criterion holds, its summary identical to the previous run (8 min 57 s). `verify verifySlow` green, 5 min 2 s.
 - **M10 T7 · Construction** — CIV-05 in progress. `ConstructionRule`: `onPlaced` (called where `PlaceBuildingRule` and `PlaceWallRule` create a foundation) and `progress` (asked by `Construction.step`); `default` is today's builder work, moved bit for bit; `self{rate}` commits the foundation at placement through `Construction.commit` (world writes, eviction) and adds a fixed work per tick with no builders, builders adding nothing; walls and gates alike; `EconomySystem` already steps every site. Tests: `ConstructionSelfTest` 6 (committed at placement, on time with no builders, walls and gates, a default faction beside it, replay and codec restore), `SeamDefaultsTest` +1, `RuleCatalogueTest` +1. No pinned hash changed. `verify verifySlow :core:soak` green, 275 s (an earlier run that overlapped another Gradle build in the same copy was red and was rerun alone, green).
 - **M10 T6 · Population and delivery** — CIV-05 in progress. `PopulationRule` owns the cap and the population part of production's reservation with its refusal: `default` (today's housing + `base` under the match maximum, HOUSING_NEEDED) and `fixed{cap}` (no houses, a new POPULATION_CAP notice, wire code 8, "Population limit reached"); the cap's every reader (production, replication, the AI) asks it. `DeliveryRule`: Gathering's six entries into GATHER_RETURNING now go through one `turnHome`; `default` walks home, `direct` credits the carry as `gathered` where the gatherer stands (conservation holds). Tests: `PopulationFixedTest` 7, `DeliveryDirectTest` 4 (both replay and restore through the save codec to the live hashes), `SeamDefaultsTest` +2, `RuleCatalogueTest` +1. No pinned hash changed. `verify` 2 min 11 s; `verifySlow :core:soak` green, 3 min 46 s. `jmhCompare` still owed on a quiet machine (Gathering is per tick).
@@ -70,6 +71,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · trial reviewer: pass — the spec review found twelve real points, each checked against the code before applying.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
+- 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-25 · The AI reads refusal facts from state, not a command-result channel, in M10 — the AI's commands have no feedback path today, and the channel belongs to AI-10's architecture in M11 — undo: add the channel in AI-10.
 - 2026-11-25 · trial implementer: pass — M10 T8, green, the opening balance compared with the previous summary.
 - 2026-11-25 · trial implementer: pass — M10 T7, green; it reported the overlapping-build red run instead of hiding it.
 - 2026-11-25 · trial implementer: pass — M10 T6, green; one follow-up round (restores through the save codec, the new wire code pinned).

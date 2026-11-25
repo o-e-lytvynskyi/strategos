@@ -293,7 +293,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The AI plays the probe civilisation and reaches Town with no houses, dropsites or builders (L1).
   3. An L3 sample reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-08, CIV-05, TECH-04 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-16 · Balance matrix
 - **Value:** Civilisations and difficulty levels stay fair as content grows (P4).

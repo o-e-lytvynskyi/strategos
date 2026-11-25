@@ -12,6 +12,7 @@ import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.civ.AiHint;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -104,6 +105,25 @@ public final class AiView {
      */
     public @Nullable TemplateId civRole(String role) {
         return q.role(new FactionSlot(faction), role);
+    }
+
+    /**
+     * Whether the rules its faction plays imply {@code hint} (CIV-05): the AI branches on this, never on a rule or a
+     * civilisation id. Every hint is set for the default civilisation.
+     */
+    public boolean needs(AiHint hint) {
+        return hint.in(q.aiHints(new FactionSlot(faction)));
+    }
+
+    /** Whether building template {@code id} takes in resources as a dropsite. */
+    public boolean isDropsite(TemplateId id) {
+        UnitTemplate t = q.templates().byId(id);
+        ValuePath p = q.templates().tokenPaths().byPath("Dropsite/resources");
+        if (t == null || p == null) {
+            return false;
+        }
+        String text = q.templates().text(t.netIndex(), p.id());
+        return text != null && !text.isBlank();
     }
 
     /** Whether its faction's civilisation uses resource {@code id}: it gathers none it does not (CIV-05). */

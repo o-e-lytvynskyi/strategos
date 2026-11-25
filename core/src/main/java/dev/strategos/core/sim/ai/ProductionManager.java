@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.Train;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.civ.AiHint;
 import java.util.List;
 
 /**
@@ -63,6 +64,8 @@ final class ProductionManager implements AiModule {
                 have[view.roleOf(t)]++;
             }
         }
+        // a fixed cap is refused with POPULATION_CAP and no house lifts it: at the cap nothing more is queued (CIV-05)
+        boolean capped = !view.needs(AiHint.NEEDS_HOUSING) && view.populationUsed() >= view.populationCap();
         BuildManager.Due due = BuildManager.due(view, script, memory);
         boolean ramWanted = false; // a ram is wanted and an arsenal stands: soldiers leave its price in the stock
         if (ram != null && battle.rams() > 0 && rams < battle.rams()) {
@@ -85,7 +88,8 @@ final class ProductionManager implements AiModule {
             if (ram != null
                     && battle.rams() > 0
                     && view.trains(b.template(), ram)) { // an arsenal trains rams, one at a time
-                if (b.queue().isEmpty()
+                if (!capped
+                        && b.queue().isEmpty()
                         && rams < battle.rams()
                         && view.affords(ram)
                         && (due == null || affordsBoth(view, ram, due))) {
@@ -94,6 +98,9 @@ final class ProductionManager implements AiModule {
                     sink.send(new Train(b.handle(), ram));
                 }
                 continue;
+            }
+            if (capped) {
+                continue; // the cap is refused whatever is queued: back off until a unit dies
             }
             if (worker != null
                     && view.trains(b.template(), worker)

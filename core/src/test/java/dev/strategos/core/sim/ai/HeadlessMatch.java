@@ -207,7 +207,24 @@ final class HeadlessMatch {
             Watcher watcher,
             boolean decided,
             PlayRules ai) {
+        return run(ground, scenario, seed, limit, scripts, watcher, decided, ai, TemplateSet.builtin(), List.of());
+    }
+
+    /** As above, over {@code set}, faction {@code k} playing {@code civs.get(k)} (the default for every one when empty). */
+    static Result run(
+            Ground ground,
+            Scenario scenario,
+            long seed,
+            long limit,
+            List<String> scripts,
+            Watcher watcher,
+            boolean decided,
+            PlayRules ai,
+            TemplateSet set,
+            List<dev.strategos.core.shared.CivId> civs) {
         SimHarness h = SimHarness.builder()
+                .templates(set)
+                .civs(civs)
                 .size(ground.size(), ground.size())
                 .yBand(0, ground.height(), 16)
                 .seed(seed)
@@ -224,7 +241,7 @@ final class HeadlessMatch {
         Scenario played = new Scenario(scenario.map(), scenario.victory(), computers);
         int[] seat = {0}; // the setup asks for each computer slot's script in slot order
         for (Command c :
-                ScenarioSetup.commands(played, ground.starts(), TemplateSet.builtin(), p -> scripts.get(seat[0]++))) {
+                ScenarioSetup.commands(played, ground.starts(), set, p -> scripts.get(seat[0]++), civs, r -> r)) {
             h.submit(PlayerSlot.ADMIN, c);
         }
         int factions = 2;

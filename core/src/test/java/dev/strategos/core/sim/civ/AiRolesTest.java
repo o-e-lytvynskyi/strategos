@@ -76,20 +76,22 @@ class AiRolesTest {
                 .toList();
     }
 
-    /** A fixed population of 8 with 7 workers: the AI would want a house at once. */
-    private static SimHarness crowded(String roles) {
-        SimHarness h = match(civ(roles, "{\"population\":{\"id\":\"fixed\",\"params\":{\"cap\":8}}}"));
-        h.submit(PlayerSlot.ADMIN, new SpawnUnits(CivScene.WORKER, new FactionSlot(0), new Vec2d(14, 14), 7, 2));
+    /** {@code workers} stand under {@code rules}: the AI would want a house at once if its rules needed them. */
+    private static SimHarness crowded(String roles, String rules, int workers) {
+        SimHarness h = match(civ(roles, rules));
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(CivScene.WORKER, new FactionSlot(0), new Vec2d(14, 14), workers, 2));
         h.step();
         return h;
     }
+
+    private static final String FIXED_8 = "{\"population\":{\"id\":\"fixed\",\"params\":{\"cap\":8}}}";
 
     private static final String HOUSING = "{\"maxWorkers\":0,\"ratio\":{},\"housingMargin\":2,\"soldierQueue\":0,"
             + "\"build\":[{\"building\":\"strategos:building/barracks\",\"population\":0}]," + ATTACK + "}";
 
     @Test
     void aCivilisationWithoutAHouseRoleBuildsNoHousesAndDoesNotStall() {
-        List<String> placed = placed(think(crowded("{\"worker\":\"strategos:unit/worker\"}"), HOUSING));
+        List<String> placed = placed(think(crowded("{\"worker\":\"strategos:unit/worker\"}", FIXED_8, 7), HOUSING));
         assertThat(placed)
                 .as("no house role: the housing branch is skipped and the build order goes on")
                 .containsExactly("strategos:building/barracks");
@@ -97,7 +99,7 @@ class AiRolesTest {
 
     @Test
     void aCivilisationWithAHouseRoleBuildsOne() {
-        List<String> placed = placed(think(crowded("{\"house\":\"strategos:building/house\"}"), HOUSING));
+        List<String> placed = placed(think(crowded("{\"house\":\"strategos:building/house\"}", "{}", 19), HOUSING));
         assertThat(placed).containsExactly("strategos:building/house");
     }
 

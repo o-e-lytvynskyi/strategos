@@ -16,6 +16,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.civ.AiHint;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.ArrayList;
@@ -67,13 +68,17 @@ final class BuildManager implements AiModule {
         TemplateId house = view.civRole(CivRoles.HOUSE); // a civilisation with no house role builds none (CIV-05)
         if (waited
                 && house != null
+                && view.needs(AiHint.NEEDS_HOUSING) // a fixed cap needs no house and no margin of free population
                 && view.populationCap() - view.populationUsed() <= script.housingMargin()
                 && !building(view, house)
                 && view.affords(house)) {
             place(view, budget, sink, base, house, ""); // no room to grow comes first
             return;
         }
-        if (waited && !script.dropsite().isEmpty() && expand(view, budget, sink, base)) {
+        if (waited
+                && !script.dropsite().isEmpty()
+                && view.needs(AiHint.NEEDS_DROPSITES)
+                && expand(view, budget, sink, base)) {
             return; // a dropsite by a far node before the build order: placed now, or the stock kept for it
         }
         int step = (int) memory.get(Slots.STEP);
@@ -81,6 +86,12 @@ final class BuildManager implements AiModule {
             StrategyScript.Step s = script.build().get(step);
             if (s.researches()) {
                 research(view, budget, sink, s, step, waited);
+                return;
+            }
+            if (superfluous(view, s.building())) {
+                memory.set(Slots.STEP, step + 1L); // a building the rules make useless is not worth its price: skipped
+                memory.set(Slots.STEP_BASE, 0);
+                memory.set(Slots.DUE_SINCE, 0);
                 return;
             }
             int count = count(view, s.building());
@@ -108,6 +119,17 @@ final class BuildManager implements AiModule {
     }
 
     /**
+     * Whether the rules its faction plays make {@code building} useless to it: a house under a fixed population, a
+     * dropsite under direct delivery (the farmstead stays: it reseeds the fields).
+     */
+    private static boolean superfluous(AiView view, TemplateId building) {
+        if (!view.needs(AiHint.NEEDS_HOUSING) && building.equals(view.civRole(CivRoles.HOUSE))) {
+            return true;
+        }
+        return !view.needs(AiHint.NEEDS_DROPSITES) && view.isDropsite(building) && !view.is(building, "Farmstead");
+    }
+
+    /**
      * AI-08: once the build order is done and Town has raised the civic centre limit above the centres it has, with the
      * stock twice the price of one (so soldiers are not starved), a second civic centre goes up on the neutral land
      * nearest the base ({@link SiteFinder#neutral}). One at a time, none while one stands unfinished.
@@ -130,18 +152,12 @@ final class BuildManager implements AiModule {
             return;
         }
         Footprint f = Footprint.of(bp, at[0], at[1], 0);
-        List<Integer> builders = nearestWorkers(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
-        if (builders.isEmpty()) {
+        UnitSet crew = crew(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
+        if (crew == null) {
             return;
         }
         budget.spend(20);
-        sink.send(new PlaceBuilding(
-                centre,
-                at[0],
-                at[1],
-                0,
-                UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray()),
-                QueueMode.REPLACE));
+        sink.send(new PlaceBuilding(centre, at[0], at[1], 0, crew, QueueMode.REPLACE));
     }
 
     /** How long the stock is kept for a due building before soldiers may have it again: a minute (AI-02). */
@@ -227,6 +243,9 @@ final class BuildManager implements AiModule {
 
     /** Every own unfinished building with no worker on its site gets the nearest one not building elsewhere. */
     private static void staff(AiView view, AiBudget budget, CommandSink sink) {
+        if (!view.needs(AiHint.NEEDS_BUILDERS)) {
+            return; // a foundation builds itself: nobody is sent to it
+        }
         for (BuildingView b : view.buildings()) {
             if (b.state() == BuildingStore.COMPLETE || budget.exhausted()) {
                 continue;
@@ -401,20 +420,13 @@ final class BuildManager implements AiModule {
                 return false; // nothing within reach now; the wait, then a look again
             }
             Footprint f = Footprint.of(bp, at[0], at[1], 0);
-            List<Integer> builders =
-                    nearestWorkers(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
-            if (builders.isEmpty()) {
+            UnitSet crew = crew(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
+            if (crew == null) {
                 return false;
             }
             memory.set(Slots.LAST_SITE, SiteFinder.pack(at[0], at[1]) + 1);
             budget.spend(20);
-            sink.send(new PlaceBuilding(
-                    template,
-                    at[0],
-                    at[1],
-                    0,
-                    UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray()),
-                    QueueMode.REPLACE));
+            sink.send(new PlaceBuilding(template, at[0], at[1], 0, crew, QueueMode.REPLACE));
             return true;
         }
         int k = (int) (memory.get(Slots.SITE) % script.sites().size());
@@ -424,8 +436,8 @@ final class BuildManager implements AiModule {
         double sz = base.z() + base.mirror() * offset.get(1);
         int x = (int) Math.floor(sx) - probe.spanX() / 2;
         int z = (int) Math.floor(sz) - probe.spanZ() / 2;
-        List<Integer> builders = nearestWorkers(view, sx, sz, 2);
-        if (builders.isEmpty()) {
+        UnitSet crew = crew(view, sx, sz, 2);
+        if (crew == null) {
             return false;
         }
         memory.set(Slots.SITE, memory.get(Slots.SITE) + 1);
@@ -434,13 +446,7 @@ final class BuildManager implements AiModule {
             return false; // AI-08: a scripted site off its land is skipped, not sent to be refused
         }
         budget.spend(20);
-        sink.send(new PlaceBuilding(
-                template,
-                x,
-                z,
-                0,
-                UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray()),
-                QueueMode.REPLACE));
+        sink.send(new PlaceBuilding(template, x, z, 0, crew, QueueMode.REPLACE));
         return true;
     }
 
@@ -476,6 +482,20 @@ final class BuildManager implements AiModule {
             }
         }
         return out;
+    }
+
+    /**
+     * The builders a placement at ({@code x}, {@code z}) sends: the {@code n} nearest workers, none when the rules need
+     * none (the foundation is placed and left); null when builders are needed and no worker is free.
+     */
+    static @org.jspecify.annotations.Nullable UnitSet crew(AiView view, double x, double z, int n) {
+        if (!view.needs(AiHint.NEEDS_BUILDERS)) {
+            return UnitSet.of();
+        }
+        List<Integer> builders = nearestWorkers(view, x, z, n);
+        return builders.isEmpty()
+                ? null
+                : UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray());
     }
 
     static List<Integer> nearestWorkers(AiView view, double x, double z, int n) {

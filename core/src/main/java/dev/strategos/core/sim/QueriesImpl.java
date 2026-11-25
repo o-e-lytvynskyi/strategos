@@ -135,6 +135,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public int aiHints(FactionSlot faction) {
+        return state.civs().rules(faction.value()).hints();
+    }
+
+    @Override
     public boolean usesResource(FactionSlot faction, String resource) {
         List<dev.strategos.core.sim.econ.ResourceDef> all =
                 state.config().rules().economy().resources();

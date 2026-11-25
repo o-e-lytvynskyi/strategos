@@ -518,7 +518,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | specified |
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | specified |
 | MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | specified |
-| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | specified |
+| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | in_progress |
 | QA-16 | Balance matrix | M | QA-12, CIV-01 | specified |
 | PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | specified |
 

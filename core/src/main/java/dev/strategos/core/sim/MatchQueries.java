@@ -137,6 +137,14 @@ public interface MatchQueries {
     /** The template {@code faction}'s civilisation gives {@code role} (CIV-05), null when it has none. */
     @Nullable TemplateId role(FactionSlot faction, String role);
 
+    /**
+     * What the rules {@code faction} plays imply for its computer player, a mask of {@code AiHint}s (CIV-05); every hint
+     * for a faction outside the match.
+     */
+    default int aiHints(FactionSlot faction) {
+        return dev.strategos.core.sim.civ.AiHint.ALL;
+    }
+
     /** Whether {@code faction}'s civilisation uses resource {@code resource} (an id of the match's economy), CIV-05. */
     boolean usesResource(FactionSlot faction, String resource);
 
