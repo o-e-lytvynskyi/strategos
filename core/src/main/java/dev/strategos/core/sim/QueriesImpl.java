@@ -135,6 +135,18 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean trains(FactionSlot faction, TemplateId building, TemplateId unit) {
+        dev.strategos.core.content.UnitTemplate b = state.templates().byId(building);
+        dev.strategos.core.content.UnitTemplate u = state.templates().byId(unit);
+        if (b == null || u == null || !state.civs().hasTemplate(faction.value(), u.netIndex())) {
+            return false;
+        }
+        int path = state.stats().tokenPath(dev.strategos.core.sim.prod.Production.TRAINER);
+        List<String> units = path < 0 ? null : state.stats().blockTokens(b.netIndex(), faction.value(), path);
+        return units != null && units.contains(unit.value());
+    }
+
+    @Override
     public int aiHints(FactionSlot faction) {
         return state.civs().rules(faction.value()).hints();
     }

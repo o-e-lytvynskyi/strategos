@@ -138,6 +138,13 @@ public interface MatchQueries {
     @Nullable TemplateId role(FactionSlot faction, String role);
 
     /**
+     * Whether a {@code building} of {@code faction} trains {@code unit}: its effective {@code Trainer/units} for that
+     * faction (technologies and civilisation bonuses included) names it, and the faction's roster has it — the rule
+     * production applies (CIV-05: the probe civilisation found the computer player reading the static list).
+     */
+    boolean trains(FactionSlot faction, TemplateId building, TemplateId unit);
+
+    /**
      * What the rules {@code faction} plays imply for its computer player, a mask of {@code AiHint}s (CIV-05); every hint
      * for a faction outside the match.
      */

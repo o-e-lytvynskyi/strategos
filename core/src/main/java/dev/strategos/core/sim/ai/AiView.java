@@ -320,20 +320,12 @@ public final class AiView {
         return false;
     }
 
-    /** Whether building template {@code building} trains unit template {@code unit}: its {@code Trainer/units}. */
+    /**
+     * Whether this faction's building template {@code building} trains unit template {@code unit}: its effective
+     * {@code Trainer/units} for the faction and its roster, the rule production applies.
+     */
     public boolean trains(TemplateId building, TemplateId unit) {
-        UnitTemplate t = q.templates().byId(building);
-        ValuePath path = q.templates().tokenPaths().byPath("Trainer/units");
-        String units = t == null || path == null ? null : q.templates().text(t.netIndex(), path.id());
-        if (units == null) {
-            return false;
-        }
-        for (String id : units.trim().split("\\s+", -1)) {
-            if (id.equals(unit.value())) {
-                return true;
-            }
-        }
-        return false;
+        return q.trains(new FactionSlot(faction), building, unit);
     }
 
     /** The building {@code u}'s current order builds, or 0 when it builds none. */

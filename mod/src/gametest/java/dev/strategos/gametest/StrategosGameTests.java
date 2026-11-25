@@ -2,6 +2,7 @@ package dev.strategos.gametest;
 
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.suites.AiSoak;
+import dev.strategos.gametest.suites.CivTests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -305,6 +306,12 @@ public final class StrategosGameTests {
     @AfterBatch(batch = "ai_battle")
     public static void afterAiBattle(ServerLevel level) {
         afterBatch(level, "ai_battle");
+    }
+
+    @AfterBatch(batch = "civ_two")
+    public static void afterCivTwo(ServerLevel level) {
+        afterBatch(level, "civ_two");
+        CivTests.unloadProbe();
     }
 
     @AfterBatch(batch = "ai_economy")

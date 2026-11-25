@@ -63,7 +63,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. A match where the factions play different civilisations (the default and the probe) runs in a GameTest (L3).
   5. Old saves and journals load as the default civilisation, and every pinned hash holds (L1).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** DATA-03, MATCH-02 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-25 — 1 `CivDefLoadTest`, `CivLintTest`, `ShippedCivsTest` (L2); 2 `CivRosterTest`; 3 `CivBonusBreakdownTest`; 4 `civtests.two_civilisations` (the default against the probe in the GameTest server); 5 `DefaultCivCompatibilityTest` and every M0–M9 pinned hash, replay and the opening balance unchanged. M10 T2–T4, T9b.
 
 #### CIV-05 · Civilisation rules: gameplay that differs
 - **Value:** Later civilisations can play differently — no houses, no drop-off, buildings that raise themselves,
@@ -84,7 +85,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
      core's rules outside the built-in set and migrations (L0).
   5. The probe lives in the test fixtures only (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** CIV-01 · **Size:** L · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-25 — 1 `SeamDefaultsTest`, `RestoreEqualsLiveTest` and every pinned seeded hash unchanged; 2 `PopulationFixedTest`, `DeliveryDirectTest`, `ConstructionSelfTest`, `SeamVariantsTest`; 3 `ProbeMatchesTest` (20 seeds, journals replayed, four restored mid-match through the save codec) and `AiProbeTest` (Town with no house, dropsite or builder); 4 `CivBoundaryArchTest`, `TemplateIdLiteralTest`; 5 `ProbeFixtureTest`. ADR-0028 Accepted. M10 T5–T9b.
 
 #### CIV-02 · Civilisation 2: roster, bonuses and abilities
 - **Value:** A second people that plays differently, not just in another colour (P4).

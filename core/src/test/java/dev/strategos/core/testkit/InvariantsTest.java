@@ -204,6 +204,14 @@ class InvariantsTest {
         }
 
         @Override
+        public boolean trains(
+                FactionSlot faction,
+                dev.strategos.core.shared.TemplateId building,
+                dev.strategos.core.shared.TemplateId unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public boolean usesResource(FactionSlot faction, String resource) {
             throw new UnsupportedOperationException();
         }

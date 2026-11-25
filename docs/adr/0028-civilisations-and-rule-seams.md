@@ -4,7 +4,7 @@ Date: 2026-11-25
 
 ## Status
 
-Proposed (M10 T2); becomes Accepted when M10's probe civilisation passes (T9b). Amends ADR-0010 (the match
+Accepted (2026-11-25, M10 T9b: the probe civilisation plays, replays and needed no production edit outside `core.sim.civ` but one, recorded under Consequences). Amends ADR-0010 (the match
 configuration gains each faction's civilisation) and ADR-0021 (delivery and construction become per-faction
 rules). Implements what ADR-0012 and ADR-0013 left open: the `civs` content kind and the civilisation bonus as a
 faction modifier.
@@ -82,13 +82,18 @@ faction modifier.
   dropsites, needs builders, …), so a new variant brings its hints with it; `AiView` exposes them and the roles, and
   refusals carry a reason the AI can read and back off from. Strategy scripts are chosen per civilisation and
   level. A mechanic the AI has never met still needs AI work — but in one manager, not across the AI.
-- **A probe civilisation proves the foundation.** It lives in test resources only (the core's fixtures and the
-  GameTest pack), never in `src/main`, uses every non-default
+- **A probe civilisation proves the foundation.** Its files are test resources the tests load themselves
+  (`mod/src/gametest/resources/probe/`, outside any data pack, which the mod's L2 tests would otherwise see),
+  never in `src/main`, uses every non-default
   variant and its own start kit, and is played by the AI in seeded headless matches whose journals replay. If adding
   it ever needs an edit outside `core.sim.civ`, the foundation has failed its test.
 
 ## Consequences
 
+- **What the probe found** (M10 T9b): the computer player read a building's static `Trainer/units`, so a
+  civilisation bonus adding a unit to a building was invisible to it. The AI now asks `MatchQueries.trains`, the
+  faction's effective list and roster — the rule production applies. Every future AI read of content should go
+  through the faction's effective stats for the same reason.
 - M10's default civilisation must be invisible in play: every pinned hash, golden and replay of M0–M9 stays as it
   is. That is the first acceptance check of the seams.
 - Likely next seams, not built in M10: the production model (what trains where, spawning without buildings),

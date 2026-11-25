@@ -1,0 +1,9 @@
+{
+  "parent": "strategos:unit/infantry",
+  "Identity": { "name": "strategos.unit.probe_infantry", "classes": "+Gatherer" },
+  "ResourceGatherer": {
+    "rates": { "food": { "fruit": 0.5, "grain": 0.25, "meat": 0.5 }, "wood": { "tree": 0.4 }, "stone": { "rock": 0.25 }, "iron": { "ore": 0.2 } },
+    "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
+    "slaughter": 1
+  }
+}

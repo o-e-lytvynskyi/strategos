@@ -36,7 +36,7 @@ governs.
 | [0025](0025-commands-into-unexplored-cells.md) | Movement positions may be unexplored; placement, node targets and the observer still need explored cells | Proposed (M6 spec) | 2026-10-25 | §7 |
 | [0026](0026-perf-measurement-validity.md) | Perf-measurement validity: attribution before a fix, per-second cumulative foreign-load telemetry, a run invalid above `min(10 %, 0.9/N)` foreign load (GameTest and JMH) | Accepted (#22) | 2026-10-30 | §16 |
 | [0027](0027-save-template-identities.md) | Stable save identities, conservative legacy migration and reload boundary validation | Accepted | 2026-10-29 | §5.8, §8.4 |
-| [0028](0028-civilisations-and-rule-seams.md) | Civilisations are content bound per faction; gameplay rules vary through a closed catalogue of seams | Proposed (M10 T2) | 2026-11-25 | §8.9 |
+| [0028](0028-civilisations-and-rule-seams.md) | Civilisations are content bound per faction; gameplay rules vary through a closed catalogue of seams | Accepted (M10 T9b) | 2026-11-25 | §8.9 |
 
 ## Pending measurements
 

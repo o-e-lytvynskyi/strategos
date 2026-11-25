@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 9 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 10 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T9a (2026-11-25).
-- **Next task:** T9b · CIV-05 · The probe civilisation.
+- **Last finished task:** M10 T9b (2026-11-25).
+- **Next task:** T10 · UNIT-10 · Abilities in the core.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-25 — M10 T1–T9a
+### 2026-11-25 — M10 T1–T9b
 
+- **M10 T9b · The probe civilisation** — CIV-01 and CIV-05 **done**; ADR-0028 Accepted. `strategos:probe` in test resources only (`mod/src/gametest/resources/probe/`): a fixed cap of 60, direct delivery, self-building, no house or storehouse, citizen-soldier infantry by template inheritance, its own barracks, kit, bonus and AI script. `ProbeMatchesTest` (3 seeds × 8 min in `verify`, 8 s; 20 seeds × 20 min `slow`, 130 s; every journal replayed, four restored mid-match through the save codec), `AiProbeTest` (Town with no house, dropsite or builder), `ProbeFixtureTest`, `civtests.two_civilisations` (the default against the probe in the GameTest server). The probe needed no production edit but one, which it found: the AI read a building's static trainer list, now `MatchQueries.trains` (effective list and roster; `AiTrainsEffectiveTest`; hash-neutral). `verify verifySlow` green, 304 s; `:core:openingBalance` every criterion holds, summary identical (535 s).
 - **M10 T9a · The AI's hints** — CIV-05 and AI-09 in progress. `AiHint` (needs housing, dropsites, builders) declared by each seam's rule (`hints()`, the variants clearing their own) and combined in `CivRules` at bind; `AiView.needs`. The managers branch on hints: no houses and a back-off at the cap without housing; no dropsite steps without drop-off (the farmstead stays, it reseeds fields); foundations placed with no crew without builders. The AI reads refusal facts from state, not notices (spec §1.6 rows 17–18). Tests: `AiHintsTest` 5 (each variant against the default AI, 3 seeds × 12 minutes, growing and never stalling; checked to fail without the change); `AiRolesTest`'s house setup moved to the default rules. No pinned hash or AI result changed; `:core:openingBalance` every criterion holds, summary identical (11.6 min). `verify verifySlow` green, 4 min 44 s.
 - **M10 T8 · Roles and the vocabulary** — CIV-05 in progress. The AI's template-id constants became the faction's civilisation roles through `MatchQueries.role` and `AiView.civRole` (house, centre, siege, ranged, cavalry; the scripts' omitted `worker`/`soldier` resolve to the `worker`/`infantry` roles at use); a missing role skips its behaviour. Guards: `CivBoundaryArchTest` (the systems' packages do not depend on `CivId`/`CivDef`; no violation existed) and `TemplateIdLiteralTest` (no template-id literal in the core's rules or client outside the built-in set and migrations). Architecture §8.9 lists the engine's 18 class tokens with their readers. Tests: `AiRolesTest` 7. No pinned hash or AI result changed; `:core:openingBalance` 1,000 matches, every criterion holds, its summary identical to the previous run (8 min 57 s). `verify verifySlow` green, 5 min 2 s.
 - **M10 T7 · Construction** — CIV-05 in progress. `ConstructionRule`: `onPlaced` (called where `PlaceBuildingRule` and `PlaceWallRule` create a foundation) and `progress` (asked by `Construction.step`); `default` is today's builder work, moved bit for bit; `self{rate}` commits the foundation at placement through `Construction.commit` (world writes, eviction) and adds a fixed work per tick with no builders, builders adding nothing; walls and gates alike; `EconomySystem` already steps every site. Tests: `ConstructionSelfTest` 6 (committed at placement, on time with no builders, walls and gates, a default faction beside it, replay and codec restore), `SeamDefaultsTest` +1, `RuleCatalogueTest` +1. No pinned hash changed. `verify verifySlow :core:soak` green, 275 s (an earlier run that overlapped another Gradle build in the same copy was red and was rerun alone, green).
@@ -72,6 +73,9 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-25 · trial implementer: pass — M10 T9b, green; it kept to the stop rule and reported the AI gap and the resource-location constraint instead of editing production code.
+- 2026-11-25 · The probe's files sit outside any data pack, loaded by the tests themselves (spec §1.6 row 19) — a pack in the gametest resources would be seen by the mod's L2 tests and break the shipped-set pins — undo: teach the L2 tests to ignore gametest resources.
+- 2026-11-25 · The probe's 20-seed test asserts Town in at least 10 of 20 matches in 20 minutes (15 of 20 in the 30-minute scratch run), and `AiProbeTest` asserts Town on its seeds — a health check of the AI on the probe, not a balance target — undo: raise the band.
 - 2026-11-25 · The AI reads refusal facts from state, not a command-result channel, in M10 — the AI's commands have no feedback path today, and the channel belongs to AI-10's architecture in M11 — undo: add the channel in AI-10.
 - 2026-11-25 · trial implementer: pass — M10 T8, green, the opening balance compared with the previous summary.
 - 2026-11-25 · trial implementer: pass — M10 T7, green; it reported the overlapping-build red run instead of hiding it.

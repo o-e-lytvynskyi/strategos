@@ -13,7 +13,7 @@ merged in (M9 is handed in, [PR #58](https://github.com/o-e-lytvynskyi/strategos
 
 As M9 §0.1: the architecture and the ADRs decide *what*, this spec *how M10 builds it*; the cards define scope and
 acceptance; ROADMAP.md holds the statuses; a disagreement is a §1.6 row. The civilisation layer is
-[ADR-0028](../adr/0028-civilisations-and-rule-seams.md) (Proposed in T2, Accepted at T9).
+[ADR-0028](../adr/0028-civilisations-and-rule-seams.md) (Accepted at T9b).
 
 **M10 stacks on M9.** Until #58 merges, this branch carries M9's commits; `origin/main` is merged in when it lands.
 **M7 is not merged** and is not needed: ART-04 moves to M14 with CIV-02; the per-player views of the new content
@@ -158,6 +158,8 @@ view and the first Minecraft twist, day and night.
 | 16 | The centre class (T5, from T8) | `Placing`, `ClientPlacement` and `ai/Base` read the civilisation's `centreClass` in T5 with `DefeatRule`, so one civilisation never has two centre classes |
 | 17 | The AI and refusal reasons (T9a) | The AI sends commands through a `CommandSink` with no feedback, so it does not read refusal notices: it reads the same facts from state through `AiView` (population used against the rule's cap; its hints). The notices carry their reasons for the HUD. A command-result channel to the AI belongs to AI-10's manager architecture (M11) |
 | 18 | Hints (T9a) | Each seam's rule declares `hints()` (a bitmask of `AiHint`), the variants clearing their own; `CivRules` combines them at bind. Under direct delivery the farmstead stays in the build order (it reseeds fields), every other dropsite step is skipped |
+| 19 | The probe's files (T9b) | `mod/src/gametest/resources/probe/` (civilisation, a citizen-soldier infantry and its barracks by template inheritance, an AI script), outside any data pack: the gametest source set is on the mod's L2 test classpath, where a pack would break the shipped-set pins. Core tests load them through `ProbeCiv`; `civtests.two_civilisations` loads them into the GameTest server and restores the pack's set after its batch. Its bonus is two entries (a wood-rate bonus for every gatherer, its barracks on the workers' list) |
+| 20 | What the probe found (T9b) | The AI read a building's static `Trainer/units`; it now asks `MatchQueries.trains` (the faction's effective list and roster, as production does) — the one production edit outside `core.sim.civ` the probe needed; hash-neutral, since no shipped technology edits trainer lists (`AiTrainsEffectiveTest`) |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -578,7 +580,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T7 (2026-11-25)
 - [x] T8 (2026-11-25)
 - [x] T9a (2026-11-25)
-- [ ] T9b
+- [x] T9b (2026-11-25)
 - [ ] T10
 - [ ] T11
 - [ ] T12

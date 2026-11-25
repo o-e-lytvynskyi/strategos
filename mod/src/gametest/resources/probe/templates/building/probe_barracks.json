@@ -1,0 +1,5 @@
+{
+  "parent": "strategos:building/barracks",
+  "Identity": { "name": "strategos.building.probe_barracks" },
+  "Trainer": { "units": "strategos:unit/probe_infantry strategos:unit/archer strategos:unit/horseman" }
+}

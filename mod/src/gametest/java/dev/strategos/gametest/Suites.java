@@ -9,6 +9,7 @@ import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.BuildingTests;
 import dev.strategos.gametest.suites.CameraTests;
 import dev.strategos.gametest.suites.CaptureTests;
+import dev.strategos.gametest.suites.CivTests;
 import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
 import dev.strategos.gametest.suites.ConstructionTests;
@@ -70,6 +71,7 @@ public final class Suites {
                         CameraTests.class,
                         CaptureTests.class,
                         ReplicationTests.class,
+                        CivTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
                         GarrisonTests.class,
