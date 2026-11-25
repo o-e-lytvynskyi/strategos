@@ -9,6 +9,11 @@ on:
     branches: [main]
     types: [labeled, synchronize]
   workflow_dispatch:
+    inputs:
+      dependency_cache_run:
+        description: Optional successful same-branch full-ci producer of cloud-gradle-modules
+        type: string
+        default: ''
 
 concurrency:
   group: full-ci-${{ github.event.pull_request.number || github.ref }}
@@ -30,6 +35,10 @@ jobs:
 
   nightly:
     needs: validate-harness
+    permissions:
+      contents: read
+      checks: write
+      actions: read
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -42,6 +51,22 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
+      - name: Validate optional dependency producer
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 tools/ci_dependency_cache.py validate --run "$CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: ${{ inputs.dependency_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
       # Preserve machine-load evidence even when the server times out before producing its final XML report.
       - name: slow and core replay soak
         run: |

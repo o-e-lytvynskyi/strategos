@@ -47,6 +47,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-25 — Verify the shipped team skirmish and optimize map import
+
+Team Skirmish ships four mirrored starts and a two-human, two-computer lobby preset beside the existing First Skirmish. Cloud Verify 45644492870 passed. Canonical L4 45646136029 matched all seven normal frames and rejected all seven altered controls. The local production-jar playtest opened the four-seat lobby. The first attempt lost its second client to native Java memory pressure, and the second attempt was interrupted before match start.
+
+Slow/Soak 45643899913 did not meet the ten-second admission gate. The arena import completed about 10.5 seconds after the test requested start and logged 6.660 seconds in the importer. The final retry message of 92.207 seconds did not report first-admission time. Commit `e1996f19` streams the foundation merge without temporary block records or a mixed sort, preserving the exact Y/X/Z order and the fluid pass. The GameTest samples the same deadline immediately after both clients receive admission. Verify 45648866416 was dispatched on that commit. Slow/Soak and live acceptance are pending.
+
 ### 2026-11-25 — Record partial two-client acceptance
 
 The owner confirmed match start, opponent isolation observations, shared-faction orders and reconnect on the dedicated arena. The server recorded a 219-second rejoin interval. Physical structures visible above shroud follow the existing FOW-06 limitation. The dedicated pause command behaved as expected under MATCH-05. Separate alliance victory and Open to LAN remain open, along with any unreported per-client details. See the [acceptance record](../testing/m7-multiplayer.md#acceptance-record).
