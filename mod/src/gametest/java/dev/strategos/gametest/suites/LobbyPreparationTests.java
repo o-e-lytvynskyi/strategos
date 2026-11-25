@@ -271,8 +271,6 @@ public final class LobbyPreparationTests {
         });
         h.startSequence()
                 .thenWaitUntil(() -> {
-                    long elapsed = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-                    check(elapsed < 10_000, "team skirmish exceeded ten seconds: " + elapsed + " ms");
                     check(service.snapshot().state() == LobbyService.State.STARTED, "team skirmish not started");
                     for (MockViewer viewer : List.of(host, peer)) {
                         check(
@@ -282,6 +280,8 @@ public final class LobbyPreparationTests {
                     }
                 })
                 .thenExecute(() -> {
+                    long elapsed = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+                    check(elapsed < 10_000, "team skirmish exceeded ten seconds: " + elapsed + " ms");
                     var queries = core(rt).queries();
                     var diplomacy = queries.diplomacy();
                     check(
