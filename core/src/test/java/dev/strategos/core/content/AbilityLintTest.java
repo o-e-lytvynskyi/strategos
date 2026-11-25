@@ -343,15 +343,15 @@ class AbilityLintTest {
     }
 
     @Test
-    void aSetWithoutAbilitiesIsWhatItWas() {
+    void theBuiltInSetKeepsItsHorsemanAndAddsTheHealer() {
         TemplateSet builtin = TemplateSet.builtin();
-        assertThat(builtin.abilities()).extracting(AbilityDef::id).containsExactly("charge");
+        assertThat(builtin.abilities()).extracting(AbilityDef::id).containsExactly("charge", "heal");
         assertThat(builtin.abilitiesOf(
                         java.util.Objects.requireNonNull(builtin.byId(new TemplateId("strategos:unit/horseman")))
                                 .netIndex()))
                 .extracting(AbilityDef::id)
                 .containsExactly("charge");
-        assertThat(builtin.hasAutocast()).isFalse();
+        assertThat(builtin.hasAutocast()).as("the healer heals by itself").isTrue();
         assertThat(builtin.abilitiesOf(0)).isEmpty();
         assertThat(builtin.abilitiesOf(-1)).isEmpty();
     }
@@ -360,6 +360,6 @@ class AbilityLintTest {
     void theVocabularyTheLintTeachesIsClosed() {
         assertThat(AbilityKinds.effects())
                 .containsExactly("apply_modifiers", "capture_strength", "damage", "heal", "spawn", "teleport");
-        assertThat(AbilityKinds.pickers()).containsExactly("nearest_enemy_in_range", "self");
+        assertThat(AbilityKinds.pickers()).containsExactly("most_wounded_ally", "nearest_enemy_in_range", "self");
     }
 }

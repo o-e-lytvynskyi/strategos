@@ -22,6 +22,7 @@ public final class PlaceholderBlueprints {
     public static final String TOWER = "strategos:tower";
     public static final String SENTRY_TOWER = "strategos:sentry_tower";
     public static final String ARSENAL = "strategos:arsenal";
+    public static final String TEMPLE = "strategos:temple";
     public static final String PALISADE = "strategos:palisade";
     public static final String PALISADE_GATE = "strategos:palisade_gate";
     public static final String QUARRY = "strategos:quarry";
@@ -45,6 +46,7 @@ public final class PlaceholderBlueprints {
                 palisade(),
                 palisadeGate(),
                 arsenal(),
+                temple(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
                 deposit(IRON_MINE, 3, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
@@ -298,6 +300,36 @@ public final class PlaceholderBlueprints {
             g.set(x, 4, 0, 3);
         }
         return g.blueprint(ARSENAL, 5, 1, 0);
+    }
+
+    /**
+     * 9 x 7 x 9 (CMB-12): quartz-brick walls on a polished base, a white-terracotta roof with a ridge, chiseled
+     * pillars at the corners and a doorway three wide and three high on the north side.
+     */
+    public static Blueprint temple() {
+        Grid g = new Grid(
+                9,
+                7,
+                9,
+                List.of(
+                        "minecraft:polished_andesite",
+                        "minecraft:quartz_bricks",
+                        "minecraft:white_terracotta",
+                        "minecraft:chiseled_quartz_block"));
+        g.fill(0, 0, 0, 8, 0, 8, 0);
+        for (int y = 1; y <= 4; y++) {
+            g.ring(0, y, 0, 8, 8, 1);
+        }
+        for (int y = 1; y <= 4; y++) { // a pillar at each corner
+            g.set(0, y, 0, 3);
+            g.set(8, y, 0, 3);
+            g.set(0, y, 8, 3);
+            g.set(8, y, 8, 3);
+        }
+        g.clear(3, 1, 0, 5, 3, 0); // the doorway
+        g.fill(0, 5, 0, 8, 5, 8, 2);
+        g.fill(1, 6, 1, 7, 6, 7, 2);
+        return g.blueprint(TEMPLE, 4, 1, 0);
     }
 
     /** 9 x 6 x 7: mud-brick walls on cobblestone, a crimson-plank roof and a ridge. */

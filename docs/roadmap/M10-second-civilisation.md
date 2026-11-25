@@ -182,7 +182,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   3. Siege engines and buildings can't be healed (L1).
   4. A heal works in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-05, BLD-10, UNIT-10 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-25 — 1 `HealRateTest` (per use, per second, capped at max HP, numbers read from the data); 2 `HealTargetTest` (the largest share lost in range, ties by handle); 3 `HealFilterTest` (siege engines, walkers and buildings are not healed); 4 `healtests.healer_heals`; garrison healing in the temple (`GarrisonHealTest`). M10 T13.
 
 #### CMB-13 · Loot
 - **Value:** Winning a fight pays (P4).

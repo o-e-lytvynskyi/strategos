@@ -17,7 +17,9 @@
     "field": "strategos:building/field",
     "storehouse": "strategos:building/storehouse",
     "wall": "strategos:building/palisade",
-    "gate": "strategos:building/palisade_gate"
+    "gate": "strategos:building/palisade_gate",
+    "temple": "strategos:building/temple",
+    "healer": "strategos:unit/healer"
   },
   "start": {
     "resources": { "food": 300, "stone": 100, "iron": 100 },

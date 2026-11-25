@@ -158,7 +158,7 @@ approved roadmap; ideas go to "For the owner" as proposals.
    - `./gradlew :core:balanceSheet` after changing a template number, a relationship or a
      provenance note: `BalanceSheetTest` fails while `docs/balance/` is stale. A new number needs
      its provenance note in `strategos/balance/provenance.json` in the same change;
-   - `./gradlew :mod:test --tests '*BlueprintFilesTest*' -Dstrategos.blueprints.update=true` after
+   - `./gradlew :mod:test --tests '*BlueprintFilesTest*' -Pblueprints.update=true` after
      changing a placeholder blueprint in `PlaceholderBlueprints`: it rewrites the shipped `.nbt`
      files, and the template set's pinned SHA in `TemplateSetTest` changes with it.
 

@@ -129,7 +129,7 @@ final class AbilityFixtures {
         return spawn(h, new TemplateId("strategos:unit/ram"), faction, x, z);
     }
 
-    private static int spawn(SimHarness h, TemplateId template, FactionSlot faction, double x, double z) {
+    static int spawn(SimHarness h, TemplateId template, FactionSlot faction, double x, double z) {
         h.submit(PlayerSlot.ADMIN, new SpawnUnits(template, faction, new Vec2d(x, z), 1, 0));
         return h.step().events().stream()
                 .filter(UnitCreated.class::isInstance)

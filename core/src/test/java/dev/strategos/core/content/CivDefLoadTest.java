@@ -170,7 +170,7 @@ class CivDefLoadTest {
         assertThat(def.phases()).hasSize(3);
         assertThat(def.roster()).isEqualTo(CivDef.Roster.ALL);
         assertThat(def.centreClass()).isEqualTo("CivicCentre");
-        assertThat(def.roles().byRole()).hasSize(14);
+        assertThat(def.roles().byRole()).hasSize(16);
         assertThat(def.start().resources()).containsOnlyKeys("food", "iron", "stone");
         assertThat(def.bonuses()).isEmpty();
         assertThat(def.rules()).isEmpty();

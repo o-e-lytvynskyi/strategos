@@ -356,6 +356,49 @@ final class BuiltinTemplates {
               "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
             }
             """;
+    static final String TEMPLE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.temple", "icon": "minecraft:golden_apple", "classes": "+Temple" },
+              "Building": { "blueprint": "strategos:temple" },
+              "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
+              "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
+              "Health": { "max": 1200 },
+              "GarrisonHolder": { "capacity": 10, "classes": "Worker Infantry Healer", "heal": 3 },
+              "Cost": { "resources": { "wood": 100, "stone": 200 }, "time": 80 },
+              "Trainer": { "units": "strategos:unit/healer", "batchExponent": 0.8 }
+            }
+            """;
+    static final String HEALER = """
+            {
+              "parent": "strategos:template/unit_base",
+              "Identity": { "name": "strategos.unit.healer", "icon": "minecraft:glistering_melon_slice", "classes": "+Healer +Organic" },
+              "Promotion": { "value": 130 },
+              "Capture": { "strength": 1.0 },
+              "Health": { "max": 60 },
+              "Behaviour": { "flee": 8, "stance": "passive" },
+              "Attack": { "Melee": { "hack": 1, "reach": 1.2, "prepare": 10, "repeat": 20 } },
+              "Abilities": {
+                "heal": {
+                  "target": "unit",
+                  "range": 12,
+                  "cooldown": 40,
+                  "autocast": true,
+                  "pick": "most_wounded_ally",
+                  "icon": "minecraft:glistering_melon_slice",
+                  "effects": [
+                    { "kind": "heal", "params": { "amount": 5 } }
+                  ]
+                }
+              },
+              "Cost": {
+                "resources": { "food": 100, "iron": 30 },
+                "population": 1,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training a healer takes as long as drilling a spearman" }
+              },
+              "Body": { "skin": "strategos:units/worker" }
+            }
+            """;
     static final String RAM = """
             {
               "parent": "strategos:template/unit_base",
@@ -505,11 +548,11 @@ final class BuiltinTemplates {
                 { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
                 { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
                 { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
-                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" },
+                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal +strategos:building/temple", "filter": "Builder" },
                 { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
                 { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" }
               ],
-              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple"]
             }
             """;
 
@@ -593,7 +636,9 @@ final class BuiltinTemplates {
             new TemplateId("strategos:unit/ram"),
             new TemplateId("strategos:building/sentry_tower"), // M9 T11
             new TemplateId("strategos:building/palisade"), // M9 T13
-            new TemplateId("strategos:building/palisade_gate")));
+            new TemplateId("strategos:building/palisade_gate"),
+            new TemplateId("strategos:building/temple"), // M10 T13
+            new TemplateId("strategos:unit/healer")));
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -631,7 +676,9 @@ final class BuiltinTemplates {
                 "field": "strategos:building/field",
                 "storehouse": "strategos:building/storehouse",
                 "wall": "strategos:building/palisade",
-                "gate": "strategos:building/palisade_gate"
+                "gate": "strategos:building/palisade_gate",
+                "temple": "strategos:building/temple",
+                "healer": "strategos:unit/healer"
               },
               "start": {
                 "resources": { "food": 300, "stone": 100, "iron": 100 },
@@ -720,6 +767,8 @@ final class BuiltinTemplates {
                     raw("strategos:building/sentry_tower", SENTRY_TOWER)); // on the Village worker's list (BLD-12)
             templates.add(raw("strategos:building/palisade", PALISADE)); // BLD-13
             templates.add(raw("strategos:building/palisade_gate", PALISADE_GATE));
+            templates.add(raw("strategos:building/temple", TEMPLE)); // CMB-12
+            templates.add(raw("strategos:unit/healer", HEALER));
         }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 templates,

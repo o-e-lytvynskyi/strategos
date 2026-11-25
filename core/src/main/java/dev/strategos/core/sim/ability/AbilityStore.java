@@ -47,6 +47,7 @@ public final class AbilityStore {
     private @Nullable TemplateSet cachedFor;
     private Compiled[] compiled = new Compiled[0]; // by ability index in cachedFor, null until first used
     private @Nullable UnitFilter[] enemies = new UnitFilter[0]; // by faction
+    private final AbilityTargets.WoundedScan wounded = new AbilityTargets.WoundedScan();
     private boolean moved; // a unit was put elsewhere since the spatial grid was last rebuilt
 
     public boolean empty() {
@@ -147,6 +148,11 @@ public final class AbilityStore {
             enemies[faction] = filter;
         }
         return filter;
+    }
+
+    /** The scratch the {@code most_wounded_ally} picker scans with, made once. */
+    AbilityTargets.WoundedScan woundedScan() {
+        return wounded;
     }
 
     /** A unit was put elsewhere: the spatial grid is out of date until it is rebuilt. */

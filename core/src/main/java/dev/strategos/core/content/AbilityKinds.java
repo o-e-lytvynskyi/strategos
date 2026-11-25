@@ -23,8 +23,13 @@ public final class AbilityKinds {
     public static final String CAPTURE_STRENGTH = "capture_strength";
     public static final String TELEPORT = "teleport";
 
-    /** Target pickers (autocast): the user itself, the nearest enemy within the ability's range. */
+    /**
+     * Target pickers (autocast): the user itself, the nearest enemy within the ability's range, the ally within it
+     * that lost the largest share of its hit points.
+     */
     public static final String SELF = "self";
+
+    public static final String MOST_WOUNDED_ALLY = "most_wounded_ally";
 
     public static final String NEAREST_ENEMY_IN_RANGE = "nearest_enemy_in_range";
 
@@ -56,7 +61,7 @@ public final class AbilityKinds {
 
     /** The target pickers, ascending. */
     public static List<String> pickers() {
-        return List.of(NEAREST_ENEMY_IN_RANGE, SELF);
+        return List.of(MOST_WOUNDED_ALLY, NEAREST_ENEMY_IN_RANGE, SELF);
     }
 
     /** Whether {@code kind} holds for a duration, whose modifiers the timed store takes back. */
@@ -79,7 +84,7 @@ public final class AbilityKinds {
     static List<Aim> pickerAims(String picker) {
         return switch (picker) {
             case SELF -> List.of(Aim.NONE, Aim.UNIT, Aim.AREA);
-            case NEAREST_ENEMY_IN_RANGE -> List.of(Aim.POINT, Aim.UNIT, Aim.AREA);
+            case NEAREST_ENEMY_IN_RANGE, MOST_WOUNDED_ALLY -> List.of(Aim.POINT, Aim.UNIT, Aim.AREA);
             default -> List.of();
         };
     }

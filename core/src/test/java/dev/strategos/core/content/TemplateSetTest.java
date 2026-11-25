@@ -36,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(24);
+        assertThat(set.all()).hasSize(26);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -175,7 +175,7 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(24)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(26)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge;
@@ -195,7 +195,7 @@ class TemplateSetTest {
     // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10); M9 T11: the sentry tower,
     // its blueprint, its place on the Village worker's list and its Upgrade (BLD-12); M9 T13: the palisade and its
     // gate, the worker's list (BLD-13). Rebaselined after merging M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "f6f3bf00662fca30f8a8693157ed57f870b8fb34ab793295b1854883a8784573";
+    private static final String BUILTIN_VERSION = "a1bfc575b7ccf14a23f64d35dfafc97242863e92477c6ab55af2b285aee24d77";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

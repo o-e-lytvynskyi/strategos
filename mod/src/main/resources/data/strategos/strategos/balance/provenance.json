@@ -290,6 +290,38 @@
     "Capturable/regen": "Ten a second: as the barracks (CMB-10)",
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
+  "strategos:building/temple": {
+    "Health/max": "Twelve hundred: as a barracks, a stone hall: worth a raid but not the first thing a raid breaks, so the army's wounded have somewhere to rest (CMB-12)",
+    "Cost/resources/wood": "A hundred wood: the roof beams and the benches, half an arsenal's (CMB-12)",
+    "Cost/resources/stone": "Two hundred stone: the dearest stone bill of the Town buildings, a hall of quartz, so healing is bought from the quarry as the tower and the arsenal are (CMB-12, D-12)",
+    "Cost/time": "Eighty seconds for one builder: between the tower's seventy-five and the arsenal's ninety, the army's rest is raised after its barracks, not before (CMB-12)",
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "Capturable/points": "Eight hundred: as the barracks (CMB-10)",
+    "Capturable/regen": "Ten a second: as the barracks (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)",
+    "GarrisonHolder/capacity": "Ten inside, workers, foot soldiers and healers: a temple rests a company, where the civic centre's twenty shelters a town (BLD-10, CMB-12)",
+    "GarrisonHolder/heal": "Three hit points a second for each unit inside, three times the civic centre's one: 0 A.D.'s temple heals garrisoned units 3 HP/s against the centre's 1 (research mechanics, garrisons), so a wounded squad is whole again in about half a minute, but only by leaving the field (BLD-10, CMB-12)"
+  },
+  "strategos:unit/healer": {
+    "Health/max": "Sixty: a little above a worker's fifty and well under a spearman's hundred: a healer behind the line is reached only once the line is broken, and then dies quickly (CMB-12)",
+    "Behaviour/flee": "Eight blocks from a blow, as a worker: a healer runs rather than fights (CMB-12)",
+    "Behaviour/stance": "Passive: a healer never picks a fight; it heals, and hit, it runs from the blow (CMB-05, CMB-12)",
+    "Attack/Melee/hack": "One hack, a third of a spearman's three: a staff to push off a straggler, no threat to a soldier (CMB-12)",
+    "Attack/Melee/reach": "A block and a fifth, as the spearman's reach (CMB-12)",
+    "Attack/Melee/prepare": "Ten ticks, as the spearman's wind-up (CMB-12)",
+    "Attack/Melee/repeat": "A blow a second, as the spearman's rhythm (CMB-12)",
+    "Cost/resources/food": "A hundred food: 0 A.D.'s healer costs 100 food (research mechanics, healing), dearer than a spearman's sixty, since a healer is worth keeping alive (CMB-12)",
+    "Cost/resources/iron": "Thirty iron: 0 A.D.'s healer costs 30 metal (research mechanics, healing), as a horseman, so an army's healers are a deliberate buy of the scarcest resource (CMB-12)",
+    "Cost/population": "One house's room for one healer, as for a foot soldier",
+    "Capture/strength": "One a second, as a worker: a healer helps to take an empty house, slowly, and no more (CMB-10, CMB-12)",
+    "Promotion/value": "A hundred and thirty: food 100 plus iron 30, what it costs to replace: the sum of its resource cost, so a kill is worth the price of the fallen (CMB-11)",
+    "Abilities/heal/range": "Twelve blocks: 0 A.D.'s healer reaches 12 m (research mechanics, healing), short of an archer's twenty, so a healer stands behind its line and reaches most of a squad around it (CMB-12)",
+    "Abilities/heal/cooldown": "Forty ticks, two seconds: 0 A.D.'s healer heals every 2 s (research mechanics, healing); one healer mends one unit at a time, so a squad needs several (CMB-12)",
+    "Abilities/heal/effects": "Five hit points a pulse, two and a half a second: 0 A.D.'s healer restores 5 HP every 2 s (research mechanics, healing), so a healer tops a squad up between fights and does not undo a fight in progress; the temple's garrison heal (3 a second a unit) is the faster cure, which asks the unit to leave the field (CMB-12)"
+  },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
     "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food",

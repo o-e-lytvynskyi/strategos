@@ -22,6 +22,7 @@ import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
 import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
+import dev.strategos.gametest.suites.HealTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
@@ -77,6 +78,7 @@ public final class Suites {
                         CombatTests.class,
                         FirstPersonTests.class,
                         GarrisonTests.class,
+                        HealTests.class,
                         MatchTests.class,
                         CommandTests.class,
                         ContentTests.class,
