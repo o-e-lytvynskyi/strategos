@@ -259,6 +259,7 @@ public final class RtsScreen extends Screen {
                 case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
                 case CONTROLS -> StrategosClient.hud().toggleControls();
+                case TECH_TREE -> StrategosClient.hud().openTechTree();
                 case PAUSE_MATCH -> {
                     MatchStateMsg state = StrategosClient.state();
                     boolean paused = state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED;

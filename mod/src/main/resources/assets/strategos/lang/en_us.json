@@ -161,5 +161,20 @@
   "strategos.hint.build_house": "Two below the population cap: select a worker and build a house",
   "strategos.hint.dismiss": "   (click to hide)",
   "strategos.controls.title": "Controls (K to close)",
-  "key.strategos.controls": "Controls overlay"
+  "key.strategos.controls": "Controls overlay",
+  "key.strategos.tech_tree": "Technology tree",
+  "strategos.techtree.button": "Tree",
+  "strategos.techtree.title": "Technologies (Esc to close)",
+  "strategos.techtree.line": "Line",
+  "strategos.techtree.state.researched": "Researched",
+  "strategos.techtree.state.researching": "Being researched",
+  "strategos.techtree.state.available": "Available",
+  "strategos.techtree.state.needs_phase": "Needs a later phase",
+  "strategos.techtree.state.needs_previous": "Needs the previous tier",
+  "strategos.techtree.state.needs_buildings": "Needs more buildings",
+  "strategos.techtree.state.locked": "Locked by %s",
+  "strategos.techtree.state.outside_roster": "Not in your civilisation",
+  "strategos.techtree.researcher": "Researched at: %s",
+  "strategos.techtree.cost": "Cost: %s",
+  "strategos.techtree.time": "Time: %s s"
 }

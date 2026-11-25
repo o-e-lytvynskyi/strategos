@@ -89,7 +89,8 @@ class PhasePanelTest {
                 .orElseThrow();
         PhasePanel panel = PhasePanel.of(T, client, centre);
         if (!phaseAhead) {
-            assertThat(panel).as(name).isNull();
+            assertThat(panel).as(name).isNotNull(); // TECH-05: Town's tokens list City on the centre, so it shows
+            assertThat(panel.phase().id().value()).isEqualTo("strategos:phase_city");
             return;
         }
         assertThat(panel).as(name).isNotNull();

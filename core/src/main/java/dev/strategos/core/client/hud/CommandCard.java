@@ -7,6 +7,7 @@ import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.TokenLists;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.BuildingState;
@@ -381,7 +382,8 @@ public record CommandCard(Page page, List<Button> buttons) {
             return out;
         }
         int slot = 0;
-        for (int t : trains(in.templates(), b.template())) {
+        ClientFactionView view = new ClientFactionView(in.templates(), in.faction(), in.buildings(), in.civ());
+        for (int t : CardLists.trains(in.templates(), view, b.template())) {
             if (slot == SLOTS - 1) {
                 break;
             }
@@ -396,8 +398,7 @@ public record CommandCard(Page page, List<Button> buttons) {
             }
             out.add(train);
         }
-        ClientFactionView view = new ClientFactionView(in.templates(), in.faction(), in.buildings(), in.civ());
-        for (TechDef tech : researches(in.templates(), b.template())) {
+        for (TechDef tech : CardLists.researches(in.templates(), view, b.template())) {
             if (slot >= SLOTS - 3) { // the bell, the all clear and demolish keep their cells
                 break;
             }
@@ -520,9 +521,10 @@ public record CommandCard(Page page, List<Button> buttons) {
         String id = templates.byIndex(template).id().value();
         for (int t : unitTemplates) {
             if (templates.has(t) && templates.byIndex(t).classes().contains("Builder")) {
-                String list = templates.text(t, path.id());
-                if (list != null && List.of(list.trim().split("\\s+")).contains(id)) {
-                    return null;
+                List<Integer> researched = f == null ? List.of() : f.researched();
+                if (TokenLists.effective(templates, t, "Builder/buildings", civ, researched)
+                        .contains(id)) {
+                    return null; // the base list, as the civilisation's bonuses and researched techs leave it
                 }
             }
         }
@@ -553,18 +555,11 @@ public record CommandCard(Page page, List<Button> buttons) {
     public static List<Integer> trains(TemplateSet templates, int building) {
         ValuePath path = templates.tokenPaths().byPath("Trainer/units");
         String units = path == null ? null : templates.text(building, path.id());
-        List<Integer> out = new ArrayList<>();
-        if (units == null || units.isBlank()) {
-            return out;
-        }
-        for (String id : units.trim().split("\\s+", -1)) {
-            for (UnitTemplate t : templates.all()) {
-                if (t.id().value().equals(id)) {
-                    out.add(t.netIndex());
-                }
-            }
-        }
-        return out;
+        return CardLists.unitsNamed(
+                templates,
+                units == null || units.isBlank()
+                        ? List.of()
+                        : List.of(units.trim().split("\\s+", -1)));
     }
 
     /**
@@ -585,22 +580,11 @@ public record CommandCard(Page page, List<Button> buttons) {
     public static List<TechDef> researches(TemplateSet templates, int building) {
         ValuePath path = templates.tokenPaths().byPath("Researcher/techs");
         String techs = path == null || !templates.has(building) ? null : templates.text(building, path.id());
-        List<TechDef> out = new ArrayList<>();
-        if (techs == null || techs.isBlank()) {
-            return out;
-        }
-        for (String id : techs.trim().split("\\s+", -1)) {
-            TechDef tech;
-            try {
-                tech = templates.tech(new TechId(id));
-            } catch (IllegalArgumentException e) {
-                continue;
-            }
-            if (tech != null) {
-                out.add(tech);
-            }
-        }
-        return out;
+        return CardLists.techsNamed(
+                templates,
+                techs == null || techs.isBlank()
+                        ? List.of()
+                        : List.of(techs.trim().split("\\s+", -1)));
     }
 
     /** A tech's cost per resource of the match, in thousandths. */

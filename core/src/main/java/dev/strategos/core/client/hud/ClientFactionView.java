@@ -5,11 +5,14 @@ import dev.strategos.core.content.ClassFilter;
 import dev.strategos.core.content.FactionView;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.TokenLists;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TechId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -23,6 +26,8 @@ public final class ClientFactionView implements FactionView {
     private final @Nullable FactionState faction;
     private final List<BuildingState.Entry> buildings;
     private final boolean phaseByRule;
+    private final @Nullable CivDef civ;
+    private final Map<String, List<String>> lists = new HashMap<>();
 
     /**
      * {@code civ} is the faction's civilisation, null when the set lacks it: a civilisation whose phase rule is not the
@@ -36,8 +41,14 @@ public final class ClientFactionView implements FactionView {
         this.templates = templates;
         this.faction = faction;
         this.buildings = List.copyOf(buildings);
+        this.civ = civ;
         CivDef.Rule rule = civ == null ? null : civ.rules().get("phase");
         this.phaseByRule = rule != null && !"default".equals(rule.id());
+    }
+
+    /** The net indexes of the techs the faction has researched. */
+    public List<Integer> researchedIndexes() {
+        return faction == null ? List.of() : faction.researched();
     }
 
     @Override
@@ -79,5 +90,15 @@ public final class ClientFactionView implements FactionView {
             }
         }
         return n;
+    }
+
+    /**
+     * Template {@code template}'s token list at {@code path} as this faction sees it (TECH-05): the base list edited by
+     * its civilisation's bonuses and its researched techs, as the server's stat service evaluates it. Cached per view.
+     */
+    public List<String> tokens(int template, String path) {
+        return lists.computeIfAbsent(
+                template + ":" + path,
+                k -> List.copyOf(TokenLists.effective(templates, template, path, civ, researchedIndexes())));
     }
 }

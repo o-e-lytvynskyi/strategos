@@ -31,7 +31,7 @@ class CommandCardRosterTest {
     private static final int WOOD_1 = CommandCardResearchTest.WOOD_1;
 
     /** A civilisation whose roster lacks the worker, the farmstead and the first wood tech. */
-    private static final CivDef LEAN = lean("[\"phase.a\", \"phase.b\"]");
+    static final CivDef LEAN = lean("[\"phase.a\", \"phase.b\"]");
 
     private static CivDef lean(String phases) {
         JsonObject roster = new JsonObject();

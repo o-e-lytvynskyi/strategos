@@ -475,6 +475,11 @@ public final class RtsMode {
         return keys;
     }
 
+    /** Whether the key pressed is the current key of {@code action}'s mapping, rebinds included. */
+    public boolean isKey(Action action, int keyCode, int scanCode) {
+        return keys.mapping(action).matches(keyCode, scanCode);
+    }
+
     void zoom(double notches) {
         zoom += notches;
     }

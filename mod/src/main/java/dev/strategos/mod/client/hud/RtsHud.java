@@ -17,6 +17,8 @@ import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
+import dev.strategos.core.client.hud.TechTreeModel;
+import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TechDef;
@@ -198,6 +200,10 @@ public final class RtsHud {
         }
         HudLayout l = layout();
         int pad = theme.padding();
+        if (button == 0 && buildingCard.treeButtonAt(x, y)) {
+            openTechTree(); // TECH-05: the phase panel's button
+            return true;
+        }
         MatchJoin join = StrategosClient.match();
         if (join != null && minimap.ready() && l.minimap().contains(x, y)) {
             Minimap m = new Minimap(l.minimap(), join.sizeX(), join.sizeZ());
@@ -762,6 +768,21 @@ public final class RtsHud {
     /** Under the first-person crosshair: a panel with the unit's name, faction swatch and what is known of it. */
     private void drawInspect(GuiGraphics g, DeltaTracker delta) {
         tooltips.inspect(g, inspect, mode.active());
+    }
+
+    /** The technology tree screen over the HUD (TECH-05); the screen closes with Esc or the key that opened it. */
+    public void openTechTree() {
+        TechTreeModel tree = TechTreeModel.of(
+                StrategosClient.templates(),
+                new ClientFactionView(
+                        StrategosClient.templates(),
+                        StrategosClient.model().faction(),
+                        StrategosClient.model().buildings(),
+                        StrategosClient.viewerCiv()),
+                StrategosClient.viewerCiv(),
+                StrategosClient.model().buildings());
+        Minecraft.getInstance()
+                .setScreen(new TechTreeScreen(tree, (key, scan) -> mode.isKey(Action.TECH_TREE, key, scan)));
     }
 
     /** UI-14's overlay on or off (its key, K by default). */

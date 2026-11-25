@@ -44,6 +44,8 @@ public enum Action {
     JUMP_TO_ALERT(false),
     /** The controls overlay (UI-14): the mod's keys on their current keys, rebinds included. */
     CONTROLS(false),
+    /** The technology tree screen (TECH-05): the phases, the lines, what is researched and what stands in the way. */
+    TECH_TREE(false),
     /** Singleplayer: the match paused, or resumed (MATCH-05). */
     PAUSE_MATCH(false),
     /** Singleplayer: the next slower game speed offered. */

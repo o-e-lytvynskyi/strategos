@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.TokenLists;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.TechId;
@@ -33,7 +34,7 @@ public final class Progress {
      * unit's or a building's own; {@link #techOf} maps one back.
      */
     public static int sourceId(int netIndex) {
-        return -1 - netIndex;
+        return TokenLists.techSource(netIndex);
     }
 
     /** The tech whose modifiers carry {@code sourceId}, or null for any other source. */

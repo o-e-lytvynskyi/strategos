@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 17 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 18 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T16 (2026-11-26).
-- **Next task:** T17 · TECH-05 · The tree screen (and the card's effective research lists).
+- **Last finished task:** M10 T17 (2026-11-26).
+- **Next task:** T18 · ORD-06 · Formations in the core.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-26 — M10 T16
+### 2026-11-26 — M10 T16–T17
 
+- **M10 T17 · The tree screen** — TECH-05 in progress (its goldens wait for the consent batch). `TokenLists.effective` (core.content, pure): a template's effective token list for a faction — base, civilisation bonuses, researched techs' TOKENS effects in the stat service's canonical order, superseded tiers dropped; the card's research, train and build lists and the phase panel read it, so Town's and City's tiers, `iron_weapons`, `chainmail` and City now appear (missing since M6); `CardLists` carries the card's list helpers (CommandCard 801 → 760 lines). `TechTreeModel` (states: researched, researching, available, needs phase/previous/buildings, locked by its pair, outside the roster) and the mod's `TechTreeScreen` (phases as columns, lines as rows, tooltips), opened by a "Tree" button on the phase panel or Y. Tests: `TechTreeModelTest`, `CommandCardEffectiveResearchTest` (client lists equal the server's `blockTokens` for six research states over every template and three lists). No state hash, golden or replay changed. `verify verifySlow` green, 4 min 52 s; `verify` after the split, 78 s.
 - **M10 T16 · The technology set** — TECH-05 in progress. 32 technologies (22 new): five resource lines to three tiers (×1.2/×1.4/×1.6, carry +5/+10/+15; tier 2 Town, tier 3 City, each superseding the last), weapons and armour to three tiers (armour to vanilla's IRON and DIAMOND, weapons to diamond and netherite through `Look`), masonry 1–2, arrow slits, carpentry, two exclusive pairs (lumber or mining guild; phalanx or skirmish drill); researched at the storehouse, farmstead, barracks and arsenal; City's unlocks filled. `excludes` in `TechDef`, linted both ways, refused by `ResearchRules` (queued or researched), shown on the card as "Locked by …". Content mirrored and the version re-pinned (1a27f72e… → 303c703b…, this content only). Tests: `TechEffectsTest` (34, one generated case per technology), `TechPairsTest`, `techtests.economy/military/buildings`, the balance sheet's tiers, the view under 128 KB; count and list pins grown for the new techs. No state hash, golden or replay changed. `verify verifySlow` green, 296 s. Found: the card lists only base research lists, so phase-added techs never show (since M6) — first in T17.
 
 ### 2026-11-25 — M10 T1–T15
@@ -84,6 +85,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-26 · trial implementer: pass — M10 T17, green; a follow-up split kept CommandCard under 800 lines.
+- 2026-11-26 · The tree screen is read-only (research stays on a building's card); a "select a researcher" click is left out — undo: add it in `TechTreeScreen`.
 - 2026-11-26 · trial implementer: pass — M10 T16, green apart from the pin; it found the card's base-list gap.
 - 2026-11-26 · The excluded half of a pair is refused with the existing `RejectReason.LIMIT` (no wire change) — undo: append a dedicated reason.
 - 2026-11-26 · The third weapon tier shows a netherite sword — undo: another look in `UnitLook`.

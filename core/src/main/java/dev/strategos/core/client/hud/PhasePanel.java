@@ -1,7 +1,6 @@
 package dev.strategos.core.client.hud;
 
 import dev.strategos.core.content.CivDef;
-import dev.strategos.core.content.FactionView;
 import dev.strategos.core.content.Requirement;
 import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
@@ -28,11 +27,11 @@ public record PhasePanel(TechDef phase, List<Row> rows) {
 
     /** The panel for {@code selected}, or null when it researches no phase still ahead. */
     public static @Nullable PhasePanel of(
-            TemplateSet templates, FactionView view, BuildingState.@Nullable Entry selected) {
+            TemplateSet templates, ClientFactionView view, BuildingState.@Nullable Entry selected) {
         if (selected == null || !selected.own() || selected.state() != CommandCard.COMPLETE) {
             return null;
         }
-        for (TechDef tech : CommandCard.researches(templates, selected.template())) {
+        for (TechDef tech : CardLists.researches(templates, view, selected.template())) {
             if (tech.isPhase() && !view.researched(tech.id())) {
                 List<Row> rows = new ArrayList<>();
                 for (Requirements.Leaf leaf : Requirements.checklist(tech.requires(), view)) {

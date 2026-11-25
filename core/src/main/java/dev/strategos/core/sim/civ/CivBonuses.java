@@ -2,6 +2,7 @@ package dev.strategos.core.sim.civ;
 
 import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.TechEffect;
+import dev.strategos.core.content.TokenLists;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.MatchState;
@@ -16,7 +17,7 @@ import dev.strategos.core.sim.stats.ModifierOp;
 @CoreApi
 public final class CivBonuses {
     /** The source id of the bonuses: just above {@code AiHandicap.SOURCE}, below every tech's and every handle's. */
-    public static final int SOURCE = Integer.MIN_VALUE + 1;
+    public static final int SOURCE = TokenLists.CIV_SOURCE;
 
     private CivBonuses() {}
 

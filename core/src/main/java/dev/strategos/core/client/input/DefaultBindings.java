@@ -53,6 +53,7 @@ public final class DefaultBindings {
                 rts(Action.NEXT_IDLE_WORKER, KeyCode.I),
                 rts(Action.JUMP_TO_ALERT, KeyCode.J),
                 rts(Action.CONTROLS, KeyCode.K),
+                rts(Action.TECH_TREE, KeyCode.Y),
                 rts(Action.PAUSE_MATCH, KeyCode.F9),
                 rts(Action.SLOWER, KeyCode.LEFT_BRACKET),
                 rts(Action.FASTER, KeyCode.RIGHT_BRACKET),
