@@ -123,8 +123,7 @@ public final class MapImporter {
         var cache = new Object() {
             long key = Long.MIN_VALUE;
 
-            @Nullable
-            LevelChunk chunk;
+            @Nullable LevelChunk chunk;
         };
         return TerrainHash.of(m.sizeX(), m.sizeZ(), m.height(), (x, y, z) -> {
             pos.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
