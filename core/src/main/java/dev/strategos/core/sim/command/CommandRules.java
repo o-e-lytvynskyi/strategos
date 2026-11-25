@@ -49,7 +49,8 @@ public final class CommandRules {
                 .register(new SpawnDepositRule())
                 .register(new ResearchRules.ResearchRule())
                 .register(new UpgradeRules.UpgradeBuildingRule())
-                .register(new PlaceWallRule());
+                .register(new PlaceWallRule())
+                .register(new UseAbilityRule());
     }
 
     /** A second rule for a kind throws. */

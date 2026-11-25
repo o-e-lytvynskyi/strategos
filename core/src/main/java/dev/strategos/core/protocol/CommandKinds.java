@@ -80,6 +80,8 @@ public final class CommandKinds {
             false);
     public static final CommandKind<PlaceWall> PLACE_WALL =
             new CommandKind<>("strategos:place_wall", 34, PlaceWall.class, PlaceWall.CODEC, PlaceWall.WIRE, false);
+    public static final CommandKind<UseAbility> USE_ABILITY =
+            new CommandKind<>("strategos:use_ability", 35, UseAbility.class, UseAbility.CODEC, UseAbility.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -114,7 +116,8 @@ public final class CommandKinds {
             RESEARCH,
             CAPTURE,
             UPGRADE_BUILDING,
-            PLACE_WALL));
+            PLACE_WALL,
+            USE_ABILITY));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

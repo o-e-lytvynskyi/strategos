@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.sim.ability.AbilitySwap;
 import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.civ.FactionCivs;
 import dev.strategos.core.sim.prod.Techs;
@@ -42,6 +43,10 @@ final class TemplateSwap {
                 state.config(), next, state.catalogue()); // a civilisation in use must survive the swap
         if (civ != null) {
             return civ;
+        }
+        String ability = AbilitySwap.problem(state, next); // an ability in use must keep its index (UNIT-10)
+        if (ability != null) {
+            return ability;
         }
         EntityStore entities = state.entities();
         for (int i = 0; i < entities.highWater(); i++) {

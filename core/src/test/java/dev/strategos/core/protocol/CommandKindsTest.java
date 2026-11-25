@@ -50,7 +50,8 @@ class CommandKindsTest {
                         "strategos:research",
                         "strategos:capture",
                         "strategos:upgrade_building",
-                        "strategos:place_wall");
+                        "strategos:place_wall",
+                        "strategos:use_ability");
     }
 
     @Test

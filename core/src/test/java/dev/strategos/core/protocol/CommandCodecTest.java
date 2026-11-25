@@ -8,6 +8,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.AbilityId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
@@ -63,7 +64,8 @@ class CommandCodecTest {
                         42,
                         -20,
                         List.of(1, 5),
-                        UnitSet.of(3, 4)));
+                        UnitSet.of(3, 4)),
+                new UseAbility(UnitSet.of(1, 9), new AbilityId("heal"), Target.unit(0x300007), QueueMode.PUSH_FRONT));
     }
 
     @Test
@@ -77,6 +79,23 @@ class CommandCodecTest {
                     .isEqualTo(CommandKinds.DEFAULT.of(command).id());
             assertThat(CODEC.parse(JsonOps.INSTANCE, json).getOrThrow()).isEqualTo(command);
         }
+    }
+
+    /** UNIT-10: each shape of target is written and read as JSON; a point and none carry no handle. */
+    @Test
+    void anAbilityCommandRoundTripsThroughJsonWithEveryTargetShape() {
+        for (Target target : List.of(Target.none(), Target.point(10.5, -3), Target.unit(0x300007))) {
+            Command use = new UseAbility(UnitSet.of(3, 4), new AbilityId("charge"), target, QueueMode.QUEUE);
+            JsonElement json = CODEC.encodeStart(JsonOps.INSTANCE, use).getOrThrow();
+            assertThat(json.getAsJsonObject().get("kind").getAsString()).isEqualTo("strategos:use_ability");
+            assertThat(CODEC.parse(JsonOps.INSTANCE, json).getOrThrow()).isEqualTo(use);
+        }
+        JsonElement bad = JsonParser.parseString("{\"kind\":\"strategos:use_ability\",\"units\":[1],"
+                + "\"ability\":\"Not An Id\",\"target\":{\"kind\":\"none\"},\"mode\":\"replace\"}");
+        assertThat(CODEC.parse(JsonOps.INSTANCE, bad).error()).isPresent();
+        JsonElement badTarget = JsonParser.parseString("{\"kind\":\"strategos:use_ability\",\"units\":[1],"
+                + "\"ability\":\"charge\",\"target\":{\"kind\":\"sideways\"},\"mode\":\"replace\"}");
+        assertThat(CODEC.parse(JsonOps.INSTANCE, badTarget).error()).isPresent();
     }
 
     @Test

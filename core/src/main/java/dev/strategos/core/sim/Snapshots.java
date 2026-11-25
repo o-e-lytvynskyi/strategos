@@ -8,6 +8,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ability.AbilitySwap;
 import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.econ.CarryStore;
@@ -94,7 +95,8 @@ final class Snapshots {
                                 : List.of(),
                         s.play().capture().save(),
                         s.play().gates().save(),
-                        s.play().breaches().save(entities::isAlive)),
+                        s.play().breaches().save(entities::isAlive),
+                        s.play().abilities().save(s)),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -197,7 +199,16 @@ final class Snapshots {
             state.ai().restore(index, unit.ai());
             Vec2d target = unit.target();
             if (target != null) {
-                state.orders().restore(index, target.x(), target.z(), unit.orders());
+                state.orders()
+                        .restore(
+                                index,
+                                target.x(),
+                                target.z(),
+                                AbilitySwap.remap(
+                                        unit.orders(),
+                                        snapshot.play().abilities().ids(),
+                                        templates,
+                                        unit.handle()));
             } else {
                 state.orders().clear(index);
             }
@@ -230,6 +241,7 @@ final class Snapshots {
         Garrisons.restore(state, snapshot.play().garrisons());
         state.play().capture().restore(snapshot.play().capture());
         state.play().breaches().restore(snapshot.play().breaches());
+        state.play().abilities().restore(snapshot.play().abilities(), templates, state.stats(), state.entities());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

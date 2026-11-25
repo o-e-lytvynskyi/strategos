@@ -25,6 +25,7 @@ import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
+import dev.strategos.core.protocol.UseAbility;
 import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.MatchId;
@@ -380,6 +381,7 @@ public final class NetGateway {
             case SetStance stance -> stance.units().size();
             case Garrison garrison -> garrison.units().size();
             case Capture capture -> capture.units().size();
+            case UseAbility use -> use.units().size();
             case PlaceWall wall -> wall.builders().size();
             case Ungarrison ungarrison ->
                 ungarrison.units().size() == 0

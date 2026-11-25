@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 10 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 11 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T9b (2026-11-25).
-- **Next task:** T10 · UNIT-10 · Abilities in the core.
+- **Last finished task:** M10 T10 (2026-11-25).
+- **Next task:** T11 · UNIT-10 · Abilities in the game.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-25 — M10 T1–T9b
+### 2026-11-25 — M10 T1–T10
 
+- **M10 T10 · Abilities in the core** — UNIT-10 in progress. `AbilityDef` in templates (target none/point/unit/area, range, radius, cooldown, cost, autocast with a picker, effects), linted; `UseAbility` (wire 35) with an ABILITY order that approaches and fires; `AbilityRules` (cooldown, range by edge gap, refusals, the cost paid once at firing); the closed `AbilityEffects` registry — damage, heal, apply_modifiers for N ticks (`TimedModifiers`), spawn, capture_strength, teleport; autocast every 10 ticks per idle unit (`self`, `nearest_enemy_in_range`); cooldowns and timed entries saved and hashed only when present; `AbilitySwap` keeps ability indices stable across content swaps and restores. One review round (index stability, spawn refusals before payment, heal and `on` targeting, queued uses, ON_COOLDOWN, allocation on the hot path). Tests: `AbilityValidationTest`, `AbilityEffectsTest`, `TimedModifiersTest`, `AbilitySnapshotTest`, `AutocastTest`, `AbilityLintTest`, `AbilitySwapTest`, the wire pins; the rate limiter counts `UseAbility` units. No pinned hash changed. `verify verifySlow` green, 5 min 1 s. `:core:jmh :core:jmhCompare` green on a quiet machine (551 s) — this also clears the comparison owed since T3/T5.
 - **M10 T9b · The probe civilisation** — CIV-01 and CIV-05 **done**; ADR-0028 Accepted. `strategos:probe` in test resources only (`mod/src/gametest/resources/probe/`): a fixed cap of 60, direct delivery, self-building, no house or storehouse, citizen-soldier infantry by template inheritance, its own barracks, kit, bonus and AI script. `ProbeMatchesTest` (3 seeds × 8 min in `verify`, 8 s; 20 seeds × 20 min `slow`, 130 s; every journal replayed, four restored mid-match through the save codec), `AiProbeTest` (Town with no house, dropsite or builder), `ProbeFixtureTest`, `civtests.two_civilisations` (the default against the probe in the GameTest server). The probe needed no production edit but one, which it found: the AI read a building's static trainer list, now `MatchQueries.trains` (effective list and roster; `AiTrainsEffectiveTest`; hash-neutral). `verify verifySlow` green, 304 s; `:core:openingBalance` every criterion holds, summary identical (535 s).
 - **M10 T9a · The AI's hints** — CIV-05 and AI-09 in progress. `AiHint` (needs housing, dropsites, builders) declared by each seam's rule (`hints()`, the variants clearing their own) and combined in `CivRules` at bind; `AiView.needs`. The managers branch on hints: no houses and a back-off at the cap without housing; no dropsite steps without drop-off (the farmstead stays, it reseeds fields); foundations placed with no crew without builders. The AI reads refusal facts from state, not notices (spec §1.6 rows 17–18). Tests: `AiHintsTest` 5 (each variant against the default AI, 3 seeds × 12 minutes, growing and never stalling; checked to fail without the change); `AiRolesTest`'s house setup moved to the default rules. No pinned hash or AI result changed; `:core:openingBalance` every criterion holds, summary identical (11.6 min). `verify verifySlow` green, 4 min 44 s.
 - **M10 T8 · Roles and the vocabulary** — CIV-05 in progress. The AI's template-id constants became the faction's civilisation roles through `MatchQueries.role` and `AiView.civRole` (house, centre, siege, ranged, cavalry; the scripts' omitted `worker`/`soldier` resolve to the `worker`/`infantry` roles at use); a missing role skips its behaviour. Guards: `CivBoundaryArchTest` (the systems' packages do not depend on `CivId`/`CivDef`; no violation existed) and `TemplateIdLiteralTest` (no template-id literal in the core's rules or client outside the built-in set and migrations). Architecture §8.9 lists the engine's 18 class tokens with their readers. Tests: `AiRolesTest` 7. No pinned hash or AI result changed; `:core:openingBalance` 1,000 matches, every criterion holds, its summary identical to the previous run (8 min 57 s). `verify verifySlow` green, 5 min 2 s.
@@ -73,6 +74,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-25 · trial reviewer: pass — M10 T10's review found ability indices unstable across a content swap and a spawn that charged for nothing.
+- 2026-11-25 · trial implementer: pass — M10 T10, green on both rounds.
 - 2026-11-25 · trial implementer: pass — M10 T9b, green; it kept to the stop rule and reported the AI gap and the resource-location constraint instead of editing production code.
 - 2026-11-25 · The probe's files sit outside any data pack, loaded by the tests themselves (spec §1.6 row 19) — a pack in the gametest resources would be seen by the mod's L2 tests and break the shipped-set pins — undo: teach the L2 tests to ignore gametest resources.
 - 2026-11-25 · The probe's 20-seed test asserts Town in at least 10 of 20 matches in 20 minutes (15 of 20 in the 30-minute scratch run), and `AiProbeTest` asserts Town on its seeds — a health check of the AI on the probe, not a balance target — undo: raise the band.

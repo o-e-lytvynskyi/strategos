@@ -34,5 +34,7 @@ public enum RejectReason {
     /** A technology or a building whose requirements, its phase, the faction does not meet (TECH-01, BLD-17). */
     REQUIREMENTS,
     /** A building outside its faction's territory, or a civic centre on another's (TERR-02). */
-    OUTSIDE_TERRITORY
+    OUTSIDE_TERRITORY,
+    /** An ability that has not yet rested the ticks of its cooldown (UNIT-10). */
+    ON_COOLDOWN
 }

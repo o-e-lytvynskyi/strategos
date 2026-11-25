@@ -149,6 +149,9 @@ public final class StateHasher {
         if (!s.play().capture().empty()) { // only while a building is being captured (CMB-10)
             h = s.play().capture().mix(h);
         }
+        if (!s.play().abilities().empty()) { // only while an ability is on cooldown or its modifiers last (UNIT-10)
+            h = s.play().abilities().mix(h, s.entities());
+        }
         if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
             h = s.garrison().mix(h);
         }

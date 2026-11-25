@@ -22,6 +22,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
+import dev.strategos.core.sim.ability.AbilityStore;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -461,6 +462,15 @@ public final class MatchSnapshotCodec {
                     Codec.BOOL.optionalFieldOf("bell", false).forGetter(GarrisonStore.Saved::bell))
             .apply(i, GarrisonStore.Saved::new));
 
+    private static final Codec<AbilityStore.Saved> ABILITIES = RecordCodecBuilder.create(i -> i.group(
+                    Codec.STRING.listOf().optionalFieldOf("ids", List.of()).forGetter(AbilityStore.Saved::ids),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("cooldowns", List.of())
+                            .forGetter(AbilityStore.Saved::cooldowns),
+                    Codec.LONG.listOf().optionalFieldOf("timed", List.of()).forGetter(AbilityStore.Saved::timed))
+            .apply(i, AbilityStore.Saved::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
@@ -481,7 +491,10 @@ public final class MatchSnapshotCodec {
                             .forGetter(MatchSnapshot.Play::territory),
                     Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture),
                     Codec.LONG.listOf().optionalFieldOf("gates", List.of()).forGetter(MatchSnapshot.Play::gates),
-                    Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches))
+                    Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches),
+                    ABILITIES
+                            .optionalFieldOf("abilities", AbilityStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play::abilities))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(

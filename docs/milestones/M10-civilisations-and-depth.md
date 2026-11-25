@@ -160,6 +160,7 @@ view and the first Minecraft twist, day and night.
 | 18 | Hints (T9a) | Each seam's rule declares `hints()` (a bitmask of `AiHint`), the variants clearing their own; `CivRules` combines them at bind. Under direct delivery the farmstead stays in the build order (it reseeds fields), every other dropsite step is skipped |
 | 19 | The probe's files (T9b) | `mod/src/gametest/resources/probe/` (civilisation, a citizen-soldier infantry and its barracks by template inheritance, an AI script), outside any data pack: the gametest source set is on the mod's L2 test classpath, where a pack would break the shipped-set pins. Core tests load them through `ProbeCiv`; `civtests.two_civilisations` loads them into the GameTest server and restores the pack's set after its batch. Its bonus is two entries (a wood-rate bonus for every gatherer, its barracks on the workers' list) |
 | 20 | What the probe found (T9b) | The AI read a building's static `Trainer/units`; it now asks `MatchQueries.trains` (the faction's effective list and roster, as production does) — the one production edit outside `core.sim.civ` the probe needed; hash-neutral, since no shipped technology edits trainer lists (`AiTrainsEffectiveTest`) |
+| 21 | Abilities' shapes (T10) | Ability ids are plain (`charge`), global to the set: templates declaring the same id must declare it identically; at most one timed effect per ability; `damage` takes hack, pierce or crush; data keys beyond §0.3: `radius` (area), `pick` (autocast picker: `self`, `nearest_enemy_in_range`), `on` (`ally` default, `enemy`, `any`) for `apply_modifiers` and `capture_strength`; `heal` mends `Organic` non-`Siege` units only. An ability's index is its place in the id-sorted list: a content swap that would move an index in use is refused, and a restore remaps saved orders by the saved id table (a missing ability refuses the restore; cooldown and timed rows are dropped). Cooldown and cost are checked at the command only for REPLACE, at firing otherwise. `RejectReason.ON_COOLDOWN` (wire 20) is appended. Personal modifier sources: none were in use; abilities take `MIN_VALUE + 1 + index`, ranks keep `MIN_VALUE` |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -581,7 +582,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T8 (2026-11-25)
 - [x] T9a (2026-11-25)
 - [x] T9b (2026-11-25)
-- [ ] T10
+- [x] T10 (2026-11-25)
 - [ ] T11
 - [ ] T12
 - [ ] T13

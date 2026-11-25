@@ -6,6 +6,7 @@ import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.shared.TerritoryGrid;
+import dev.strategos.core.sim.ability.AbilitySystem;
 import dev.strategos.core.sim.capture.CaptureSystem;
 import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.combat.CombatSystem;
@@ -76,6 +77,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(commands);
         this.queries = new QueriesImpl(state, paths);
         scheduler.register(new AiSystem(queries)); // computer players, after the commands
+        scheduler.register(new AbilitySystem()); // UNIT-10: the tick boundary of cooldowns and buffs, and autocast
         scheduler.register(new UnitAiSystem(state));
         scheduler.register(new TownArrows()); // a centre's volley is an intent like a unit's, after the units'
         scheduler.register(paths.requests());

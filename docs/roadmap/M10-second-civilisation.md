@@ -154,7 +154,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   3. Command-card buttons come from the template (L1).
   4. The showcase ability works in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-03, DATA-02 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### CMB-11 · Promotion and ranks
 - **Value:** Veterans matter: units that survive fights get stronger and show it (P2).

@@ -22,6 +22,11 @@ class CommandHandlesTest {
                 .isEqualTo(3);
         assertThat(NetGateway.handles(new SetStance(three, Stance.DEFENSIVE))).isEqualTo(3);
         assertThat(NetGateway.handles(new Garrison(three, 0x80001))).isEqualTo(3);
+        assertThat(NetGateway.handles(dev.strategos.core.protocol.UseAbility.replace(
+                        three,
+                        new dev.strategos.core.shared.AbilityId("charge"),
+                        dev.strategos.core.protocol.Target.none())))
+                .isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, three))).isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, UnitSet.of())))
                 .as("everyone inside counts as a full centre")

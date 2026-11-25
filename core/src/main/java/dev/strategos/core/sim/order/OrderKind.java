@@ -33,6 +33,12 @@ public final class OrderKind {
     public static final int GARRISON = 10;
     /** Capturing a building (CMB-10), whose handle the queue holds as the target: done when it changes hands or is lost. */
     public static final int CAPTURE = 11;
+    /**
+     * Using an ability (UNIT-10): the queue's slot holds the ability's index in the template set, the target a unit it
+     * is aimed at (0 for none) and the place a point it is aimed at (the user's own for an aimless one); done once it
+     * has fired, or when it can no longer.
+     */
+    public static final int ABILITY = 12;
 
     private OrderKind() {}
 
@@ -50,6 +56,7 @@ public final class OrderKind {
             case BURN -> "burn";
             case GARRISON -> "garrison";
             case CAPTURE -> "capture";
+            case ABILITY -> "ability";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -68,6 +75,7 @@ public final class OrderKind {
             case "burn" -> BURN;
             case "garrison" -> GARRISON;
             case "capture" -> CAPTURE;
+            case "ability" -> ABILITY;
             default -> null;
         };
     }
@@ -89,6 +97,7 @@ public final class OrderKind {
                 || kind == BUILD
                 || kind == BURN
                 || kind == GARRISON
-                || kind == CAPTURE;
+                || kind == CAPTURE
+                || kind == ABILITY;
     }
 }

@@ -100,6 +100,8 @@ class UnitTreeTransitionsTest {
                 BurnTransitionRows.start(this, from);
             } else if (from.equals(UnitAi.CAPTURE_APPROACHING) || from.equals(UnitAi.CAPTURING)) {
                 CaptureTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.ABILITY)) {
+                AbilityTransitionRows.start(this);
             } else if (from.equals(UnitAi.FLEEING)) {
                 FleeTransitionRows.start(this);
             } else if (from.equals(UnitAi.GARRISON_APPROACHING) || from.equals(UnitAi.GARRISONED)) {
@@ -259,7 +261,8 @@ class UnitTreeTransitionsTest {
                         BurnTransitionRows.rows(),
                         FleeTransitionRows.rows(),
                         GarrisonTransitionRows.rows(),
-                        CaptureTransitionRows.rows())
+                        CaptureTransitionRows.rows(),
+                        AbilityTransitionRows.rows())
                 .flatMap(r -> r);
     }
 

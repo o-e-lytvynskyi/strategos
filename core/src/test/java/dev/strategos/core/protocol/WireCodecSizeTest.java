@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.AbilityId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
@@ -92,6 +93,50 @@ class WireCodecSizeTest {
         }
     }
 
+    /** UNIT-10: the ability command is wire id 35, as small as its target, and its decoder refuses what it cannot read. */
+    @Test
+    void useAbilityIsWireId35WithTheSizesOfItsFields() {
+        UseAbility none = UseAbility.replace(UnitSet.of(5), new AbilityId("charge"), Target.none());
+        UseAbility point =
+                new UseAbility(UnitSet.of(5), new AbilityId("charge"), Target.point(1, 2), QueueMode.PUSH_FRONT);
+        UseAbility unit =
+                new UseAbility(UnitSet.of(5), new AbilityId("charge"), Target.unit(0x300007), QueueMode.QUEUE);
+        assertThat(CommandKinds.DEFAULT.of(none).wireId()).isEqualTo(35);
+        assertThat(CommandKinds.DEFAULT.of(none).adminOnly()).isFalse();
+        assertThat(size(UseAbility.WIRE, none))
+                .as("count and handle 2, id 7, kind 1, mode 1")
+                .isEqualTo(11);
+        assertThat(size(UseAbility.WIRE, point)).as("a point adds two doubles").isEqualTo(27);
+        assertThat(size(UseAbility.WIRE, unit))
+                .as("a unit adds a 4-byte handle")
+                .isEqualTo(15);
+        for (UseAbility use : List.of(none, point, unit)) {
+            assertThat(roundTrip(COMMANDS, use)).isEqualTo(use);
+            assertThat(size(COMMANDS, use)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        UseAbility widest = new UseAbility(
+                UnitSet.of(many),
+                new AbilityId("a".repeat(Limits.ID_BYTES)),
+                Target.point(-1e300, 1e300),
+                QueueMode.PUSH_FRONT);
+        assertThat(size(UseAbility.WIRE, widest)).isLessThanOrEqualTo(UseAbility.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        assertThat(UseAbility.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        byte[] nan = WireCodec.encode(
+                COMMANDS,
+                new UseAbility(UnitSet.of(5), new AbilityId("a"), Target.point(Double.NaN, 1), QueueMode.QUEUE));
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, nan)).isInstanceOf(WireException.class);
+        byte[] badKind = WireCodec.encode(COMMANDS, none);
+        badKind[badKind.length - 2] = 9; // the target's kind byte
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, badKind))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("target kind");
+    }
+
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
@@ -99,7 +144,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();

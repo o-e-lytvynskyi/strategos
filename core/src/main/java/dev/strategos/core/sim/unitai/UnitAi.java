@@ -98,6 +98,7 @@ public final class UnitAi {
     public static final StateId CAPTURE = new StateId(25, "capture", null);
     public static final StateId CAPTURE_APPROACHING = new StateId(26, "capture.approaching", UnitState.WALKING);
     public static final StateId CAPTURING = new StateId(27, "capture.capturing", UnitState.COMBAT);
+    public static final StateId ABILITY = new StateId(28, "ability", UnitState.WALKING);
 
     private UnitAi() {}
 
@@ -300,6 +301,15 @@ public final class UnitAi {
                                 .thinkEvery(1)
                                 .think(Capturing::work)
                                 .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(ABILITY, INDIVIDUAL)
+                                .thinkEvery(1)
+                                .enter(UsingAbility::enter)
+                                .think(UsingAbility::work)
+                                .on(Arrived.class, UsingAbility::arrived)
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -310,7 +320,18 @@ public final class UnitAi {
      */
     private static StateId[] next(StateId... more) {
         List<StateId> all = new ArrayList<>(List.of(
-                IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN, GARRISON, CAPTURE));
+                IDLE,
+                WALKING,
+                FLEEING,
+                COMBAT,
+                WALKING_AND_FIGHTING,
+                FOLLOW,
+                GATHER,
+                BUILD,
+                BURN,
+                GARRISON,
+                CAPTURE,
+                ABILITY));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -380,7 +401,8 @@ public final class UnitAi {
                 GARRISON_APPROACHING,
                 GARRISONED,
                 CAPTURE_APPROACHING,
-                CAPTURING);
+                CAPTURING,
+                ABILITY);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -416,6 +438,7 @@ public final class UnitAi {
             case OrderKind.BURN -> BURN;
             case OrderKind.GARRISON -> GARRISON;
             case OrderKind.CAPTURE -> CAPTURE;
+            case OrderKind.ABILITY -> ABILITY;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

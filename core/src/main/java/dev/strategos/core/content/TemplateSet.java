@@ -44,6 +44,9 @@ public final class TemplateSet {
     private final int[] techPosition; // by tech net index: the tech's place in the list, -1 for a retired index
     private final List<CivDef> civs; // ascending by id; never empty
     private final boolean impliedCivs; // the built-in default, left out of the hash
+    private final List<AbilityDef> abilities; // every ability of the set by id, ascending (UNIT-10)
+    private final List<List<AbilityDef>> abilitiesOf; // by net index: a template's own, ascending by id
+    private final boolean autocasts; // whether any ability is used by itself
 
     /** A set from code: each template's JSON is {@link UnitTemplate#toJson()}. */
     public TemplateSet(List<UnitTemplate> templates) {
@@ -142,6 +145,21 @@ public final class TemplateSet {
         if (!implied) {
             canonical.add("$civs", civJson); // likewise reserved: a set with only the default keeps its hash
         }
+        Map<String, AbilityDef> byId = new TreeMap<>();
+        List<List<AbilityDef>> own = new ArrayList<>();
+        for (int k = 0; k < indices; k++) {
+            own.add(List.of());
+        }
+        for (int i = 0; i < templates.size(); i++) {
+            List<AbilityDef> mine = templates.get(i).isBuilding() ? List.of() : AbilityChecks.defs(copies.get(i));
+            for (AbilityDef def : mine) {
+                byId.putIfAbsent(def.id(), def);
+            }
+            own.set(templates.get(i).netIndex(), mine);
+        }
+        this.abilities = List.copyOf(byId.values());
+        this.abilitiesOf = List.copyOf(own);
+        this.autocasts = abilities.stream().anyMatch(AbilityDef::autocast);
         this.sha = CanonicalJson.sha256(CanonicalJson.write(canonical));
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
@@ -306,6 +324,46 @@ public final class TemplateSet {
     /** The token lists templates carry: string leaves of space-separated tokens, such as {@code Identity/classes}. */
     public ValuePaths tokenPaths() {
         return tokenPaths;
+    }
+
+    /** Every ability of the set, ascending by id: an ability's index here is its net index (UNIT-10). */
+    public List<AbilityDef> abilities() {
+        return abilities;
+    }
+
+    /** The ability {@code id}, or null. */
+    public @Nullable AbilityDef ability(String id) {
+        int at = abilityIndex(id);
+        return at < 0 ? null : abilities.get(at);
+    }
+
+    /** The index of ability {@code id} in {@link #abilities()}, or -1. */
+    public int abilityIndex(String id) {
+        int lo = 0;
+        int hi = abilities.size() - 1;
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            int c = abilities.get(mid).id().compareTo(id);
+            if (c == 0) {
+                return mid;
+            }
+            if (c < 0) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return -1;
+    }
+
+    /** Template {@code netIndex}'s abilities, ascending by id; none for a building or a retired index. */
+    public List<AbilityDef> abilitiesOf(int netIndex) {
+        return netIndex >= 0 && netIndex < abilitiesOf.size() ? abilitiesOf.get(netIndex) : List.of();
+    }
+
+    /** Whether some ability of the set is used by its idle owners by themselves. */
+    public boolean hasAutocast() {
+        return autocasts;
     }
 
     /** Template {@code netIndex}'s number at value path {@code path}, the typed default for a core path, else NaN. */

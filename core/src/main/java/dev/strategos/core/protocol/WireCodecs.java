@@ -1,5 +1,6 @@
 package dev.strategos.core.protocol;
 
+import dev.strategos.core.shared.AbilityId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TechId;
@@ -131,6 +132,29 @@ public final class WireCodecs {
         }
     };
 
+    /** An ability's id, as a bounded string. */
+    public static final WireCodec<AbilityId> ABILITY_ID = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, AbilityId value) {
+            out.writeString(value.value(), Limits.ID_BYTES);
+        }
+
+        @Override
+        public AbilityId read(WireReader in) {
+            String id = in.readString(Limits.ID_BYTES);
+            try {
+                return new AbilityId(id);
+            } catch (IllegalArgumentException e) {
+                throw new WireException(String.valueOf(e.getMessage()));
+            }
+        }
+
+        @Override
+        public int maxSize() {
+            return 2 + Limits.ID_BYTES;
+        }
+    };
+
     public static final WireCodec<TemplateId> TEMPLATE_ID = new WireCodec<>() {
         @Override
         public void write(WireWriter out, TemplateId value) {
@@ -249,6 +273,7 @@ public final class WireCodecs {
                             case LIMIT -> 17;
                             case REQUIREMENTS -> 18;
                             case OUTSIDE_TERRITORY -> 19;
+                            case ON_COOLDOWN -> 20;
                         });
     }
 
@@ -275,6 +300,7 @@ public final class WireCodecs {
             case 17 -> RejectReason.LIMIT;
             case 18 -> RejectReason.REQUIREMENTS;
             case 19 -> RejectReason.OUTSIDE_TERRITORY;
+            case 20 -> RejectReason.ON_COOLDOWN;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }

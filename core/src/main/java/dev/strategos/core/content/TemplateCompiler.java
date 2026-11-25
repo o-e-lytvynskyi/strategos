@@ -165,9 +165,16 @@ public final class TemplateCompiler {
         }
         TemplateIdTable next = table.with(units.stream().map(UnitTemplate::id).toList());
         List<Flat> flats = new ArrayList<>();
+        List<AbilityChecks.Source> sources = new ArrayList<>();
         for (int k = 0; k < units.size(); k++) {
             flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
+            sources.add(new AbilityChecks.Source(
+                    units.get(k).id(),
+                    Objects.requireNonNull(byId.get(units.get(k).id().value())).file(),
+                    unitJson.get(k),
+                    units.get(k).isBuilding()));
         }
+        AbilityChecks.cross(sources, problems);
         List<TechDef> drafts = new ArrayList<>();
         Map<String, RawTech> techById = new TreeMap<>();
         for (RawTech raw : rawTechs) {
@@ -230,6 +237,15 @@ public final class TemplateCompiler {
                 kept.add(f);
             }
         }
+        List<AbilityChecks.Source> sources = new ArrayList<>();
+        for (int k = 0; k < kept.size(); k++) {
+            sources.add(new AbilityChecks.Source(
+                    kept.get(k).id(),
+                    kept.get(k).id().value(),
+                    kept.get(k).json(),
+                    units.get(k).isBuilding()));
+        }
+        AbilityChecks.cross(sources, problems);
         int top = kept.stream().mapToInt(Flat::netIndex).max().orElse(-1);
         for (int k = 0; k <= top; k++) {
             int index = k;
@@ -574,6 +590,7 @@ public final class TemplateCompiler {
         if (mobility.equals("large") && radius < UnitTemplate.DEFAULT_LARGE_RADIUS) {
             problems.add(TemplateProblem.error(file, "/Body/radius", "large mobility needs a radius of at least 0.7"));
         }
+        AbilityChecks.template(json, file, false, problems);
         if (problems.size() > before) {
             return null;
         }
@@ -621,6 +638,7 @@ public final class TemplateCompiler {
                         TemplateProblem.error(file, "/Blueprint", bp.id() + " trains units but has no spawn marker"));
             }
         }
+        AbilityChecks.template(json, file, true, problems);
         if (problems.size() > before) {
             return null;
         }

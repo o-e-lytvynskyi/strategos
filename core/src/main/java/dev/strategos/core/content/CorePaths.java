@@ -177,6 +177,15 @@ public final class CorePaths {
                 STANCE);
     }
 
+    /**
+     * Abilities (UNIT-10): {@code Abilities/<id>/{target,range,radius,cooldown,autocast,pick,effects}} and {@code
+     * Abilities/<id>/Cost/resources/<r>}, read by {@link AbilityDef}. Optional, so they stay out of {@link #all()}; a
+     * timed effect's modifiers address ordinary value paths.
+     */
+    public static final String ABILITIES = "Abilities";
+
+    public static final String ABILITY_COST_RESOURCES = "Cost/resources/";
+
     private CorePaths() {}
 
     public static double min(String path) {

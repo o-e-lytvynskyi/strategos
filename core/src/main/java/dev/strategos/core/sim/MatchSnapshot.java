@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.sim.ability.AbilityStore;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
@@ -54,7 +55,8 @@ public record MatchSnapshot(
             List<Long> territory,
             List<Long> capture,
             List<Long> gates,
-            List<Long> breaches) {
+            List<Long> breaches,
+            AbilityStore.Saved abilities) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -69,7 +71,42 @@ public record MatchSnapshot(
                 List.of(),
                 List.of(),
                 List.of(),
-                List.of());
+                List.of(),
+                AbilityStore.Saved.EMPTY);
+
+        /** A play without abilities, as before UNIT-10 saved them (M10 spec §0.3). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture,
+                List<Long> gates,
+                List<Long> breaches) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    gates,
+                    breaches,
+                    AbilityStore.Saved.EMPTY);
+        }
 
         /** A play without breaches, as before the M9 soak's fix saved them (BLD-13). */
         public Play(
