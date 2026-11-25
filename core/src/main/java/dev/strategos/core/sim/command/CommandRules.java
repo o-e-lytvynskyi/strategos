@@ -50,7 +50,8 @@ public final class CommandRules {
                 .register(new ResearchRules.ResearchRule())
                 .register(new UpgradeRules.UpgradeBuildingRule())
                 .register(new PlaceWallRule())
-                .register(new UseAbilityRule());
+                .register(new UseAbilityRule())
+                .register(new FormationMoveRule());
     }
 
     /** A second rule for a kind throws. */

@@ -7,6 +7,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.formation.FormationStore;
 import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.StanceStore;
@@ -57,8 +58,20 @@ public record MatchSnapshot(
             List<Long> capture,
             List<Long> gates,
             List<Long> breaches,
-            AbilityStore.Saved abilities,
-            ExperienceStore.Saved experience) {
+            Depth depth) {
+        /**
+         * What M10 adds to a play, each part saved only when non-empty (M10 spec §0.3): the abilities' cooldowns and
+         * timed modifiers (UNIT-10), the experience and ranks (CMB-11) and the formations (ORD-06). The parts share one
+         * record because {@link Play} is at the sixteen components a record codec takes; the codec writes them as
+         * fields of the play all the same.
+         */
+        @CoreApi
+        public record Depth(
+                AbilityStore.Saved abilities, ExperienceStore.Saved experience, FormationStore.Saved formations) {
+            public static final Depth EMPTY =
+                    new Depth(AbilityStore.Saved.EMPTY, ExperienceStore.Saved.EMPTY, FormationStore.Saved.EMPTY);
+        }
+
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -74,8 +87,55 @@ public record MatchSnapshot(
                 List.of(),
                 List.of(),
                 List.of(),
-                AbilityStore.Saved.EMPTY,
-                ExperienceStore.Saved.EMPTY);
+                Depth.EMPTY);
+
+        public AbilityStore.Saved abilities() {
+            return depth.abilities();
+        }
+
+        public ExperienceStore.Saved experience() {
+            return depth.experience();
+        }
+
+        public FormationStore.Saved formations() {
+            return depth.formations();
+        }
+
+        /** A play without formations, as before ORD-06 saved them (M10 spec §0.3). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture,
+                List<Long> gates,
+                List<Long> breaches,
+                AbilityStore.Saved abilities,
+                ExperienceStore.Saved experience) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    gates,
+                    breaches,
+                    new Depth(abilities, experience, FormationStore.Saved.EMPTY));
+        }
 
         /** A play without experience, as before CMB-11 saved it (M10 spec §0.3). */
         public Play(

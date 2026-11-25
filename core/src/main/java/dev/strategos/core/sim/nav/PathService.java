@@ -378,6 +378,15 @@ public final class PathService {
      */
     private static boolean settled(MatchState s, int i, long tick) {
         long last = s.paths().lastRequest(i);
+        if (s.orders().kind(i)
+                == OrderKind.FORMATION) { // ORD-06: a member is settled only on its place, or it asks again
+            return last != PathStore.NEVER
+                    && tick - last <= SETTLED_AFTER
+                    && DetMath.length(
+                                    s.motion().x(i) - s.orders().targetX(i),
+                                    s.motion().z(i) - s.orders().targetZ(i))
+                            <= FORMATION_SETTLED_WITHIN;
+        }
         return s.orders().kind(i) != OrderKind.BURN // a burner within reach of its place burns (Burning)
                 && last != PathStore.NEVER
                 && tick - last <= SETTLED_AFTER
@@ -389,6 +398,9 @@ public final class PathService {
     }
 
     private static final double SETTLED_WITHIN = 1.5;
+
+    /** How near its place a member of a formation counts as on it, in blocks: nearer than a block, or it is walked to. */
+    private static final double FORMATION_SETTLED_WITHIN = 0.5;
 
     /** How near its place a mover on its own, not of a group order, arrives (MotionSystem's latch). */
     private static final double ARRIVED_ALONE = 1.0;
@@ -409,7 +421,8 @@ public final class PathService {
     private static void failSettled(MatchState s, int i) {
         int handle = s.entities().handleAt(i);
         MotionStore motion = s.motion();
-        if (s.orders().kind(i) == OrderKind.MOVE
+        int kind = s.orders().kind(i);
+        if ((kind == OrderKind.MOVE || kind == OrderKind.FORMATION) // a member of a formation stands on its place
                 && DetMath.length(
                                 motion.x(i) - s.orders().targetX(i),
                                 motion.z(i) - s.orders().targetZ(i))

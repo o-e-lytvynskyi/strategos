@@ -28,6 +28,7 @@ import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.formation.FormationStore;
 import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
@@ -477,6 +478,40 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("ranks", List.of()).forGetter(ExperienceStore.Saved::ranks))
             .apply(i, ExperienceStore.Saved::new));
 
+    private static final Codec<FormationStore.Row> FORMATION_ROW = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("id").forGetter(FormationStore.Row::id),
+                    Codec.INT.fieldOf("shape").forGetter(FormationStore.Row::shape),
+                    Codec.DOUBLE.listOf().fieldOf("route").forGetter(FormationStore.Row::route),
+                    Codec.BOOL.optionalFieldOf("more", false).forGetter(FormationStore.Row::more),
+                    Codec.DOUBLE.fieldOf("goalX").forGetter(FormationStore.Row::goalX),
+                    Codec.DOUBLE.fieldOf("goalZ").forGetter(FormationStore.Row::goalZ),
+                    Codec.DOUBLE.fieldOf("along").forGetter(FormationStore.Row::along),
+                    Codec.DOUBLE.fieldOf("facingX").forGetter(FormationStore.Row::facingX),
+                    Codec.DOUBLE.fieldOf("facingZ").forGetter(FormationStore.Row::facingZ),
+                    Codec.BOOL.optionalFieldOf("holding", false).forGetter(FormationStore.Row::holding),
+                    Codec.BOOL.optionalFieldOf("advancing", false).forGetter(FormationStore.Row::advancing),
+                    Codec.INT.optionalFieldOf("waited", 0).forGetter(FormationStore.Row::waited),
+                    Codec.INT.listOf().fieldOf("members").forGetter(FormationStore.Row::members),
+                    Codec.DOUBLE.listOf().fieldOf("lateral").forGetter(FormationStore.Row::lateral),
+                    Codec.DOUBLE.listOf().fieldOf("forward").forGetter(FormationStore.Row::forward))
+            .apply(i, FormationStore.Row::new));
+
+    private static final Codec<FormationStore.Saved> FORMATIONS =
+            FORMATION_ROW.listOf().xmap(FormationStore.Saved::new, FormationStore.Saved::formations);
+
+    /** The M10 parts of a play, as fields of the play itself (see {@link MatchSnapshot.Play.Depth}). */
+    private static final MapCodec<MatchSnapshot.Play.Depth> DEPTH = RecordCodecBuilder.mapCodec(i -> i.group(
+                    ABILITIES
+                            .optionalFieldOf("abilities", AbilityStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::abilities),
+                    EXPERIENCE
+                            .optionalFieldOf("experience", ExperienceStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::experience),
+                    FORMATIONS
+                            .optionalFieldOf("formations", FormationStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::formations))
+            .apply(i, MatchSnapshot.Play.Depth::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
@@ -498,12 +533,7 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture),
                     Codec.LONG.listOf().optionalFieldOf("gates", List.of()).forGetter(MatchSnapshot.Play::gates),
                     Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches),
-                    ABILITIES
-                            .optionalFieldOf("abilities", AbilityStore.Saved.EMPTY)
-                            .forGetter(MatchSnapshot.Play::abilities),
-                    EXPERIENCE
-                            .optionalFieldOf("experience", ExperienceStore.Saved.EMPTY)
-                            .forGetter(MatchSnapshot.Play::experience))
+                    DEPTH.forGetter(MatchSnapshot.Play::depth))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(

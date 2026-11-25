@@ -155,6 +155,9 @@ public final class StateHasher {
         if (!s.play().experience().empty()) { // only once a unit has earned experience (CMB-11)
             h = s.play().experience().mix(h, s.entities());
         }
+        if (!s.play().formations().empty()) { // only while a formation exists (ORD-06)
+            h = s.play().formations().mix(h);
+        }
         if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
             h = s.garrison().mix(h);
         }

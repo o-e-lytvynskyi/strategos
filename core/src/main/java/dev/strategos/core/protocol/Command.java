@@ -41,4 +41,5 @@ public sealed interface Command extends Hashable
                 Capture,
                 UpgradeBuilding,
                 PlaceWall,
-                UseAbility {}
+                UseAbility,
+                FormationMove {}

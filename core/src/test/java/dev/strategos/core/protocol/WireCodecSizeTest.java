@@ -137,6 +137,40 @@ class WireCodecSizeTest {
                 .hasMessageContaining("target kind");
     }
 
+    /** ORD-06: the formation command is wire id 38 (36 and 37 are reserved), as small as its fields, and refuses a bad shape. */
+    @Test
+    void formationMoveIsWireId38WithTheSizesOfItsFields() {
+        FormationMove box = FormationMove.replace(UnitSet.of(5), new Vec2d(1, 2), FormationShape.BOX);
+        FormationMove line =
+                new FormationMove(UnitSet.of(5, 6), new Vec2d(-1.5, 2), FormationShape.LINE, QueueMode.QUEUE);
+        assertThat(CommandKinds.DEFAULT.of(box).wireId()).isEqualTo(38);
+        assertThat(CommandKinds.DEFAULT.of(box).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.byWireId(36)).isNull();
+        assertThat(CommandKinds.DEFAULT.byWireId(37)).isNull();
+        assertThat(size(FormationMove.WIRE, box))
+                .as("count and handle 2, point 16, shape 1, mode 1")
+                .isEqualTo(20);
+        assertThat(size(FormationMove.WIRE, line)).as("one more handle, 1 byte").isEqualTo(21);
+        for (FormationMove move : List.of(box, line)) {
+            assertThat(roundTrip(COMMANDS, move)).isEqualTo(move);
+            assertThat(size(COMMANDS, move)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        FormationMove widest = new FormationMove(
+                UnitSet.of(many), new Vec2d(-1e300, 1e300), FormationShape.LINE, QueueMode.PUSH_FRONT);
+        assertThat(size(FormationMove.WIRE, widest)).isLessThanOrEqualTo(FormationMove.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        assertThat(FormationMove.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        byte[] badShape = WireCodec.encode(COMMANDS, box);
+        badShape[badShape.length - 2] = 7; // the shape byte, before the mode's
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, badShape))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("formation shape");
+    }
+
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
@@ -144,7 +178,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:formation_move=38");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();

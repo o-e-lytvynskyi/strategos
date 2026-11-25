@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.sim.ability.AbilityStore;
 import dev.strategos.core.sim.capture.CaptureStore;
+import dev.strategos.core.sim.formation.FormationStore;
 import dev.strategos.core.sim.nav.GateOverlay;
 import dev.strategos.core.sim.rank.ExperienceStore;
 import dev.strategos.core.sim.territory.TerritorySystem;
@@ -21,6 +22,7 @@ public final class PlayState {
     private final AbilityStore abilities = new AbilityStore(); // saved and hashed while it holds anything (UNIT-10)
     private final ExperienceStore experience =
             new ExperienceStore(); // saved and hashed while it holds anything (CMB-11)
+    private final FormationStore formations = new FormationStore(); // saved and hashed while one exists (ORD-06)
     private @Nullable TerritorySystem territorySystem;
 
     PlayState(MatchState owner, MatchConfig config) {
@@ -38,6 +40,11 @@ public final class PlayState {
     /** The experience and ranks the units have earned (CMB-11). */
     public ExperienceStore experience() {
         return experience;
+    }
+
+    /** The formations on the march or standing (ORD-06). */
+    public FormationStore formations() {
+        return formations;
     }
 
     /** What the units have breached lately (BLD-13). */

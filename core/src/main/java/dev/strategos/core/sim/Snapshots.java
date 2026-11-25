@@ -99,8 +99,10 @@ final class Snapshots {
                         s.play().capture().save(),
                         s.play().gates().save(),
                         s.play().breaches().save(entities::isAlive),
-                        s.play().abilities().save(s),
-                        ranked),
+                        new MatchSnapshot.Play.Depth(
+                                s.play().abilities().save(s),
+                                ranked,
+                                s.play().formations().save())),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -252,6 +254,7 @@ final class Snapshots {
         state.play().breaches().restore(snapshot.play().breaches());
         state.play().abilities().restore(snapshot.play().abilities(), templates, state.stats(), state.entities());
         Ranks.restore(state, snapshot.play().experience());
+        state.play().formations().restore(snapshot.play().formations());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

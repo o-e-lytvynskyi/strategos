@@ -54,6 +54,11 @@ import org.jspecify.annotations.Nullable;
  *     BURN_APPROACHING every 5   enter: a free place round the building, walked to; think: one gone ends it; Arrived:
  *                                burn
  *     BURNING          every 1   enter: the torch's wind-up; think: a blow of fire when it is over, then every period
+ *   FORMATION_MEMBER               Stuck at its last rung: the order failed; PathInvalidated: as WALKING
+ *     FORMATION_MARCHING every 1 think: the place a moment ahead of its slot, walked to; stand once the formation does
+ *     FORMATION_HOLDING  every 1 think: walk again once the place moves or the unit is pushed off it; a queued order
+ *                                takes over; once the formation stands, look for enemies; Attacked: hit back (as
+ *                                it does when it stands)
  * </pre>
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
@@ -99,6 +104,9 @@ public final class UnitAi {
     public static final StateId CAPTURE_APPROACHING = new StateId(26, "capture.approaching", UnitState.WALKING);
     public static final StateId CAPTURING = new StateId(27, "capture.capturing", UnitState.COMBAT);
     public static final StateId ABILITY = new StateId(28, "ability", UnitState.WALKING);
+    public static final StateId FORMATION_MEMBER = new StateId(29, "formation", null);
+    public static final StateId FORMATION_MARCHING = new StateId(30, "formation.marching", UnitState.WALKING);
+    public static final StateId FORMATION_HOLDING = new StateId(31, "formation.holding", UnitState.IDLE);
 
     private UnitAi() {}
 
@@ -310,6 +318,25 @@ public final class UnitAi {
                                 .on(Stuck.class, UnitAi::giveUp)
                                 .on(PathInvalidated.class, UnitAi::repath)
                                 .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(FORMATION_MEMBER, INDIVIDUAL)
+                                .initial(FORMATION_MARCHING)
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .transitions(next(FORMATION_HOLDING))
+                                .build(),
+                        StateDef.<MatchState>child(FORMATION_MARCHING, FORMATION_MEMBER)
+                                .thinkEvery(1)
+                                .think(Marching::march)
+                                .on(Arrived.class, (ctx, m) -> Marching.arrived(ctx))
+                                .transitions(next(FORMATION_HOLDING))
+                                .build(),
+                        StateDef.<MatchState>child(FORMATION_HOLDING, FORMATION_MEMBER)
+                                .thinkEvery(1)
+                                .think(Marching::hold)
+                                .on(Arrived.class, (ctx, m) -> {}) // standing: nowhere to walk to
+                                .on(Attacked.class, (ctx, m) -> Marching.struck(ctx, m.attacker()))
+                                .transitions(next(FORMATION_MARCHING))
                                 .build()),
                 UnitAi::changed);
     }
@@ -331,7 +358,8 @@ public final class UnitAi {
                 BURN,
                 GARRISON,
                 CAPTURE,
-                ABILITY));
+                ABILITY,
+                FORMATION_MEMBER));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -402,7 +430,9 @@ public final class UnitAi {
                 GARRISONED,
                 CAPTURE_APPROACHING,
                 CAPTURING,
-                ABILITY);
+                ABILITY,
+                FORMATION_MARCHING,
+                FORMATION_HOLDING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -439,6 +469,7 @@ public final class UnitAi {
             case OrderKind.GARRISON -> GARRISON;
             case OrderKind.CAPTURE -> CAPTURE;
             case OrderKind.ABILITY -> ABILITY;
+            case OrderKind.FORMATION -> FORMATION_MEMBER;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

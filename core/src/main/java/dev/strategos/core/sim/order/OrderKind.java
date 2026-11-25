@@ -39,6 +39,11 @@ public final class OrderKind {
      * has fired, or when it can no longer.
      */
     public static final int ABILITY = 12;
+    /**
+     * Keeping a place in a formation (ORD-06): the queue's target is the formation's id, its slot the unit's place in
+     * it and its ground place where that place will be a moment from now; done when the unit leaves the formation.
+     */
+    public static final int FORMATION = 13;
 
     private OrderKind() {}
 
@@ -57,6 +62,7 @@ public final class OrderKind {
             case GARRISON -> "garrison";
             case CAPTURE -> "capture";
             case ABILITY -> "ability";
+            case FORMATION -> "formation";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -76,6 +82,7 @@ public final class OrderKind {
             case "garrison" -> GARRISON;
             case "capture" -> CAPTURE;
             case "ability" -> ABILITY;
+            case "formation" -> FORMATION;
             default -> null;
         };
     }
@@ -87,7 +94,7 @@ public final class OrderKind {
 
     /**
      * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the unit it
-     * flees from, the node it gathers at, or the building it builds, burns, captures or goes into.
+     * flees from, the node it gathers at, the building it builds, burns, captures or goes into, or the formation it keeps a place in.
      */
     public static boolean targets(int kind) {
         return attacks(kind)
@@ -98,6 +105,7 @@ public final class OrderKind {
                 || kind == BURN
                 || kind == GARRISON
                 || kind == CAPTURE
-                || kind == ABILITY;
+                || kind == ABILITY
+                || kind == FORMATION;
     }
 }

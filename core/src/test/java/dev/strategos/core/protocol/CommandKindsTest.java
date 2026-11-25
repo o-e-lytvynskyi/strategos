@@ -51,7 +51,8 @@ class CommandKindsTest {
                         "strategos:capture",
                         "strategos:upgrade_building",
                         "strategos:place_wall",
-                        "strategos:use_ability");
+                        "strategos:use_ability",
+                        "strategos:formation_move");
     }
 
     @Test

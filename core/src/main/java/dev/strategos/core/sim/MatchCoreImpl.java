@@ -14,6 +14,7 @@ import dev.strategos.core.sim.combat.ShotSystem;
 import dev.strategos.core.sim.combat.TownArrows;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
+import dev.strategos.core.sim.formation.FormationSystem;
 import dev.strategos.core.sim.garrison.GarrisonSystem;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.journal.JournalWriter;
@@ -78,6 +79,7 @@ final class MatchCoreImpl implements MatchCore {
         this.queries = new QueriesImpl(state, paths);
         scheduler.register(new AiSystem(queries)); // computer players, after the commands
         scheduler.register(new AbilitySystem()); // UNIT-10: the tick boundary of cooldowns and buffs, and autocast
+        scheduler.register(new FormationSystem()); // ORD-06: the formations walk before their members' machines think
         scheduler.register(new UnitAiSystem(state));
         scheduler.register(new TownArrows()); // a centre's volley is an intent like a unit's, after the units'
         scheduler.register(paths.requests());

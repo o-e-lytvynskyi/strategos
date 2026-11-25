@@ -82,6 +82,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:place_wall", 34, PlaceWall.class, PlaceWall.CODEC, PlaceWall.WIRE, false);
     public static final CommandKind<UseAbility> USE_ABILITY =
             new CommandKind<>("strategos:use_ability", 35, UseAbility.class, UseAbility.CODEC, UseAbility.WIRE, false);
+    /** Wire ids 36 and 37 are reserved for patrol and guard (ORD-07). */
+    public static final CommandKind<FormationMove> FORMATION_MOVE = new CommandKind<>(
+            "strategos:formation_move", 38, FormationMove.class, FormationMove.CODEC, FormationMove.WIRE, false);
+
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -117,7 +121,8 @@ public final class CommandKinds {
             CAPTURE,
             UPGRADE_BUILDING,
             PLACE_WALL,
-            USE_ABILITY));
+            USE_ABILITY,
+            FORMATION_MOVE));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

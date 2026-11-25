@@ -65,7 +65,8 @@ class CommandCodecTest {
                         -20,
                         List.of(1, 5),
                         UnitSet.of(3, 4)),
-                new UseAbility(UnitSet.of(1, 9), new AbilityId("heal"), Target.unit(0x300007), QueueMode.PUSH_FRONT));
+                new UseAbility(UnitSet.of(1, 9), new AbilityId("heal"), Target.unit(0x300007), QueueMode.PUSH_FRONT),
+                new FormationMove(UnitSet.of(2, 6), new Vec2d(40.5, -2), FormationShape.LINE, QueueMode.REPLACE));
     }
 
     @Test

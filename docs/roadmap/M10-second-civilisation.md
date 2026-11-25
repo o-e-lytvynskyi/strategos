@@ -217,7 +217,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
      and keep moving (L1).
   6. A click on a member selects only that unit; Alt+click selects its whole formation (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-03, PATH-09 · **Size:** L · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### ORD-07 · Patrol and guard
 - **Value:** Standing orders that keep working while you look elsewhere (P3).

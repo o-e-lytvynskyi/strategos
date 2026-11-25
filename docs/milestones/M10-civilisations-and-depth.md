@@ -162,6 +162,7 @@ view and the first Minecraft twist, day and night.
 | 20 | What the probe found (T9b) | The AI read a building's static `Trainer/units`; it now asks `MatchQueries.trains` (the faction's effective list and roster, as production does) — the one production edit outside `core.sim.civ` the probe needed; hash-neutral, since no shipped technology edits trainer lists (`AiTrainsEffectiveTest`) |
 | 21 | Abilities' shapes (T10) | Ability ids are plain (`charge`), global to the set: templates declaring the same id must declare it identically; at most one timed effect per ability; `damage` takes hack, pierce or crush; data keys beyond §0.3: `radius` (area), `pick` (autocast picker: `self`, `nearest_enemy_in_range`), `on` (`ally` default, `enemy`, `any`) for `apply_modifiers` and `capture_strength`; `heal` mends `Organic` non-`Siege` units only. An ability's index is its place in the id-sorted list: a content swap that would move an index in use is refused, and a restore remaps saved orders by the saved id table (a missing ability refuses the restore; cooldown and timed rows are dropped). Cooldown and cost are checked at the command only for REPLACE, at firing otherwise. `RejectReason.ON_COOLDOWN` (wire 20) is appended. Personal modifier sources: none were in use; abilities take `MIN_VALUE + 1 + index`, ranks keep `MIN_VALUE` |
 | 22 | Ranks (T12) | `unit_soldier` (infantry, archer, horseman) carries `Promotion`: values are cost sums, thresholds 200/500/1000, ranks ×1.05/×1.10/×1.15 on hit points and damage (each about half an equipment tier; the first try at ×1.3 kept seed 2 of `BattleAtTheFordTest` from ending by its cap). Experience is credited per packet, `min(dealt, left) × value ÷ max HP`, to enemy player-faction attackers that are not dying; an archer that dies before its arrow lands forfeits it. The earned rank is state and stays as earned after a swap or a restore; what shows and applies is `min(rank, the list's length)`. Max HP keeps the ratio on a rank change (ADR-0013's note) |
+| 23 | Formations (T18) | One route per formation, searched by the path kernel (`PathJob`, gates passed like `PathService`) at command time on the most confined member's grid, re-searched from a partial route's end, instead of a PATH-09 group request; members steer to a place pushed ahead along it and plan individually only when it is out of line of walk. `FormationMove` is REPLACE only in M10 (a formation is a standing thing); one unit becomes a plain Move. The anchor waits up to 100 ticks for stragglers (assembled within 0.6 block; the place runs 0.9 block ahead). `MatchSnapshot.Play` reached DFU's 16-field limit: abilities, experience and formations nest in `Play.Depth`, still written as flat optional fields |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -598,7 +599,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T15 (2026-11-25)
 - [x] T16 (2026-11-26)
 - [x] T17 (2026-11-26)
-- [ ] T18
+- [x] T18 (2026-11-26)
 - [ ] T19
 - [ ] T20
 - [ ] T21
