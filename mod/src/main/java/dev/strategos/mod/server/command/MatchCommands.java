@@ -18,6 +18,7 @@ import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.protocol.Resign;
 import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SkirmishSetup;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
@@ -36,6 +37,7 @@ import dev.strategos.mod.server.world.ArenaWorld;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -217,7 +219,7 @@ final class MatchCommands {
 
     /**
      * {@code skirmish <map> [level=easy|normal|hard] [visibility=fog|explored|revealed] [resources=map|low|high]
-     * [population=50..200]} (MATCH-02): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
+     * [population=50..200] [civ=<id>[,<id>]]} (MATCH-02, CIV-01: one civilisation for every slot, or one per slot): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
      * skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one, with seed
      * {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it as its
      * observer.
@@ -264,6 +266,7 @@ final class MatchCommands {
         SkirmishSetup.Visibility visibility = d.visibility();
         SkirmishSetup.StartResources resources = d.resources();
         int population = d.populationCap();
+        List<CivId> civs = d.civs();
         for (String token : options.trim().split("\\s+", -1)) {
             if (token.isEmpty()) {
                 continue;
@@ -277,6 +280,7 @@ final class MatchCommands {
                     case "visibility" -> visibility = SkirmishSetup.Visibility.valueOf(value);
                     case "resources" -> resources = SkirmishSetup.StartResources.valueOf(value);
                     case "population" -> population = Integer.parseInt(value);
+                    case "civ" -> civs = civs(token.substring(eq + 1));
                     default -> throw new MatchRefusedException("unknown skirmish option " + key);
                 }
             } catch (IllegalArgumentException e) {
@@ -284,10 +288,23 @@ final class MatchCommands {
             }
         }
         try {
-            return new SkirmishSetup(map.toString(), level, resources, population, visibility);
+            return new SkirmishSetup(map.toString(), level, resources, population, visibility, civs);
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
+    }
+
+    /** {@code a:b,c:d} as civilisation ids: one id is every slot's, else one per slot. */
+    private static List<CivId> civs(String list) {
+        List<CivId> out = new ArrayList<>();
+        for (String id : list.split(",", -1)) {
+            try {
+                out.add(new CivId(id.trim()));
+            } catch (IllegalArgumentException e) {
+                throw new MatchRefusedException("civ=" + list + ": " + e.getMessage());
+            }
+        }
+        return out;
     }
 
     private static int skirmish(CommandSourceStack source, ResourceLocation map, String seedArg) {

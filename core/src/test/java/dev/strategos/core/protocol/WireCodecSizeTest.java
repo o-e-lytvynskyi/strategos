@@ -245,6 +245,9 @@ class WireCodecSizeTest {
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
+        assertThat(SkirmishSetup.WIRE.maxSize())
+                .as("skirmish: the map, the options, then up to 16 civilisation ids (CIV-01)")
+                .isEqualTo(3 + 128 + 1 + 1 + 5 + 1 + 1 + 16 * (1 + 48));
         assertThat(MatchStateMsg.WIRE.maxSize())
                 .as("match_state")
                 .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)

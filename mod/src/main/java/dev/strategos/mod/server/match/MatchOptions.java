@@ -1,14 +1,17 @@
 package dev.strategos.mod.server.match;
 
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.sim.PlayRules;
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import org.jspecify.annotations.Nullable;
 
 /**
  * How a match is made: its seed (random when null), factions, whether it is saved, who made it, its fault policy (the
  * server's default when null), its metrics sink, the Y its units stand at, the map package to import, if any (the
- * match then stays PREPARING until the import is done), and its play rules (MATCH-07's visibility option among them).
+ * match then stays PREPARING until the import is done), its play rules (MATCH-07's visibility option among them) and
+ * each faction's civilisation (CIV-01; empty: every faction plays the default).
  */
 public record MatchOptions(
         @Nullable Long seed,
@@ -19,7 +22,8 @@ public record MatchOptions(
         MetricsSink metrics,
         double flatFloorY,
         @Nullable ResourceLocation map,
-        PlayRules play) {
+        PlayRules play,
+        List<CivId> civs) {
     /** GameTests not about fog: MATCH-07's Explored option, so placement and the observer's footing work anywhere. */
     public static final PlayRules GAMETEST_PLAY = new PlayRules(PlayRules.Victory.NONE, false, true, false);
 
@@ -34,6 +38,24 @@ public record MatchOptions(
             double flatFloorY,
             @Nullable ResourceLocation map) {
         this(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, PlayRules.DEFAULTS);
+    }
+
+    /** A match whose factions all play the default civilisation. */
+    public MatchOptions(
+            @Nullable Long seed,
+            int factions,
+            boolean persistent,
+            MatchSource source,
+            @Nullable FaultPolicy faultPolicy,
+            MetricsSink metrics,
+            double flatFloorY,
+            @Nullable ResourceLocation map,
+            PlayRules play) {
+        this(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, List.of());
+    }
+
+    public MatchOptions {
+        civs = List.copyOf(civs);
     }
 
     /** A match without a map. */
@@ -56,31 +78,45 @@ public record MatchOptions(
     /** An unsaved match with a fixed seed and two factions, under {@link #GAMETEST_PLAY}. */
     public static MatchOptions gameTest(long seed, double flatFloorY) {
         return new MatchOptions(
-                seed, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), flatFloorY, null, GAMETEST_PLAY);
+                seed,
+                2,
+                false,
+                MatchSource.GAMETEST,
+                null,
+                MetricsSink.none(),
+                flatFloorY,
+                null,
+                GAMETEST_PLAY,
+                List.of());
     }
 
     public MatchOptions withPersistent(boolean persistent) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
     }
 
     public MatchOptions withFaultPolicy(FaultPolicy faultPolicy) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
     }
 
     public MatchOptions withMetrics(MetricsSink metrics) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
     }
 
     public MatchOptions withSeed(long seed) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
     }
 
     /** The match imports map package {@code map} into its space, its units standing at {@code floorY}. */
     public MatchOptions withMap(ResourceLocation map, double floorY) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, floorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, floorY, map, play, civs);
     }
 
     public MatchOptions withPlay(PlayRules play) {
-        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play);
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
+    }
+
+    /** Faction {@code k} plays {@code civs.get(k)}. */
+    public MatchOptions withCivs(List<CivId> civs) {
+        return new MatchOptions(seed, factions, persistent, source, faultPolicy, metrics, flatFloorY, map, play, civs);
     }
 }

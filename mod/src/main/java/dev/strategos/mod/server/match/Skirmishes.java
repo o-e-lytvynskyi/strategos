@@ -1,8 +1,11 @@
 package dev.strategos.mod.server.match;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SkirmishSetup;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
@@ -16,9 +19,11 @@ import dev.strategos.mod.server.world.ArenaPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -81,7 +86,9 @@ public final class Skirmishes {
         if (scenario == null) {
             throw new MatchRefusedException("no scenario is made for " + map);
         }
-        MatchOptions options = MatchOptions.generated(ArenaPolicy.FLOOR_Y).withPlay(play(setup));
+        MatchOptions base = MatchOptions.generated(ArenaPolicy.FLOOR_Y);
+        MatchOptions options = base.withPlay(play(setup))
+                .withCivs(civs(setup, base.factions(), server.templates().set()));
         MatchRuntime rt = placer.place(map, options);
         pending.add(new Pending(rt, player, scenario, setup));
         LOG.info("Skirmish {} on {} for {}: {}", rt.id(), map, player, setup);
@@ -96,6 +103,32 @@ public final class Skirmishes {
             }
         }
         return null;
+    }
+
+    /**
+     * Each of {@code factions}' civilisation as {@code setup} chooses it; empty when they all play the default. Refused
+     * when the setup lists neither one civilisation nor one per faction, or names one {@code templates} lacks.
+     */
+    static List<CivId> civs(SkirmishSetup setup, int factions, TemplateSet templates) {
+        int listed = setup.civs().size();
+        if (listed > 1 && listed != factions) {
+            throw new MatchRefusedException("a skirmish of " + factions + " slots has " + listed + " civilisations");
+        }
+        List<CivId> chosen = new ArrayList<>();
+        for (int k = 0; k < factions; k++) {
+            CivId civ = setup.civ(k);
+            if (templates.civ(civ) == null) {
+                throw new MatchRefusedException("no civilisation " + civ.value());
+            }
+            chosen.add(civ);
+        }
+        return chosen.stream().allMatch(CivId.DEFAULT::equals) ? List.of() : chosen;
+    }
+
+    /** The computer's strategy profile for a slot playing {@code civ}: the civilisation's own. */
+    static String profile(TemplateSet templates, CivId civ) {
+        CivDef def = templates.civ(civ);
+        return def == null ? CivDef.DEFAULT_AI_PROFILE : def.aiProfile();
     }
 
     /** Conquest under the setup's visibility (MATCH-07); the computer does not see through fog. */
@@ -158,7 +191,7 @@ public final class Skirmishes {
                 : ScenarioSetup.AI + "first_loop";
         for (Scenario.Slot slot : scenario.slots()) {
             String player = slot.player().startsWith(ScenarioSetup.AI) ? slot.player() : human;
-            computers.add(new Scenario.Slot(player, slot.resources(), slot.entities()));
+            computers.add(slot.with(player, slot.resources()));
         }
         apply(server, p.match(), new Scenario(scenario.map(), scenario.victory(), computers), core);
         seat(server, p.match(), p.player(), PlayerSlot.ADMIN);
@@ -166,16 +199,21 @@ public final class Skirmishes {
 
     /**
      * The player's skirmish: the scenario with each slot's resources scaled, the computer's slots playing {@code
-     * ai:skirmish} at the setup's level (AI-05: the script resolved for it is what {@code SetAi} carries, so the journal
+     * ai:<profile>} (the civilisation's, {@code skirmish} for the default) at the setup's level (AI-05: the script resolved for it is what {@code SetAi} carries, so the journal
      * replays it), the population cap, then the player in slot 0.
      */
     private static void play(StrategosServer server, Pending p, SkirmishSetup setup, MatchCore core) {
         Scenario scenario = Scenarios.load(server.server(), p.scenario());
         List<Scenario.Slot> slots = new ArrayList<>();
-        for (Scenario.Slot slot : scenario.slots()) {
-            String player =
-                    slot.player().startsWith(ScenarioSetup.AI) ? ScenarioSetup.AI + Levels.PROFILE : slot.player();
-            slots.add(new Scenario.Slot(player, setup.startResources(slot.resources()), slot.entities()));
+        TemplateSet templates = core.queries().templates();
+        List<CivId> civs = core.queries().config().civs();
+        for (int k = 0; k < scenario.slots().size(); k++) {
+            Scenario.Slot slot = scenario.slots().get(k);
+            CivId civ = k < civs.size() ? civs.get(k) : CivId.DEFAULT;
+            String player = slot.player().startsWith(ScenarioSetup.AI)
+                    ? ScenarioSetup.AI + profile(templates, civ)
+                    : slot.player();
+            slots.add(slot.with(player, slot.resources()));
         }
         String skirmish = Objects.requireNonNull(
                 Scenarios.script(server.server(), Levels.PROFILE), "the skirmish computer player's ai/skirmish.json");
@@ -187,7 +225,8 @@ public final class Skirmishes {
                 core,
                 profile -> profile.equals(Levels.PROFILE)
                         ? Levels.resolve(skirmish, level)
-                        : Scenarios.script(server.server(), profile));
+                        : Scenarios.script(server.server(), profile),
+                setup::startResources);
         p.match().submit(PlayerSlot.ADMIN, new RuleChange("populationMax", String.valueOf(setup.populationCap())));
         seat(server, p.match(), p.player(), new PlayerSlot(0));
     }
@@ -202,6 +241,16 @@ public final class Skirmishes {
             Scenario scenario,
             MatchCore core,
             Function<String, @Nullable String> scripts) {
+        apply(server, rt, scenario, core, scripts, r -> r);
+    }
+
+    private static void apply(
+            StrategosServer server,
+            MatchRuntime rt,
+            Scenario scenario,
+            MatchCore core,
+            Function<String, @Nullable String> scripts,
+            UnaryOperator<Map<String, Long>> scale) {
         ResourceLocation map = rt.map();
         Scenarios.apply(
                 rt,
@@ -210,7 +259,8 @@ public final class Skirmishes {
                         ? List.of()
                         : MapPackageLoader.load(server.server(), map).manifest().startSlots(),
                 core.queries().templates(),
-                scripts);
+                scripts,
+                scale);
     }
 
     private static void seat(StrategosServer server, MatchRuntime rt, UUID player, PlayerSlot slot) {

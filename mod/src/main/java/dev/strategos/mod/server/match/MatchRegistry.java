@@ -139,7 +139,7 @@ public final class MatchRegistry {
                 options.factions(),
                 MatchRules.DEFAULTS.withEconomy(economy.get()).withPlay(options.play()),
                 map == null ? List.of() : map.manifest().startSlots(), // AI-18: the computer knows the starts
-                List.of()); // every faction plays the default until setup chooses (CIV-01, T4)
+                options.civs());
         MatchCore core;
         try {
             core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
