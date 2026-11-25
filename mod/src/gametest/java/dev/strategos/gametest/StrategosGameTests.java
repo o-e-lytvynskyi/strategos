@@ -447,6 +447,11 @@ public final class StrategosGameTests {
         afterBatch(level, "map_lobby_coop");
     }
 
+    @AfterBatch(batch = "map_team_skirmish")
+    public static void afterMapTeamSkirmish(ServerLevel level) {
+        afterBatch(level, "map_team_skirmish");
+    }
+
     @AfterBatch(batch = "map_lobby_start")
     public static void afterMapLobbyStart(ServerLevel level) {
         afterBatch(level, "map_lobby_start");

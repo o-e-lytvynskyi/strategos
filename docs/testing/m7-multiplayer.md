@@ -13,9 +13,12 @@ For the LAN check, create a singleplayer world with the **Strategos Arena**
 world type before opening it to LAN.
 
 In the multiplayer pause menu, the host opens **Match lobby** and selects
-**Create lobby**. The second player opens **Match lobby** and selects **Join lobby**.
+**Create lobby** for the two-seat First Skirmish or **Create 2v2 lobby** for
+Team Skirmish. The second player opens **Match lobby** and selects **Join lobby**.
 Both select **Ready** below the seat table before the host selects **Start match**.
-Start separate lobby rounds when changing the seat plan.
+Start separate lobby rounds when changing the seat plan. For a production-jar
+playtest, use the `strategos-playtest` artifact from the candidate's successful
+manually dispatched Verify and install the same jar on the server and both clients.
 Use the same account for the reconnect check. Do the automation-negative
 controls through existing evidence, without sending malformed traffic during
 this playtest.
@@ -24,7 +27,7 @@ this playtest.
 |---|---|---|
 | 1. Start | On dedicated, invite B and start as A with B ready. Both reach RTS mode and see their correct seat, faction colours and roster. Repeat the lobby-entry check on Open to LAN. | Real-client [lobby scenario](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44203471758), [four-player admission and isolation](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44300748747) |
 | 2. Opponents | Put A and B on opposing teams. Each changes their treasury or training queue. The other player checks their own panels and then views the opponent under fog. A middle-clicks the minimap and sees their own marker, while B sees neither version. Repeat with roles reversed. | [Recipient matrix](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44746013321), [ping isolation](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45032045463) |
-| 3. Allies | Put A and B on distinct allied factions with an opposing AI. Middle-click a minimap location. Both allies identify the same map and world marker and see it expire. Confirm that their economies stay distinct. Defeat the opposing faction and confirm allied victory on both results screens. | [Coalition results](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44296700394), [approved HUD and ping scenario](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45059965221) |
+| 3. Allies | Use **Create 2v2 lobby**. A and B start in distinct allied factions against two allied AIs. Middle-click a minimap location. Both allies identify the same map and world marker and see it expire. Confirm that their economies stay distinct. Defeat both opposing factions and confirm allied victory on both results screens. | [Coalition results](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44296700394), [approved HUD and ping scenario](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45059965221) |
 | 4. Grant and co-op | In a fresh allied round use **Share control** to grant, use and revoke a command on the other faction's unit. Check that revocation takes effect and the private panel stays with its primary faction. Then start with both humans in one faction and issue compatible orders from both clients; both can control the shared roster. | [Co-op authority and scoreboard](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44614567652), [co-op UI](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45031953038) |
 | 5. Reclaim mid-fight | During an ongoing fight, B saves a control group and camera pose, then disconnects. A stays connected and watches B's existing orders continue. B connects with the same account inside the configured grace period (300 seconds by default). Confirm the same seat, authorised surviving group handles, camera, continuing fight and refreshed private view. | [Reclaim, timeout and transport](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918199224), [actual camera/group restoration](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918953137) |
 | 6. Commander and UI | Show fog in both views and pan the commander around a map boundary. Confirm body/camera correction and ordinary input recovery after opening chat and pause. In the approved 60-block ART-03 scene identify each silhouette and faction colour. | [Commander compatibility](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968393924), [actual Sodium movement](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968610434) and [fog](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968388209) |
@@ -93,12 +96,11 @@ Each row uses the actual server adapter and recipient connections. The
 compatibility Verify jobs rerun this matrix, and the client scenarios
 exercise the lobby and RTS screens under a real client.
 
-## Live coverage gap
+## Allied-victory acceptance
 
-The shipped lobby, map and scenario each support two faction slots. Step 3
-needs at least three factions. Keep it open until a production route supports
-two human allies and an opposing AI. The owner deferred the content expansion
-on 2026-11-25. The automated coalition and ping evidence remains recorded above.
+Team Skirmish supplies a four-start production route for Step 3. The previous
+two-client session took place before this route was available. Record the live
+2v2 result and the two clients' observations using the full protocol above.
 
 ## Acceptance record
 
