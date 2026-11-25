@@ -8,6 +8,7 @@ import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.mod.client.StrategosClient;
 import java.util.List;
@@ -50,6 +51,10 @@ final class HudCardPresentation {
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
             case RESEARCH -> research(templates, b.template());
             case ABILITY -> ability(templates, b.template());
+            case FORMATION ->
+                Component.translatable("strategos.card.formation."
+                                + FormationShape.ofCode(b.template()).id())
+                        .getString();
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);

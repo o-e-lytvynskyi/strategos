@@ -15,6 +15,7 @@ import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetRally;
@@ -70,6 +71,7 @@ final class RtsOrders {
     private final List<double[]> markers =
             new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
     private boolean attackMove;
+    private @Nullable FormationShape formation; // the armed formation march's shape (ORD-06)
     private int ability = NO_ABILITY; // the armed ability's index in the template set (UNIT-10)
     private final FocusTargets focus = new FocusTargets();
     private @Nullable Command lastCommand;
@@ -83,18 +85,64 @@ final class RtsOrders {
         if (action == Action.ATTACK_MOVE) {
             attackMove = true; // for the next right click
             ability = NO_ABILITY;
+            formation = null;
+        } else if (action == Action.FORMATION_BOX || action == Action.FORMATION_LINE) {
+            armFormation(action == Action.FORMATION_BOX ? FormationShape.BOX : FormationShape.LINE);
         } else if (action == Action.CANCEL || action == Action.SELECT || action == Action.BOX_SELECT) {
-            attackMove = false; // an armed ability keeps through a click, which fires it, and goes with cancel or a box
+            attackMove = false;
+            if (action != Action.SELECT) {
+                formation = null; // a click fires it, in the screen's handler; cancel and a box drop it
+            } // an armed ability keeps through a click, which fires it, and goes with cancel or a box
             if (action != Action.SELECT) {
                 ability = NO_ABILITY;
             }
         }
     }
 
+    /** The next click on the ground marches the selection in a formation of {@code shape} (ORD-06). */
+    void armFormation(FormationShape shape) {
+        formation = shape;
+        attackMove = false;
+        ability = NO_ABILITY;
+    }
+
+    /** The armed formation's shape code, -1 for none. */
+    int formationArmed() {
+        FormationShape shape = formation;
+        return shape == null ? -1 : shape.code();
+    }
+
+    /**
+     * The click that ends a formation march's targeting (ORD-06): the selection marches to the ground the cursor at
+     * window points picks, in one formation of the armed shape, replacing its orders (Shift is not offered). It
+     * disarms; false when none was armed.
+     */
+    boolean fireFormation(double x, double y) {
+        FormationShape shape = formation;
+        formation = null;
+        if (shape == null) {
+            return false;
+        }
+        Pick pick = mode.pick(x, y);
+        MatchJoin join = StrategosClient.match();
+        if (pick == null || join == null) {
+            return true;
+        }
+        double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+        double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+        Command command =
+                OrderIntents.formation(mode.selection().handles(), wx - join.originX(), wz - join.originZ(), shape);
+        if (command != null && send(command)) {
+            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, 40, 2});
+        }
+        return true;
+    }
+
     /** Targeting arms with the ability at {@code index} of the set (UNIT-10): the next click aims it. */
     void armAbility(int index) {
         ability = index;
         attackMove = false;
+        formation = null;
     }
 
     /** The armed ability's index in the template set, -1 for none. */
@@ -208,7 +256,7 @@ final class RtsOrders {
      */
     void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
         previewing = false;
-        if (fireAbility(x, y, shift)) { // an armed ability takes the click (UNIT-10)
+        if (fireAbility(x, y, shift) || fireFormation(x, y)) { // an armed ability or formation takes the click
             return;
         }
         boolean armed = attackMove;

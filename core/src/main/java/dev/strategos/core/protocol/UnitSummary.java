@@ -10,7 +10,9 @@ import java.util.List;
  * {@code tick}, as a full frame, twice a second. A unit is keyed by its index, which only one live unit holds at a time
  * and every body carries; its template, state and match-local column quantised to an eighth of a block. On the wire
  * the entries go by faction, in index order, about 6 bytes each: the index's step, template and state in one byte, and
- * X and Z in two each for spaces up to 2,048 blocks.
+ * X and Z in two each for spaces up to 2,048 blocks. A trailer after the factions (ORD-06) lists the units that keep a
+ * place in a formation, each as its step in the frame's order and the formation's id; it is left out when none does,
+ * so a frame without formations is byte-for-byte what it was. Only the viewer's own units carry one.
  */
 @CoreApi
 public record UnitSummary(int matchId, long tick, List<Entry> units) {
@@ -20,9 +22,12 @@ public record UnitSummary(int matchId, long tick, List<Entry> units) {
     private static final int TEMPLATE_ESCAPE = 31;
     private static final int MAX_FACTIONS = 16;
 
-    /** One unit: {@code qx} and {@code qz} are match-local X and Z in eighths of a block. */
+    /**
+     * One unit: {@code qx} and {@code qz} are match-local X and Z in eighths of a block; {@code formation} the id of
+     * the formation it keeps a place in (ORD-06), 0 for none.
+     */
     @CoreApi
-    public record Entry(int index, int faction, int template, int state, int qx, int qz) {
+    public record Entry(int index, int faction, int template, int state, int qx, int qz, int formation) {
         public Entry {
             if (index < 0
                     || faction < 0
@@ -31,15 +36,26 @@ public record UnitSummary(int matchId, long tick, List<Entry> units) {
                     || state < 0
                     || state > 7
                     || qx < 0
-                    || qz < 0) {
+                    || qz < 0
+                    || formation < 0) {
                 throw new IllegalArgumentException("a summary entry out of range: " + index + ", " + faction + ", "
-                        + template + ", " + state + ", " + qx + ", " + qz);
+                        + template + ", " + state + ", " + qx + ", " + qz + ", " + formation);
             }
+        }
+
+        /** A unit in no formation. */
+        public Entry(int index, int faction, int template, int state, int qx, int qz) {
+            this(index, faction, template, state, qx, qz, 0);
         }
 
         /** An entry at match-local ({@code x}, {@code z}), rounded to the nearest eighth and kept non-negative. */
         public static Entry at(int index, int faction, int template, int state, double x, double z) {
             return new Entry(index, faction, template, state, quantise(x), quantise(z));
+        }
+
+        /** As {@link #at(int, int, int, int, double, double)}, a unit that keeps a place in formation {@code formation}. */
+        public static Entry at(int index, int faction, int template, int state, double x, double z, int formation) {
+            return new Entry(index, faction, template, state, quantise(x), quantise(z), formation);
         }
 
         public double x() {
@@ -98,6 +114,20 @@ public record UnitSummary(int matchId, long tick, List<Entry> units) {
                 }
                 k = end;
             }
+            int formed = 0;
+            for (Entry e : units) {
+                formed += e.formation() > 0 ? 1 : 0;
+            }
+            if (formed > 0) {
+                out.writeVarInt(formed);
+                int last = -1;
+                for (int j = 0; j < units.size(); j++) {
+                    if (units.get(j).formation() > 0) {
+                        out.writeVarInt(j - last - 1).writeVarInt(units.get(j).formation());
+                        last = j;
+                    }
+                }
+            }
         }
 
         @Override
@@ -121,12 +151,24 @@ public record UnitSummary(int matchId, long tick, List<Entry> units) {
                     units.add(new Entry(index, faction, template, packed >>> 5, in.readVarInt(), in.readVarInt()));
                 }
             }
+            if (in.remaining() > 0) {
+                int formed = in.readVarInt(units.size());
+                int at = -1;
+                for (int j = 0; j < formed; j++) {
+                    at += 1 + in.readVarInt(units.size() - 1 - at);
+                    Entry e = units.get(at);
+                    units.set(
+                            at,
+                            new Entry(
+                                    e.index(), e.faction(), e.template(), e.state(), e.qx(), e.qz(), in.readVarInt()));
+                }
+            }
             return new UnitSummary(matchId, tick, units);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 10 + 5 + MAX_FACTIONS * (1 + 5) + MAX_UNITS * (5 + 1 + 5 + 5 + 5);
+            return 5 + 10 + 5 + MAX_FACTIONS * (1 + 5) + MAX_UNITS * (5 + 1 + 5 + 5 + 5) + 5 + MAX_UNITS * (5 + 5);
         }
     };
 }

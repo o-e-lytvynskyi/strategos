@@ -17,6 +17,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.DepositState;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.UnitSummary;
@@ -141,6 +142,21 @@ public final class RtsMode {
     /** The command card's ability button: targeting armed with the ability at index {@code ability} of the set (UNIT-10). */
     public void armAbility(int ability) {
         orders.armAbility(ability);
+    }
+
+    /** The command card's or the key's formation march: the next ground click marches the selection in {@code shape} (ORD-06). */
+    public void armFormation(FormationShape shape) {
+        orders.armFormation(shape);
+    }
+
+    /** The armed formation march's shape code (ORD-06); -1 when none is armed. */
+    public int formationArmed() {
+        return orders.formationArmed();
+    }
+
+    /** The click that marches the selection to what the cursor at window points picks; false when none is armed. */
+    boolean fireFormation(double x, double y) {
+        return orders.fireFormation(x, y);
     }
 
     /** The ability whose target the next click picks (UNIT-10), its index in the template set; -1 when none is armed. */
@@ -341,7 +357,8 @@ public final class RtsMode {
                     feet == null ? Double.NaN : feet[0],
                     feet == null ? Double.NaN : feet[1],
                     head == null ? Double.NaN : head[0],
-                    head == null ? Double.NaN : head[1]));
+                    head == null ? Double.NaN : head[1],
+                    formationOf(data)));
         }
         return out;
     }
@@ -357,7 +374,13 @@ public final class RtsMode {
             return null;
         }
         UnitSpawnData d = body.spawnData();
-        return new Seen(d.handle(), d.faction(), d.templateIndex(), 0, 0, 0, 0);
+        return new Seen(d.handle(), d.faction(), d.templateIndex(), 0, 0, 0, 0, formationOf(d));
+    }
+
+    /** The formation the unit keeps a place in (ORD-06), from the summary; 0 for none or for another faction's. */
+    private static int formationOf(UnitSpawnData d) {
+        UnitSummary.Entry e = StrategosClient.model().unit(Handle.index(d.handle()));
+        return e == null ? 0 : e.formation();
     }
 
     /** Pans the camera to the centre of the units {@code handles} names that have bodies here. */

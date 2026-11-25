@@ -27,6 +27,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UiQuery;
@@ -277,6 +278,8 @@ public final class RtsHud {
             mode.armPlacement(c.template());
         } else if (c.effect() == CardController.Effect.TARGET) {
             mode.armAbility(c.template()); // the next click aims it (UNIT-10)
+        } else if (c.effect() == CardController.Effect.FORMATION) {
+            mode.armFormation(FormationShape.ofCode(c.template())); // the next ground click marches (ORD-06)
         }
         build();
     }
@@ -731,6 +734,15 @@ public final class RtsHud {
                                 cell.y() + (cell.height() - font.lineHeight) / 2 + 1,
                                 theme.text(),
                                 true);
+                    }
+                }
+                case FORMATION -> {
+                    paint.item(
+                            g,
+                            b.template() == FormationShape.BOX.code() ? "minecraft:white_banner" : "minecraft:lead",
+                            cell);
+                    if (b.template() == mode.formationArmed()) { // waiting for its ground click: framed
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
                     }
                 }
                 case RESEARCH -> {

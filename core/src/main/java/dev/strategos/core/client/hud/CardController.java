@@ -45,7 +45,9 @@ public final class CardController {
         PAGE,
         ARM,
         /** An ability that takes a target: {@link Click#template} is its index; the next click aims it. */
-        TARGET
+        TARGET,
+        /** A formation march: {@link Click#template} is the shape's code; the next ground click sends it (ORD-06). */
+        FORMATION
     }
 
     /** A click's effect, and for {@link Effect#ARM} the building template to place. */
@@ -212,6 +214,7 @@ public final class CardController {
                 send.accept(java.util.Objects.requireNonNull(AbilityIntents.use(owners, def, Target.none(), batch)));
                 yield new Click(Effect.SENT, -1);
             }
+            case FORMATION -> units.size() < 2 ? Click.NONE : new Click(Effect.FORMATION, button.template());
             case BUILD_PAGE -> {
                 buildPage = true;
                 yield new Click(Effect.PAGE, -1);

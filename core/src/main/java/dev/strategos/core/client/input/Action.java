@@ -21,6 +21,10 @@ public enum Action {
     ORDER_CONTEXT(false),
     ATTACK_MOVE(false),
     STOP(false),
+    /** The selection's next ground click marches it in a box formation (ORD-06). */
+    FORMATION_BOX(false),
+    /** The selection's next ground click marches it in a line formation (ORD-06). */
+    FORMATION_LINE(false),
     /** Held while right-clicking an enemy building: the selection captures it instead of attacking it (CMB-10). */
     CAPTURE(true),
     CONTROL_GROUP_SET(false),

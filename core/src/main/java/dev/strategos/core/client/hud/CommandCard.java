@@ -80,7 +80,9 @@ public record CommandCard(Page page, List<Button> buttons) {
          * An ability of the selected units (UNIT-10): {@link Button#template} is its index in the template set's
          * abilities, {@link Button#cooldown} the ticks it still rests.
          */
-        ABILITY
+        ABILITY,
+        /** A formation march of the selection (ORD-06): {@link Button#template} is the shape's code; the next click aims it. */
+        FORMATION
     }
 
     /** The cells ability buttons take, in order (see {@link #abilitySlot}): beside the build page's cell, then above stop (their keys follow the grid). */
@@ -296,7 +298,11 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (builders) {
             out.add(new Button(Kind.BUILD_PAGE, 0, -1, List.of(), true));
         }
-        abilityButtons(in, out);
+        boolean formations = FormationCard.offered(in.templates(), in.unitTemplates());
+        abilityButtons(in, out, formations ? FormationCard.ABILITIES_BESIDE : ABILITY_SLOT_COUNT);
+        if (formations) {
+            FormationCard.buttons(out);
+        }
         List<Stance> stances = stances();
         for (int k = 0; k < stances.size(); k++) {
             out.add(Button.stance(STANCE_ROW + k, stances.get(k), stances.get(k) == in.stance()));
@@ -343,9 +349,9 @@ public record CommandCard(Page page, List<Button> buttons) {
         return least;
     }
 
-    private static void abilityButtons(Input in, List<Button> out) {
+    private static void abilityButtons(Input in, List<Button> out, int most) {
         List<Integer> abilities = abilitiesOf(in.templates(), in.unitTemplates());
-        for (int k = 0; k < abilities.size() && k < ABILITY_SLOT_COUNT; k++) {
+        for (int k = 0; k < abilities.size() && k < most; k++) {
             int index = abilities.get(k);
             AbilityDef def = in.templates().abilities().get(index);
             List<Long> cost = new ArrayList<>(in.resources().size());

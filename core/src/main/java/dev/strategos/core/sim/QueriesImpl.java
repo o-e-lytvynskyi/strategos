@@ -24,6 +24,7 @@ import dev.strategos.core.sim.econ.GatherSlots;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.econ.ResourceDef;
+import dev.strategos.core.sim.formation.FormationController;
 import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
@@ -352,6 +353,33 @@ final class QueriesImpl implements MatchQueries {
                 motion.yaw(i),
                 state.ai().state(i),
                 orders.kind(i) != OrderKind.NONE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
+    }
+
+    @Override
+    public int formationOf(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return 0;
+        }
+        int i = Handle.index(handle);
+        return state.orders().kind(i) == OrderKind.FORMATION ? state.orders().target(i) : 0;
+    }
+
+    @Override
+    public double formationSlotError(int handle) {
+        int id = formationOf(handle);
+        FormationController c = id == 0 ? null : state.play().formations().byId(id);
+        if (c == null) {
+            return Double.NaN;
+        }
+        for (int k = 0; k < c.size(); k++) {
+            if (c.member(k) == handle) {
+                int i = Handle.index(handle);
+                double dx = state.motion().x(i) - c.slotX(k);
+                double dz = state.motion().z(i) - c.slotZ(k);
+                return Math.sqrt(dx * dx + dz * dz);
+            }
+        }
+        return Double.NaN;
     }
 
     @Override

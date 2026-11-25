@@ -56,4 +56,52 @@ class UnitSummaryCodecTest {
                         .length)
                 .isLessThanOrEqualTo(UnitSummary.WIRE.maxSize());
     }
+
+    @Test
+    void aFrameWithoutFormationsIsByteForByteWhatItWas() {
+        UnitSummary plain = sixHundred();
+        byte[] bytes = WireCodec.encode(UnitSummary.WIRE, plain);
+        UnitSummary same = new UnitSummary(plain.matchId(), plain.tick(), plain.units());
+        assertThat(WireCodec.encode(UnitSummary.WIRE, same)).isEqualTo(bytes);
+        assertThat(WireCodec.decode(UnitSummary.WIRE, bytes).units()).allMatch(e -> e.formation() == 0);
+    }
+
+    /** ORD-06: the formation id rides in a trailer written only when a unit has one. */
+    @Test
+    void formationIdsRideInATrailerOnlyForTheUnitsThatHaveOne() {
+        List<UnitSummary.Entry> units = new ArrayList<>();
+        for (int k = 0; k < 40; k++) {
+            units.add(UnitSummary.Entry.at(k, k % 2, 1, 0, 10 + k, 20, k % 4 == 0 ? 300 + k / 4 : 0));
+        }
+        UnitSummary frame = new UnitSummary(2, 99, units);
+        byte[] bytes = WireCodec.encode(UnitSummary.WIRE, frame);
+        UnitSummary back = WireCodec.decode(UnitSummary.WIRE, bytes);
+        assertThat(back).isEqualTo(frame);
+        assertThat(back.units().stream().filter(e -> e.formation() > 0)).hasSize(10);
+        int plain = WireCodec.encode(
+                        UnitSummary.WIRE,
+                        new UnitSummary(
+                                2,
+                                99,
+                                units.stream()
+                                        .map(e -> new UnitSummary.Entry(
+                                                e.index(), e.faction(), e.template(), e.state(), e.qx(), e.qz()))
+                                        .toList()))
+                .length;
+        assertThat(bytes.length - plain)
+                .as("the trailer: a count and about 3 bytes a member")
+                .isLessThanOrEqualTo(1 + 10 * 3);
+    }
+
+    @Test
+    void aFullFrameOfFormedUnitsFitsItsCap() {
+        List<UnitSummary.Entry> units = new ArrayList<>();
+        for (int k = 0; k < UnitSummary.MAX_UNITS; k++) {
+            units.add(UnitSummary.Entry.at(k * 2, 15, 40_000, 7, 2_047.9, 2_047.9, Integer.MAX_VALUE));
+        }
+        UnitSummary frame = new UnitSummary(Integer.MAX_VALUE, Long.MAX_VALUE, units);
+        byte[] bytes = WireCodec.encode(UnitSummary.WIRE, frame);
+        assertThat(bytes.length).isLessThanOrEqualTo(UnitSummary.WIRE.maxSize());
+        assertThat(WireCodec.decode(UnitSummary.WIRE, bytes)).isEqualTo(frame);
+    }
 }

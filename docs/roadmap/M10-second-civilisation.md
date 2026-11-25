@@ -217,7 +217,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
      and keep moving (L1).
   6. A click on a member selects only that unit; Alt+click selects its whole formation (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-03, PATH-09 · **Size:** L · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-26 — 1 `FormationSlotTest` (40 members, max slot error 0.78 block; under 0.8 through 90° turns); 2 `FormationSpeedTest`; 3 `FormationBreakTest`; 4 `formationtests.march` (a mixed box through a wall gap on the GameTest arena — refinement of 2026-11-26 in docs/design/roadmap-changes.md §8); 5 `FormationLeaveTest`; 6 `FormationSelectTest` (click one, Alt+click the formation). M10 T18–T19.
 
 #### ORD-07 · Patrol and guard
 - **Value:** Standing orders that keep working while you look elsewhere (P3).

@@ -6,7 +6,7 @@ import java.util.List;
  * The default bindings (UI-01, 04 §13.3), modelled on the classics where Minecraft leaves room. In the RTS screen the
  * camera pans on W, A, S and D, which vanilla binds only in game (they never conflict); it rotates on comma and period
  * ("<" and ">") and zooms on "=" and "-" and the wheel, because vanilla's Q and E bind drop and inventory in every
- * context. Attack-move is Z, beside A, where the classics put attack; stop is H (halt); first person is V (view);
+ * context. Attack-move is Z, beside A, where the classics put attack; stop is H (halt); formations are M (march in a box) and U (line; F, L, X and C are vanilla's); first person is V (view);
  * Space centres on the selection; B arms placement and cycles its buildings, R turns the ghost. Outside the screen, F6
  * enters RTS mode. The command card's fifteen cells (UI-08) are Alt and the classics' grid, Q W E R T / A S D F G /
  * Z X C V B: the grid alone would take the camera's and the actions' keys, so the card's bindings come first and a
@@ -46,6 +46,8 @@ public final class DefaultBindings {
                 rts(Action.CAMERA_CENTRE_ON_SELECTION, KeyCode.SPACE),
                 rts(Action.ATTACK_MOVE, KeyCode.Z),
                 rts(Action.STOP, KeyCode.H),
+                rts(Action.FORMATION_BOX, 'M'),
+                rts(Action.FORMATION_LINE, 'U'),
                 rts(Action.CAPTURE, KeyCode.N),
                 rts(Action.TOGGLE_FIRST_PERSON, KeyCode.V),
                 rts(Action.BUILD, KeyCode.B),

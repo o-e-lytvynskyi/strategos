@@ -190,8 +190,8 @@ public final class RtsScreen extends Screen {
             boolean shift = Modifiers.shift(e.modifiers());
             switch (e.action()) {
                 case SELECT -> {
-                    if (mode.fireAbility(x(e.x()), y(e.y()), shift)) {
-                        // an armed ability took the click (UNIT-10)
+                    if (mode.fireAbility(x(e.x()), y(e.y()), shift) || mode.fireFormation(x(e.x()), y(e.y()))) {
+                        // an armed ability (UNIT-10) or formation march (ORD-06) took the click
                     } else if (!mode.placement().place(shift)) {
                         RtsMode.Pick pick = pickAt(e.x(), e.y());
                         Seen unit = mode.seenAt(pick);
@@ -202,6 +202,8 @@ public final class RtsScreen extends Screen {
                             selection.clickBuilding(building.handle(), building.faction());
                         } else if (deposit != null) {
                             selection.clickDeposit(deposit.node());
+                        } else if (unit != null && Modifiers.alt(e.modifiers())) {
+                            selection.clickFormation(onScreen(mode.seen()), unit, shift); // Alt: its whole formation
                         } else {
                             selection.click(unit, shift);
                         }

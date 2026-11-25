@@ -59,7 +59,8 @@ public final class ReplicationService {
                         unit.templateIndex(),
                         stateCode(unit.state()),
                         unit.x(),
-                        unit.z()));
+                        unit.z(),
+                        own ? q.formationOf(handle) : 0));
                 if (entries.size() == UnitSummary.MAX_UNITS) {
                     break;
                 }

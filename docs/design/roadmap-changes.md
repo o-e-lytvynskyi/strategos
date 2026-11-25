@@ -502,3 +502,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | Card | Change | Why |
 |---|---|---|
 | TECH-04 | Criterion 3 ("a GameTest phase-up to City applies the bonuses"): the GameTest `phasetests.city_bonuses` checks the territory bonus in the real level (tiles change owner as the civic centre's radius grows); the arrows bonus (+2 on the civic centre and the towers) is checked at L1 in `CityTerritoryTest` | The core's queries expose no building stat to a GameTest, and counting volleys would make the L3 test timing-bound; both bonuses ride the same modifier path the L1 test reads |
+
+### 2026-11-26 — M10: the formation march's ground
+
+| Card | Change | Why |
+|---|---|---|
+| ORD-06 | Criterion 4 ("a formation marches across the proving ground in a GameTest"): `formationtests.march` marches a mixed box of spearmen and archers through a six-block gap in a wall on the GameTest arena `arena_flat_48`; every member arrives within a block of its slot, the ranged behind the melee | The proving ground is a map-test scene, not a GameTest structure; the arena with a wall gap gives the same obstacle the march must pass and runs inside `runGameTestServer` |

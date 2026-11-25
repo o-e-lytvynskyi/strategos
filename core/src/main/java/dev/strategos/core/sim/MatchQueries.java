@@ -90,6 +90,19 @@ public interface MatchQueries {
 
     @Nullable UnitView unit(int handle);
 
+    /** The formation a live unit keeps a place in (ORD-06): its id, a group id of the match; 0 for none. */
+    default int formationOf(int handle) {
+        return 0;
+    }
+
+    /**
+     * How far a live unit stands from its place in its formation, in blocks (ORD-06); NaN for a unit in none, which
+     * tests and the debug overlay read.
+     */
+    default double formationSlotError(int handle) {
+        return Double.NaN;
+    }
+
     /** A sorted copy; cold path. */
     int[] unitHandles();
 

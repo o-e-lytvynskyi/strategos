@@ -6,6 +6,8 @@ import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Follow;
+import dev.strategos.core.protocol.FormationMove;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
@@ -86,6 +88,20 @@ public final class OrderIntents {
                 y,
                 z,
                 shift ? QueueMode.QUEUE : QueueMode.REPLACE);
+    }
+
+    /**
+     * The click that ends a formation move's targeting (ORD-06): the selection marches to the match-local point in one
+     * formation of {@code shape}; it only replaces the orders, as the server takes nothing else. None without a
+     * selection.
+     */
+    public static @Nullable FormationMove formation(
+            List<Integer> selection, double localX, double localZ, FormationShape shape) {
+        if (selection.isEmpty()) {
+            return null;
+        }
+        return FormationMove.replace(
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()), new Vec2d(localX, localZ), shape);
     }
 
     public static @Nullable Move move(List<Integer> selection, double localX, double localZ, boolean shift) {

@@ -20,6 +20,7 @@ import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.TerritoryUpdate;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TerritoryGrid;
@@ -34,6 +35,7 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
+import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -113,6 +115,21 @@ class PayloadRoundTripTest {
                         List.of(new UnitDetail.Cooldown(0, 600)))));
         roundTrip(UnitDetailPayload.STREAM_CODEC, new UnitDetailPayload(detail), UnitDetailPayload.SPEC.cap());
         assertThat(UnitDetailPayload.SPEC.cap()).isEqualTo(UnitDetail.WIRE.maxSize());
+    }
+
+    /** ORD-06: {@code unit_summary} with a formation id on some units round-trips through its stream codec within its cap. */
+    @Test
+    void aUnitSummaryWithFormationsRoundTripsWithinItsCap() {
+        UnitSummary summary = new UnitSummary(
+                1,
+                99,
+                List.of(
+                        UnitSummary.Entry.at(3, 0, 2, 1, 10.5, 20.25, 12),
+                        UnitSummary.Entry.at(4, 0, 2, 0, 11, 20, 12),
+                        UnitSummary.Entry.at(7, 0, 5, 0, 40, 41, 0),
+                        UnitSummary.Entry.at(2, 1, 2, 0, 90, 41, 0)));
+        roundTrip(UnitSummaryPayload.STREAM_CODEC, new UnitSummaryPayload(summary), UnitSummaryPayload.SPEC.cap());
+        assertThat(UnitSummaryPayload.SPEC.cap()).isEqualTo(UnitSummary.WIRE.maxSize());
     }
 
     /** PATH-10's dev payloads (spec §2.7): {@code debug_subscribe} within 64 B, {@code debug_feed} within 64 KiB. */

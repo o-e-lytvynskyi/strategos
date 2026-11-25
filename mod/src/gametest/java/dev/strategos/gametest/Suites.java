@@ -21,6 +21,7 @@ import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
 import dev.strategos.gametest.suites.FogTests;
+import dev.strategos.gametest.suites.FormationTests;
 import dev.strategos.gametest.suites.GarrisonTests;
 import dev.strategos.gametest.suites.HealTests;
 import dev.strategos.gametest.suites.JournalTests;
@@ -79,6 +80,7 @@ public final class Suites {
                         CivTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
+                        FormationTests.class,
                         GarrisonTests.class,
                         HealTests.class,
                         LootTests.class,
