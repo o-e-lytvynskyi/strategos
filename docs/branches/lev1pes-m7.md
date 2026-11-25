@@ -6,7 +6,7 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 24 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 25 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
 - **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. UI-15 human two-client acceptance is T25. Tests, builds and client runs stay cloud-only; optional T24 stays in scope.
 
@@ -16,7 +16,8 @@
 - **T22 complete:** Verify 45062739294 on d4bb32b5 passes 3,095 cases, including Roman materials, all seven buildings, construction, damage/restore/repair and command-card icons. T23 is complete too. The owner approved the Roman look and all three inspected 60-block frames from 45063031385. Canonical run 45063579435 passes at maximum NMSE 1.9631e-6 (limit 1e-5), and rejects all three inverted controls.
 - **T17 complete:** S11 cloud measurement 45062182584 verified all four 60-second scenes and four peers; the highest per-peer gameplay mean was 34,341.80 B/s under the 102,400 B/s limit. T18 confirms the native packet accounting and keeps tier 4 in reserve.
 - **T18 complete:** The dedicated server and two native clients measured all four S11 scenes. Eight peer means pass E, up to 62,639.93 B/s. Pan travelled 39.2 and 39.8 blocks/game-second. Tier 4 stays in reserve.
-- **T20/T21 in progress:** T20 adds the 24,000-tick four-faction measurement, 2× stress and existing path-latency checks. Diagnostics 45064656511 and 45068257346 exposed workload underfill. Exact-census PERF-10 45088024574 and paired JMH 45088571229 passed on bd23adc2. The AMD EPYC 7763 hosted runner passed the A–E, 2× stress, workload and path-latency checks. Host C p95 was 6.748 ms normal and 10.505 ms stress. The largest E mean was 6,771 B/s, with order latency p95 of three ticks. Client-profile Verify 45088028364 passes 3,096 cases on that commit. Reference-host acceptance is still required. T21 adds the recipient/reconnect inventory. Canonical lobby 45065058405 selects Roman on production transport with seven zero-diff frames and seven rejected controls. The actual Sodium co-op scenario 45064693729 passes with eight inspected frames. Server 45064683957 passes 3,095 cases, client 45065907954 passes 3,096, and full S 45064689520 passes 23 jobs, 249 cases, all 20 replayed AI seeds and 896,421 ticks.
+- **T20 complete:** T20 adds the 24,000-tick four-faction measurement, 2× stress and existing path-latency checks. Diagnostics 45064656511 and 45068257346 exposed workload underfill. Exact-census PERF-10 45088024574 and paired JMH 45088571229 passed on bd23adc2. The AMD EPYC 7763 hosted runner passed the A–E, 2× stress, workload and path-latency checks. Host C p95 was 6.748 ms normal and 10.505 ms stress. The largest E mean was 6,771 B/s, with order latency p95 of three ticks. Client-profile Verify 45088028364 passes 3,096 cases on that commit. The owner accepted this run on 2026-11-25. See the [reference reports](../../perf/m7/README.md).
+- **T21 in progress:** T21 adds the recipient/reconnect inventory. Canonical lobby 45065058405 selects Roman on production transport with seven zero-diff frames and seven rejected controls. The actual Sodium co-op scenario 45064693729 passes with eight inspected frames. Server 45064683957 passes 3,095 cases, client 45065907954 passes 3,096, and full S 45064689520 passes 23 jobs, 249 cases, all 20 replayed AI seeds and 896,421 ticks.
 - **T24 timing:** Keep the owner's optional QA-14 request in scope. The M6 playability verdict unblocks ART-03. The separate MVP acceptance still requires the QA-13 playtest record; T24 is due at the formal MVP exit or 2027-Q2 and proceeds on its own claim.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
@@ -43,6 +44,10 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-25 — Accept the PERF-10 reference
+
+The owner accepted 45088024574. The archive passes `tools/m7_perf_reports.py` and includes the standard, stress and path reports from the exact-census candidate. Synced `origin/main` at `e18bcddb` (M9/M10 claim records only). T21 and T25 remain open.
 
 ### 2026-11-22 — Complete T14 and start the two-client protocol
 
@@ -549,7 +554,11 @@ or replication privacy; those retain their own integration tests and dependencie
 
 9. D-03 and artwork scope resolved 2026-11-22. The first civilisation is Roman antiquity. The owner described M6 as playable but difficult and delegated all ART-03 assets to this session. The existing vanilla-faithful D-04 direction applies. QA-13 retains its other release-candidate checks.
 
+10. **T25 Step 3 is blocked.** The production lobby exposes two seats and the shipped map and scenario provide two faction starts. The acceptance route needs two human allied factions and an opposing AI. The owner deferred expanding the shipped lobby and content on 2026-11-25. Keep the L7 step and M7 hand-in open.
+
 ## Decisions taken
+
+- **2026-11-25, PERF-10 reference.** The owner accepted run 45088024574 on the hosted AMD EPYC 7763. Archive its A–E, stress and path reports with unchanged thresholds. To supersede this reference, approve and archive a complete measurement on the replacement host.
 
 - 2026-11-23 · The sustained-load diagnostic 45068257346 held at least 137 live units per normal faction and 276 per stress faction. The lowest population means were 149.985 and 299.747, so the exact load gate rejected them. Keep the gate and give each active bot one reserve worker after the exact initial census. This measures a slightly more demanding workload and covers casualties between replenishment ticks. Undo by removing the one-worker reserve and retaining the same workload guard.
 

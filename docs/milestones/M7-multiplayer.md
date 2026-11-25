@@ -934,7 +934,9 @@ ticks after 200 warm-up ticks in the baseline and 6,000 measured ticks under 2×
 each viewer's exact gameplay bytes and measured duration. The dedicated 100-unit order test
 enforces the five-tick latency behind 200 requests. The PERF-10 report guard checks the complete
 windows, all four recipient budgets and the existing timing and latency limits. The GitHub-hosted
-`perf` workflow's `m7` input runs these GameTests as a diagnostic with factor 1.
+`perf` workflow's `m7` input runs these GameTests with factor 1. On 2026-11-25 the owner
+accepted run 45088024574 as the PERF-10 reference. See the [archived reports](../../perf/m7/README.md)
+for the host, census, limits and reproduction check.
 
 No M8 fog-cost certification or threshold/baseline change is implied.
 
@@ -1060,7 +1062,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T17 (2026-11-22) · [Four-peer S11 archive](../spikes/S11-bandwidth.md#four-peer-result), cloud run 45062182584. Every peer stays within E in all four scenes; the worst mean was 34,341.80 B/s.
 - [x] T18 (2026-11-23) · [Dedicated server and two real clients](../spikes/S11-bandwidth.md#dedicated-server-and-two-real-clients). All eight measurements pass E; highest 62,639.93 B/s. Tier 4 stays in reserve.
 - [x] T19 (2026-11-22) · Two-client [protocol and evidence map](../testing/m7-multiplayer.md); verify [45060561545](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45060561545), 3,089 cases. L7 stays T25.
-- [ ] T20 · Multiplayer performance gate.
+- [x] T20 (2026-11-25) · [Accepted PERF-10 reference](../../perf/m7/README.md). A–E, 2× stress, sustained census and order latency passed.
 - [ ] T21 · Integration and compatibility.
 - [x] T22 (2026-11-22) · [Roman assets](../art/roman.md) and engine coverage; Verify [45062739294](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062739294) passes 3,095 cases. T23 holds the visual verdict.
 - [x] T23 (2026-11-22) · The owner approved Roman styling, silhouettes and three 60-block frames. [Canonical comparison 45063579435](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063579435) passes all frames and rejects all three inverted controls.
@@ -1073,7 +1075,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [ ] Private state absent from every unauthorized player's full/delta/query/reconnect/deferred output.
 - [ ] Commander guards pass with positive controls before multiplayer play, including `-Pcompat` movement/fog/hardening tests.
 - [ ] S11 mock and two-real-client comparison complete; every client's E passes, tier-4 decision explicit.
-- [ ] PERF-10 normal and stress gates valid and archived; no thresholds raised or invalid runs hidden.
+- [x] PERF-10 normal and stress gates passed at unchanged thresholds and are [archived](../../perf/m7/README.md). The underfilled diagnostics remain recorded.
 - [ ] ART-03 blueprint/icon/golden checks and owner look verdict complete after MVP approval.
 - [ ] Dedicated two-client acceptance covers allied victory, co-op, pings and mid-fight reconnect; no P0/P1 remains open.
 - [ ] V/S and all change-type gates pass; branch/card/spec/KB/inventory records agree; handoff names residual M8 work.

@@ -1,0 +1,365 @@
+{
+  "test": "m7_multiplayer",
+  "seed": 5050,
+  "units": 565,
+  "ticks": 24200,
+  "samples": 24000,
+  "factions": 4,
+  "populationPerFactionAtStart": 150,
+  "buildingsPerFactionAtStart": 30,
+  "terrainExcludedFromE": true,
+  "workload": {
+    "samples": 1200,
+    "unitReplacements": 2554,
+    "buildingReplacements": 2,
+    "factions": [
+      {
+        "faction": 0,
+        "population": {
+          "min": 147,
+          "max": 154,
+          "mean": 150.95916666666668
+        },
+        "livingUnits": {
+          "min": 139,
+          "max": 143,
+          "mean": 140.92166666666665
+        },
+        "finishedBuildings": {
+          "min": 30,
+          "max": 45,
+          "mean": 42.96
+        }
+      },
+      {
+        "faction": 1,
+        "population": {
+          "min": 147,
+          "max": 153,
+          "mean": 151.02416666666667
+        },
+        "livingUnits": {
+          "min": 139,
+          "max": 143,
+          "mean": 141.00916666666666
+        },
+        "finishedBuildings": {
+          "min": 30,
+          "max": 37,
+          "mean": 34.515
+        }
+      },
+      {
+        "faction": 2,
+        "population": {
+          "min": 150,
+          "max": 153,
+          "mean": 151.62833333333333
+        },
+        "livingUnits": {
+          "min": 140,
+          "max": 143,
+          "mean": 141.59666666666666
+        },
+        "finishedBuildings": {
+          "min": 30,
+          "max": 50,
+          "mean": 44.81333333333333
+        }
+      },
+      {
+        "faction": 3,
+        "population": {
+          "min": 150,
+          "max": 154,
+          "mean": 151.8175
+        },
+        "livingUnits": {
+          "min": 139,
+          "max": 144,
+          "mean": 141.71166666666667
+        },
+        "finishedBuildings": {
+          "min": 30,
+          "max": 63,
+          "mean": 54.6825
+        }
+      }
+    ]
+  },
+  "baselineTickP50": 2697564,
+  "baselineTickP95": 7634630,
+  "tickP50": 4070084,
+  "tickP95": 6373594,
+  "betweenTicksMax": 33119293,
+  "budgets": {
+    "a": {
+      "gate": "a",
+      "percentile": 0.5,
+      "ns": 1347162,
+      "p50": 1347162,
+      "max": 49140680,
+      "limit": 5000000,
+      "verdict": "pass"
+    },
+    "a_p99": {
+      "gate": "a",
+      "percentile": 0.99,
+      "ns": 6757704,
+      "p50": 1347162,
+      "max": 49140680,
+      "limit": 10000000,
+      "verdict": "pass"
+    },
+    "b": {
+      "gate": "b",
+      "percentile": 0.95,
+      "ns": 3676030,
+      "p50": 1372520,
+      "max": 165946205,
+      "limit": 17000000,
+      "verdict": "pass"
+    },
+    "c": {
+      "gate": "c",
+      "percentile": 0.95,
+      "ns": 6747690,
+      "p50": 4322668,
+      "max": 170840506,
+      "limit": 23000000,
+      "verdict": "pass"
+    },
+    "d": {
+      "gate": "d",
+      "percentile": 0.99,
+      "ns": 201536,
+      "p50": 75541,
+      "max": 687753,
+      "limit": 2000000,
+      "verdict": "pass"
+    },
+    "e": [
+      {
+        "bytesPerSecond": 6188,
+        "limit": 102400,
+        "totalGameplayBytes": 7426054
+      },
+      {
+        "bytesPerSecond": 5744,
+        "limit": 102400,
+        "totalGameplayBytes": 6892849
+      },
+      {
+        "bytesPerSecond": 4795,
+        "limit": 102400,
+        "totalGameplayBytes": 5753814
+      },
+      {
+        "bytesPerSecond": 6771,
+        "limit": 102400,
+        "totalGameplayBytes": 8125046
+      }
+    ],
+    "e_bodies_paired_mean": 2.9629166666666666,
+    "e_bodies_paired_most": 61
+  },
+  "navBytes": 5550992,
+  "groupOrders": 0,
+  "unitOrders": 0,
+  "failedOrders": 2694,
+  "nudges": 0,
+  "ladderRungs": [
+    0,
+    3359,
+    1349,
+    601,
+    0,
+    2694
+  ],
+  "stuckHistogram": [
+    181,
+    250,
+    72,
+    62,
+    0,
+    0
+  ],
+  "stuckHistogramBuckets": "<40, 40, 100, 200, 400, 600+ ticks without progress",
+  "mostStuck": 262,
+  "worst": "#77.3 at 191.1298550128869, 146.0205367660784 toward Vec2d[x=30.5, z=249.5] on tick 13278",
+  "journal": "m7_multiplayer.strj",
+  "foreignCpu": 0.023625768166791777,
+  "foreignLoad": {
+    "source": "/proc/stat and /proc/self/stat ticks",
+    "logicalCpus": 4,
+    "intervalSeconds": 1,
+    "intervals": 1204,
+    "windowSeconds": 1204.430013841,
+    "seconds": 1204.430013841,
+    "available": true,
+    "mean": 0.023625768166791777,
+    "p95": 0.030226700251889168,
+    "peak": 0.07304785894206549,
+    "gateLimit": 0.1,
+    "proposedBurstLimit": 0.2,
+    "proposedValid": true,
+    "reasons": [],
+    "preflight": {
+      "seconds": 122.084673739,
+      "mean": 0.01580003343922421,
+      "p95": 0.030303030303030304,
+      "peak": 0.037783375314861464
+    }
+  },
+  "multiplayer": {
+    "placement": {
+      "samples": 0
+    },
+    "writer": {
+      "samples": 24000,
+      "p50": 0,
+      "p95": 39874,
+      "p99": 105206,
+      "max": 6821275
+    },
+    "fx": {
+      "samples": 24000,
+      "p50": 37811,
+      "p95": 77825,
+      "p99": 121638,
+      "max": 1338074
+    },
+    "adapter": {
+      "samples": 24000,
+      "p50": 273922,
+      "p95": 470517,
+      "p99": 598876,
+      "max": 2850016
+    },
+    "step": {
+      "samples": 24000,
+      "p50": 1036795,
+      "p95": 2801445,
+      "p99": 6421074,
+      "max": 48839178
+    },
+    "phases": {
+      "INGEST": {
+        "samples": 24000,
+        "p50": 11481,
+        "p95": 51195,
+        "p99": 101690,
+        "max": 530290
+      },
+      "COMMANDS": {
+        "samples": 24000,
+        "p50": 1062,
+        "p95": 113332,
+        "p99": 286965,
+        "max": 31106025
+      },
+      "AI": {
+        "samples": 24000,
+        "p50": 1664,
+        "p95": 869501,
+        "p99": 1324611,
+        "max": 19647445
+      },
+      "UNIT_AI": {
+        "samples": 24000,
+        "p50": 184585,
+        "p95": 314245,
+        "p99": 2231127,
+        "max": 15548181
+      },
+      "MOVEMENT": {
+        "samples": 24000,
+        "p50": 569823,
+        "p95": 838584,
+        "p99": 977528,
+        "max": 4810284
+      },
+      "COMBAT": {
+        "samples": 24000,
+        "p50": 11792,
+        "p95": 39965,
+        "p99": 72455,
+        "max": 2544034
+      },
+      "ECONOMY": {
+        "samples": 24000,
+        "p50": 16771,
+        "p95": 34585,
+        "p99": 60523,
+        "max": 14897791
+      },
+      "WORLD": {
+        "samples": 24000,
+        "p50": 99736,
+        "p95": 161511,
+        "p99": 4318807,
+        "max": 14082166
+      },
+      "FINAL": {
+        "samples": 24000,
+        "p50": 6032,
+        "p95": 288848,
+        "p99": 454046,
+        "max": 43950666
+      }
+    },
+    "placed": 0,
+    "placementsRefused": 0,
+    "waves": 0,
+    "buildingsAtEnd": 187,
+    "saveNanos": 19131682,
+    "economyTimes": {
+      "nodeIndexSearches": 1745,
+      "nodeIndexSearchNsMean": 26062,
+      "nodeIndexBuilds": 11,
+      "nodeIndexBuildNsMean": 2643569,
+      "dropsiteQueries": 2731,
+      "dropsiteQueryNsMean": 7551
+    },
+    "systemsPerTick": {
+      "ai": {
+        "samples": 24000,
+        "p50": 1664,
+        "p95": 869501,
+        "p99": 1324611,
+        "max": 19647445
+      },
+      "vision": {
+        "samples": 24000,
+        "p50": 99736,
+        "p95": 161511,
+        "p99": 4318807,
+        "max": 14082166
+      },
+      "trackersRefresh": {
+        "samples": 24000,
+        "p50": 0,
+        "p95": 415526,
+        "p99": 553382,
+        "max": 10998225,
+        "meanPerTick": 65067.7285
+      },
+      "note": "vision is the WORLD phase (vision, then terrain edits, gear and alerts); the trackers' refresh runs one tick in five, so read its meanPerTick"
+    },
+    "perUnit": {
+      "units": 560,
+      "aP95PerUnitNs": 4679.103571428572,
+      "aP95PerUnitWithAiNs": 5687.935714285714,
+      "bP95PerUnitNs": 6564.339285714285,
+      "base": "the battle soak, M5 spec \u00a711 (1.139 x M4's base), A without the AI's phase",
+      "aBasePerUnitNs": 7834.042,
+      "aGrowth": 0.5972783361933177
+    }
+  },
+  "crowdChecks": [
+    "2694 failed orders (0 refused, 2694 given up)"
+  ],
+  "violations": [],
+  "verdict": "pass",
+  "foreignCpuSource": "stat ticks"
+}
