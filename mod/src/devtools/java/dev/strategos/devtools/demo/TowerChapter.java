@@ -30,7 +30,7 @@ final class TowerChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.TOWER, 0, TOWER_DX, 0);
                     st.units(Ids.INFANTRY, 0, TOWER_DX - 4, 2, 3, 1.5);

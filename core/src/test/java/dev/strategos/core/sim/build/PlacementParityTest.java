@@ -80,6 +80,13 @@ class PlacementParityTest {
                     }
 
                     @Override
+                    public int territory(int x, int z) { // the grid the client was sent (TERR-01)
+                        return Objects.requireNonNull(s.territorySystem())
+                                .grid()
+                                .ownerAt(x, z);
+                    }
+
+                    @Override
                     public boolean node(int x, int z) {
                         for (int y = 0; y < 32; y++) {
                             Material m = w.materialAt(x, y, z);

@@ -26,7 +26,7 @@ final class HighGroundChapter implements DemoChapter {
     @Override
     public void script(DemoScript s) {
         s.run(st -> st.fill(-18, 0, -5, -10, 5, 5, Blocks.STONE.defaultBlockState()))
-                .run(DemoStage::match)
+                .run(Stage::match)
                 .run(st -> {
                     st.units(Ids.ARCHER, 0, -14, 0, 3, 0.5);
                     st.units(Ids.ARCHER, 1, 7.5, 0, 3, 0.5);

@@ -10,6 +10,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -200,6 +201,7 @@ class WireCodecSizeTest {
                 .as("match_state")
                 .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
+        assertThat(TerritoryUpdate.WIRE.maxSize()).as("territory").isEqualTo(8192);
 
         MatchJoin widest = new MatchJoin(
                 Integer.MAX_VALUE,
@@ -627,6 +629,129 @@ class WireCodecSizeTest {
 
     /** AUD-04.2's cap for one tick's world fx to one viewer: 64 placements in under a kilobyte. */
     private static final int FX_TICK_CAP = 1_000;
+
+    /** CMB-10: a building with an open capture carries a byte per faction; the widest state stays within its cap. */
+    @Test
+    void aBuildingStateWithCaptureSharesRoundTripsWithinItsCap() {
+        List<Integer> queue = List.of(6, 6, 6, 6, 6, 6, 6, 6);
+        List<Integer> shares = new ArrayList<>(Collections.nCopies(BuildingState.MAX_CAPTURE_FACTIONS - 1, 255));
+        shares.add(1);
+        List<BuildingState.Entry> widest = new ArrayList<>();
+        for (int k = 0; k < BuildingState.MAX_BUILDINGS; k++) {
+            widest.add(new BuildingState.Entry(
+                    Integer.MAX_VALUE - k,
+                    Integer.MAX_VALUE,
+                    Integer.MAX_VALUE,
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE,
+                    3,
+                    Integer.MIN_VALUE,
+                    15,
+                    Integer.MAX_VALUE,
+                    255,
+                    true,
+                    queue,
+                    true,
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE,
+                    Integer.MAX_VALUE,
+                    Integer.MAX_VALUE - 1,
+                    Integer.MAX_VALUE,
+                    true,
+                    Collections.nCopies(queue.size(), TrainBatch.MOST),
+                    shares));
+        }
+        BuildingState state = new BuildingState(Integer.MAX_VALUE, Long.MAX_VALUE, widest);
+        byte[] bytes = WireCodec.encode(BuildingState.WIRE, state);
+        assertThat(WireCodec.decode(BuildingState.WIRE, bytes)).isEqualTo(state);
+        assertThat(bytes.length).isLessThanOrEqualTo(BuildingState.WIRE.maxSize());
+        assertThat(BuildingState.WIRE.maxSize())
+                .as("building_state's cap: the old 115 bytes an entry and a count and 16 shares")
+                .isEqualTo(5 + 10 + 2 + BuildingState.MAX_BUILDINGS * (115 + 1 + BuildingState.MAX_CAPTURE_FACTIONS));
+    }
+
+    @Test
+    void aBuildingWithoutACaptureCostsNoByteMore() {
+        BuildingState.Entry plain = new BuildingState.Entry(
+                1, 2, 0, 3, 4, 0, 5, 2, 0, 255, false, List.of(), false, 0, 0, 0, -1, 0, false, List.of());
+        BuildingState.Entry taken = new BuildingState.Entry(
+                1,
+                2,
+                0,
+                3,
+                4,
+                0,
+                5,
+                2,
+                0,
+                255,
+                false,
+                List.of(),
+                false,
+                0,
+                0,
+                0,
+                -1,
+                0,
+                false,
+                List.of(),
+                List.of(140, 115));
+        int without = WireCodec.encode(BuildingState.WIRE, new BuildingState(1, 1, List.of(plain))).length;
+        byte[] with = WireCodec.encode(BuildingState.WIRE, new BuildingState(1, 1, List.of(taken)));
+        assertThat(with.length).as("a count and a byte a faction").isEqualTo(without + 3);
+        assertThat(WireCodec.decode(BuildingState.WIRE, with).buildings().get(0).captureShare(1))
+                .isEqualTo(115);
+    }
+
+    @Test
+    void captureSharesThatCannotBeWrittenOnlyOneWayAreRefused() {
+        assertThatThrownBy(() -> new BuildingState.Entry(
+                        1,
+                        2,
+                        0,
+                        3,
+                        4,
+                        0,
+                        5,
+                        2,
+                        0,
+                        255,
+                        false,
+                        List.of(),
+                        false,
+                        0,
+                        0,
+                        0,
+                        -1,
+                        0,
+                        false,
+                        List.of(),
+                        List.of(255, 0)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new BuildingState.Entry(
+                        1,
+                        2,
+                        0,
+                        3,
+                        4,
+                        0,
+                        5,
+                        2,
+                        0,
+                        255,
+                        false,
+                        List.of(),
+                        false,
+                        0,
+                        0,
+                        0,
+                        -1,
+                        0,
+                        false,
+                        List.of(),
+                        List.of(256)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 
     private static <T> int size(WireCodec<T> codec, T value) {
         return WireCodec.encode(codec, value).length;

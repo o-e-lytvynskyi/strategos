@@ -62,7 +62,7 @@ public final class Techs {
             if (b.faction(handle) != faction) {
                 continue;
             }
-            for (int e : b.queue(handle)) {
+            for (int e : b.queues().queue(handle)) {
                 if (e == entry) {
                     return true;
                 }
@@ -169,7 +169,7 @@ public final class Techs {
     public static void dropRetired(MatchState s, TemplateSet old) {
         BuildingStore b = s.buildings();
         for (int handle : b.handles()) {
-            int[] queue = b.queue(handle);
+            int[] queue = b.queues().queue(handle);
             for (int k = queue.length - 1; k >= 0; k--) {
                 if (!QueueEntry.isTech(queue[k])) {
                     continue;
@@ -178,7 +178,7 @@ public final class Techs {
                 TechDef was = old.techByIndex(index);
                 TechDef now = s.templates().techByIndex(index);
                 if (was == null || now == null || !was.id().equals(now.id())) {
-                    b.dequeue(handle, k);
+                    b.queues().dequeue(handle, k);
                 }
             }
         }

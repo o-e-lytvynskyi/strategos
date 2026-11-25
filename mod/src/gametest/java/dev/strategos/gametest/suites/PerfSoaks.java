@@ -8,6 +8,7 @@ import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.MvpScene;
+import dev.strategos.core.testkit.TerritoryScene;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
 import dev.strategos.mod.server.content.Scenarios;
 import java.util.Objects;
@@ -38,6 +39,13 @@ final class PerfSoaks {
     private static final int MVP_STRESS_TICKS = Integer.getInteger("strategos.mvpStress.ticks", 6_000);
     private static final int MVP_LANE = 11;
     private static final int MVP_STRESS_LANE = 12;
+    /** PERF-16: 15 game minutes; {@code -Pterritory.ticks} shortens a trial run, {@code territory.stressTicks} the stress's. */
+    private static final int TERRITORY_TICKS =
+            Integer.getInteger("strategos.territory.ticks", TerritoryScene.SOAK_TICKS);
+
+    private static final int TERRITORY_STRESS_TICKS = Integer.getInteger("strategos.territoryStress.ticks", 6_000);
+    private static final int TERRITORY_LANE = 13;
+    private static final int TERRITORY_STRESS_LANE = 14;
 
     private PerfSoaks() {}
 
@@ -161,6 +169,38 @@ final class PerfSoaks {
                 h,
                 CrowdSoak.Config.firstLoop(
                         "mvp_stress", mvp(h, MvpScene.Config.STRESS), MVP_STRESS_TICKS, MVP_STRESS_LANE, 1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /** The scene at {@code scale}, its four factions played by the shipped skirmish script at Hard. */
+    private static TerritoryScene.Config territory(GameTestHelper h, TerritoryScene.Config scale) {
+        return scale.withAi(Objects.requireNonNull(
+                Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json"));
+    }
+
+    static void territorySoak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "territory_soak", territory(h, TerritoryScene.Config.SOAK), TERRITORY_TICKS, TERRITORY_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    static void territoryStress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "territory_stress",
+                        territory(h, TerritoryScene.Config.STRESS),
+                        TERRITORY_STRESS_TICKS,
+                        TERRITORY_STRESS_LANE,
+                        1),
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);

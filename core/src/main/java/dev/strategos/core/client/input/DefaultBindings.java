@@ -46,6 +46,7 @@ public final class DefaultBindings {
                 rts(Action.CAMERA_CENTRE_ON_SELECTION, KeyCode.SPACE),
                 rts(Action.ATTACK_MOVE, KeyCode.Z),
                 rts(Action.STOP, KeyCode.H),
+                rts(Action.CAPTURE, KeyCode.N),
                 rts(Action.TOGGLE_FIRST_PERSON, KeyCode.V),
                 rts(Action.BUILD, KeyCode.B),
                 rts(Action.ROTATE, KeyCode.R),

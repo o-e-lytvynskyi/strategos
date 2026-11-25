@@ -27,7 +27,7 @@ final class CrowdChapter implements DemoChapter {
     @Override
     public void script(DemoScript s) {
         s.run(st -> st.fill(0, 0, -14, 1, 2, 14, Blocks.STONE_BRICKS.defaultBlockState()))
-                .run(DemoStage::match)
+                .run(Stage::match)
                 .run(st -> st.units(Ids.INFANTRY, 0, -20, 0, COUNT, 5))
                 .look(0, 0, 55)
                 .until("the crowd", 10, st -> st.handles(0, Ids.INFANTRY).length >= COUNT)
@@ -42,7 +42,7 @@ final class CrowdChapter implements DemoChapter {
     }
 
     /** Most of the crowd round its goal: a crowd of forty spreads some six blocks from it. */
-    private static boolean arrived(DemoStage st, double dx, double dz) {
+    private static boolean arrived(Stage st, double dx, double dz) {
         int[] units = st.handles(0, Ids.INFANTRY);
         return st.near(units, dx, dz, 12) >= units.length * 8 / 10;
     }

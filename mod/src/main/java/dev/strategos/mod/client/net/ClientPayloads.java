@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.territory.BorderRenderer;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
@@ -17,6 +18,7 @@ import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -102,6 +104,17 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().acceptVision(p.delta(), join.matchId());
+                }
+            }
+            case TerritoryPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    var territory = StrategosClient.model().territory();
+                    int before = territory.version();
+                    StrategosClient.model().acceptTerritory(p.update(), join.matchId());
+                    if (territory.version() != before) {
+                        BorderRenderer.territoryChanged(territory, join); // TERR-03: the borders' sections rebuild
+                    }
                 }
             }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());

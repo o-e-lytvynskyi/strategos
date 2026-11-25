@@ -164,7 +164,7 @@ class ResearchTest {
         assertThat(ticks).isEqualTo(600);
         assertThat(rate(p)).as("at once").isEqualTo(0.6 * 1.2);
         assertThat(p.s.progress().researched(0, WOOD_1)).isTrue();
-        assertThat(p.s.buildings().queueSize(house))
+        assertThat(p.s.buildings().queues().queueSize(house))
                 .as("the entry left the queue")
                 .isZero();
     }
@@ -246,7 +246,7 @@ class ResearchTest {
         p.h.step();
         assertThat(p.s.treasury().stock(0, 0)).isEqualTo(food);
         assertThat(p.s.treasury().stock(0, 1)).isEqualTo(wood);
-        assertThat(p.s.buildings().queueSize(house)).isZero();
+        assertThat(p.s.buildings().queues().queueSize(house)).isZero();
         assertThat(research(p, house, WOOD_1).outcome()).as("no longer pending").isEqualTo(CommandOutcome.ACCEPTED);
     }
 
@@ -266,7 +266,7 @@ class ResearchTest {
         int house = storehouse(p, 30, 30);
         int used = p.s.population().used(0);
         research(p, house, WOOD_1);
-        assertThat(p.s.buildings().queue(house))
+        assertThat(p.s.buildings().queues().queue(house))
                 .as("a tech entry is -1 - its index")
                 .containsExactly(-1);
         assertThat(p.s.population().used(0)).isEqualTo(used);
@@ -275,7 +275,7 @@ class ResearchTest {
         int shed = storehouse(full, 30, 30);
         int worker = full.s.templates().byId(TemplateSet.WORKER).netIndex();
         for (int k = 0; k < 5; k++) {
-            assertThat(full.s.buildings().enqueue(shed, worker)).isTrue();
+            assertThat(full.s.buildings().queues().enqueue(shed, worker)).isTrue();
         }
         assertThat(research(full, shed, WOOD_1).firstReason()).isEqualTo(RejectReason.QUEUE_FULL);
     }
@@ -307,7 +307,7 @@ class ResearchTest {
         SimHarness back = SimHarness.restore(p.h.core().snapshot(), TemplateSet.builtin());
         assertThat(back.stateHash()).isEqualTo(p.h.stateHash());
         ProdScene r = new ProdScene(back, p.centre);
-        assertThat(r.s.buildings().queueSize(house)).isOne();
+        assertThat(r.s.buildings().queues().queueSize(house)).isOne();
         assertThat(untilResearched(r, 600)).isPositive();
         assertThat(rate(r)).isEqualTo(0.6 * 1.2);
     }
@@ -417,7 +417,7 @@ class ResearchTest {
         p.h.runTicks(2);
         assertThat(p.s.templates().techs()).hasSize(1);
         assertThat(rate(p)).as("the researched tech from the new set").isEqualTo(0.6 * 1.5);
-        assertThat(p.s.buildings().queueSize(pending))
+        assertThat(p.s.buildings().queues().queueSize(pending))
                 .as("the pending entry whose tech is gone")
                 .isZero();
         assertThat(p.s.treasury().stock(0, 0))

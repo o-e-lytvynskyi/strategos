@@ -1,0 +1,19 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.sentry_tower", "icon": "minecraft:bow", "classes": "+Tower" },
+  "Building": { "blueprint": "strategos:sentry_tower", "material": "wood" },
+  "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
+  "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
+  "Resistance": { "fire": 0 },
+  "Health": { "max": 400 },
+  "Vision": { "range": 20 },
+  "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
+  "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
+  "Cost": { "resources": { "wood": 100 }, "time": 40 },
+  "Upgrade": {
+    "to": "strategos:building/tower",
+    "time": 50,
+    "requires": "strategos:phase_town",
+    "Cost": { "resources": { "wood": 50, "stone": 100 } }
+  }
+}

@@ -28,7 +28,7 @@ final class BuildersChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, 0, -22); // a building goes up within 48 blocks of one
                     st.admin(new Grant(new FactionSlot(0), "wood", 500));
@@ -54,13 +54,13 @@ final class BuildersChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static void place(DemoStage st, double dx, int[] builders) {
+    private static void place(Stage st, double dx, int[] builders) {
         int[] at = st.corner(Ids.HOUSE, dx, 0);
         st.order(0, new PlaceBuilding(Ids.HOUSE, at[0], at[1], 0, UnitSet.of(builders), QueueMode.REPLACE));
     }
 
     /** Whether the right ({@code east}) or the left house is finished. */
-    private static boolean done(DemoStage st, boolean east) {
+    private static boolean done(Stage st, boolean east) {
         for (BuildingView b : st.buildings(0, Ids.HOUSE)) {
             boolean isEast = b.footprint().anchorX() > st.x(0);
             if (isEast == east && b.state() == BuildingStore.COMPLETE) {

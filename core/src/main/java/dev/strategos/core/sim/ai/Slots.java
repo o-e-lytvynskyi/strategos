@@ -72,5 +72,12 @@ final class Slots {
     /** One more than the tick of that sighting; 0 before. */
     static final int SEEN_AT = 30;
 
+    /** One more than the handle of the enemy building the wave is capturing (AI-08); 0 while none. */
+    static final int CAPTURE = 31;
+    /** One more than the tick that capture began; 0 while none. */
+    static final int CAPTURE_SINCE = 32;
+    /** One more than the tick of the last garrisoning ordered in defence (AI-08); 0 before. */
+    static final int GARRISONED = 33;
+
     private Slots() {}
 }

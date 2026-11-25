@@ -101,7 +101,47 @@ final class BuildManager implements AiModule {
                     && view.affords(s.building())) {
                 place(view, budget, sink, base, s.building(), s.near());
             }
+        } else if (waited) {
+            expandCentre(view, budget, sink, base);
         }
+    }
+
+    static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
+
+    /**
+     * AI-08: once the build order is done and Town has raised the civic centre limit above the centres it has, with the
+     * stock twice the price of one (so soldiers are not starved), a second civic centre goes up on the neutral land
+     * nearest the base ({@link SiteFinder#neutral}). One at a time, none while one stands unfinished.
+     */
+    private void expandCentre(AiView view, AiBudget budget, CommandSink sink, Base base) {
+        if (count(view, CENTRE) >= view.buildingLimit(CENTRE) || building(view, CENTRE)) {
+            return;
+        }
+        for (String r : view.resources()) {
+            if (view.stock(r) < 2 * view.cost(CENTRE, r)) {
+                return;
+            }
+        }
+        int[] at = SiteFinder.neutral(view, budget, base, CENTRE);
+        memory.set(Slots.PLACED, view.tick() + 1);
+        UnitTemplate t = view.templates().byId(CENTRE);
+        Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
+        if (at == null || bp == null) {
+            return;
+        }
+        Footprint f = Footprint.of(bp, at[0], at[1], 0);
+        List<Integer> builders = nearestWorkers(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 2);
+        if (builders.isEmpty()) {
+            return;
+        }
+        budget.spend(20);
+        sink.send(new PlaceBuilding(
+                CENTRE,
+                at[0],
+                at[1],
+                0,
+                UnitSet.of(builders.stream().mapToInt(Integer::intValue).toArray()),
+                QueueMode.REPLACE));
     }
 
     /** How long the stock is kept for a due building before soldiers may have it again: a minute (AI-02). */
@@ -390,6 +430,9 @@ final class BuildManager implements AiModule {
         }
         memory.set(Slots.SITE, memory.get(Slots.SITE) + 1);
         memory.set(Slots.PLACED, view.tick() + 1);
+        if ("TERRITORY".equals(view.placementRefusal(template, x, z))) {
+            return false; // AI-08: a scripted site off its land is skipped, not sent to be refused
+        }
         budget.spend(20);
         sink.send(new PlaceBuilding(
                 template,

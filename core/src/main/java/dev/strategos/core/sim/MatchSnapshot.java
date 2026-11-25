@@ -50,7 +50,11 @@ public record MatchSnapshot(
             List<Long> vision,
             ShotStore.Snapshot shots,
             List<StanceStore.Saved> stances,
-            List<GarrisonStore.Saved> garrisons) {
+            List<GarrisonStore.Saved> garrisons,
+            List<Long> territory,
+            List<Long> capture,
+            List<Long> gates,
+            List<Long> breaches) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -61,7 +65,128 @@ public record MatchSnapshot(
                 List.of(),
                 ShotStore.Snapshot.EMPTY,
                 List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
                 List.of());
+
+        /** A play without breaches, as before the M9 soak's fix saved them (BLD-13). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture,
+                List<Long> gates) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    gates,
+                    List.of());
+        }
+
+        /** A play without gates, as before PATH-12 saved them (M9 spec §2.9). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    List.of());
+        }
+
+        /** A play without capture, as before CMB-10 saved it (M9 spec §2.6). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    List.of());
+        }
+
+        /** A play without territory, as before TERR-01 saved it (M9 spec §2.3). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    List.of(),
+                    List.of());
+        }
 
         /** A play without garrisons, as before BLD-16 saved them. */
         public Play(
@@ -194,6 +319,10 @@ public record MatchSnapshot(
             vision = List.copyOf(vision);
             stances = List.copyOf(stances);
             garrisons = List.copyOf(garrisons);
+            territory = List.copyOf(territory);
+            capture = List.copyOf(capture);
+            gates = List.copyOf(gates);
+            breaches = List.copyOf(breaches);
         }
     }
 

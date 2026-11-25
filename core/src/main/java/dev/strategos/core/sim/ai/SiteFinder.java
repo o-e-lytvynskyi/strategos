@@ -127,6 +127,67 @@ final class SiteFinder {
         return null;
     }
 
+    /** A civic centre's least distance from another's: the template's spacing is 64 blocks between footprints (AI-08). */
+    static final int CENTRE_SPACING = 64;
+
+    /** How far from the centre a second civic centre's site's middle may lie. */
+    static final int CENTRE_REACH = 120;
+
+    /** The stride of the second centre's search, and the most places it looks at. */
+    static final int CENTRE_STRIDE = 4;
+
+    static final int CENTRE_LOOKS = 400;
+
+    /**
+     * AI-08: the corner of the site for a second civic centre on neutral land nearest the base: a place whose middle
+     * is on no one's territory, at least {@value #CENTRE_SPACING} blocks from the centre, that the ground's rules
+     * take; null when none within {@value #CENTRE_REACH} blocks does. Looks at most {@value #CENTRE_LOOKS} places.
+     */
+    static int @Nullable [] neutral(AiView view, AiBudget budget, Base base, TemplateId building) {
+        UnitTemplate t = view.templates().byId(building);
+        Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
+        if (bp == null) {
+            return null;
+        }
+        Footprint probe = Footprint.of(bp, 0, 0, 0);
+        int cx = (int) Math.floor(base.x());
+        int cz = (int) Math.floor(base.z());
+        List<int[]> candidates = new ArrayList<>();
+        for (int dx = -CENTRE_REACH; dx <= CENTRE_REACH; dx += CENTRE_STRIDE) {
+            for (int dz = -CENTRE_REACH; dz <= CENTRE_REACH; dz += CENTRE_STRIDE) {
+                double d = DetMath.length(dx, dz);
+                int mx = cx + dx;
+                int mz = cz + dz;
+                int x = mx - probe.spanX() / 2;
+                int z = mz - probe.spanZ() / 2;
+                if (d < CENTRE_SPACING
+                        || d > CENTRE_REACH
+                        || x < 0
+                        || z < 0
+                        || x + probe.spanX() > view.bounds().sizeX()
+                        || z + probe.spanZ() > view.bounds().sizeZ()
+                        || view.territoryOwner(mx, mz) != -1) {
+                    continue;
+                }
+                candidates.add(new int[] {x, z, (int) Math.round(d * 16)});
+            }
+        }
+        candidates.sort((a, b) -> a[2] != b[2]
+                ? Integer.compare(a[2], b[2])
+                : a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
+        int looks = 0;
+        for (int[] c : candidates) {
+            if (looks == CENTRE_LOOKS || budget.exhausted()) {
+                return null;
+            }
+            looks++;
+            if (view.placementRefusal(building, c[0], c[1]) == null) {
+                return new int[] {c[0], c[1]};
+            }
+        }
+        return null;
+    }
+
     /** Whether another building's footprint lies within {@value #GAP} blocks of a site at corner (x, z). */
     private static boolean crowded(AiView view, int x, int z, Footprint probe) {
         for (int cx = x - GAP; cx < x + probe.spanX() + GAP; cx++) {

@@ -4,7 +4,6 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hasher;
-import dev.strategos.core.shared.QueueEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,16 +53,7 @@ public final class BuildingStore {
     private int[] placed = new int[8];
     private int[][] slots = new int[8][];
     private int[][] claims = new int[8][];
-    private int[][] queue =
-            new int[8][]; // per building its entries (a unit's template index, or a tech: -1 - index), head first
-    private int[][] batch = new int[8][]; // per entry the units it trains at once (PROD-02), 1 for a single one
-    private long[] trained = new long[8]; // the head's ticks of training
-    private boolean[] reserved = new boolean[8]; // whether the head holds its population
-    private boolean[] waiting = new boolean[8]; // whether the head waits for housing, told once
-    private int[] rallyKind = new int[8];
-    private double[] rallyX = new double[8];
-    private double[] rallyZ = new double[8];
-    private int[] rallyTarget = new int[8];
+    private final BuildingQueues queues = new BuildingQueues(this);
     private int[] field = new int[8]; // a field's crop node, 0 for none (ECO-09)
     private int[] stage = new int[8]; // a finished building's damage stage, 0 whole (BLD-05)
     private boolean[] autoReseed = new boolean[8]; // a farmstead's toggle: it sows its reach's empty fields (ECO-17)
@@ -104,15 +94,7 @@ public final class BuildingStore {
         this.placed[k] = 0;
         this.slots[k] = new int[0];
         this.claims[k] = new int[0];
-        this.queue[k] = new int[0];
-        this.batch[k] = new int[0];
-        this.trained[k] = 0;
-        this.reserved[k] = false;
-        this.waiting[k] = false;
-        this.rallyKind[k] = RALLY_NONE;
-        this.rallyX[k] = 0;
-        this.rallyZ[k] = 0;
-        this.rallyTarget[k] = 0;
+        queues.reset(k);
         this.field[k] = 0;
         this.stage[k] = 0;
         this.autoReseed[k] = false;
@@ -137,15 +119,7 @@ public final class BuildingStore {
         claims = Arrays.copyOf(claims, n);
         tickBuilders = Arrays.copyOf(tickBuilders, n);
         tickRates = Arrays.copyOf(tickRates, n);
-        queue = Arrays.copyOf(queue, n);
-        batch = Arrays.copyOf(batch, n);
-        trained = Arrays.copyOf(trained, n);
-        reserved = Arrays.copyOf(reserved, n);
-        waiting = Arrays.copyOf(waiting, n);
-        rallyKind = Arrays.copyOf(rallyKind, n);
-        rallyX = Arrays.copyOf(rallyX, n);
-        rallyZ = Arrays.copyOf(rallyZ, n);
-        rallyTarget = Arrays.copyOf(rallyTarget, n);
+        queues.grow(n);
         field = Arrays.copyOf(field, n);
         stage = Arrays.copyOf(stage, n);
         autoReseed = Arrays.copyOf(autoReseed, n);
@@ -188,122 +162,9 @@ public final class BuildingStore {
     public static final int RALLY_NODE = 2;
     public static final int RALLY_BUILDING = 3;
 
-    /** Building {@code handle}'s queue: its entries, the head first; a tech entry is {@link QueueEntry#isTech}. */
-    public int[] queue(int handle) {
-        return queue[at(handle)].clone();
-    }
-
-    public int queueSize(int handle) {
-        return queue[at(handle)].length;
-    }
-
-    /** Adds an entry of {@code template} at the queue's end; false when it is full. */
-    public boolean enqueue(int handle, int template) {
-        return enqueue(handle, template, 1);
-    }
-
-    /** Adds an entry of {@code count} units of {@code template} at the queue's end (PROD-02); false when it is full. */
-    public boolean enqueue(int handle, int template, int count) {
-        int k = at(handle);
-        if (queue[k].length >= QUEUE_MAX) {
-            return false;
-        }
-        queue[k] = Arrays.copyOf(queue[k], queue[k].length + 1);
-        queue[k][queue[k].length - 1] = template;
-        batch[k] = Arrays.copyOf(batch[k], queue[k].length);
-        batch[k][queue[k].length - 1] = Math.max(1, count);
-        return true;
-    }
-
-    /** Every entry's batch count, the head first (PROD-02). */
-    public List<Integer> batches(int handle) {
-        int k = at(handle);
-        List<Integer> out = new ArrayList<>(queue[k].length);
-        for (int e = 0; e < queue[k].length; e++) {
-            out.add(batch(handle, e));
-        }
-        return out;
-    }
-
-    /** How many units entry {@code index} trains at once (PROD-02): 1 for a single one. */
-    public int batch(int handle, int index) {
-        int[] b = batch[at(handle)];
-        return index < b.length ? Math.max(1, b[index]) : 1;
-    }
-
-    /** Takes entry {@code index} out of the queue; its template. The head's training starts afresh. */
-    public int dequeue(int handle, int index) {
-        int k = at(handle);
-        int[] q = queue[k];
-        int template = q[index];
-        int[] out = new int[q.length - 1];
-        System.arraycopy(q, 0, out, 0, index);
-        System.arraycopy(q, index + 1, out, index, q.length - index - 1);
-        queue[k] = out;
-        int[] counts = Arrays.copyOf(batch[k], q.length);
-        int[] left = new int[out.length];
-        System.arraycopy(counts, 0, left, 0, index);
-        System.arraycopy(counts, index + 1, left, index, q.length - index - 1);
-        batch[k] = left;
-        if (index == 0) {
-            trained[k] = 0;
-            reserved[k] = false;
-            waiting[k] = false;
-        }
-        return template;
-    }
-
-    /** The head's ticks of training. */
-    public long trained(int handle) {
-        return trained[at(handle)];
-    }
-
-    public void setTrained(int handle, long ticks) {
-        trained[at(handle)] = ticks;
-    }
-
-    /** Whether the head holds its population. */
-    public boolean reserved(int handle) {
-        return reserved[at(handle)];
-    }
-
-    public void setReserved(int handle, boolean value) {
-        reserved[at(handle)] = value;
-    }
-
-    /** Whether the head waits for housing, so the notice is told once. */
-    public boolean waiting(int handle) {
-        return waiting[at(handle)];
-    }
-
-    public void setWaiting(int handle, boolean value) {
-        waiting[at(handle)] = value;
-    }
-
-    public int rallyKind(int handle) {
-        return rallyKind[at(handle)];
-    }
-
-    public double rallyX(int handle) {
-        return rallyX[at(handle)];
-    }
-
-    public double rallyZ(int handle) {
-        return rallyZ[at(handle)];
-    }
-
-    /** The rally's node id or building handle, 0 for a point. */
-    public int rallyTarget(int handle) {
-        return rallyTarget[at(handle)];
-    }
-
-    /** Building {@code handle}'s rally point: its kind, the point, and the node or building it names. */
-    public void setRally(int handle, int kind, double x, double z, int target) {
-        int k = at(handle);
-        rallyKind[k] = kind;
-        rallyX[k] = x;
-        rallyZ[k] = z;
-        rallyTarget[k] = target;
+    /** The production queues and rally points of the buildings (PROD-01 to -03). */
+    public BuildingQueues queues() {
+        return queues;
     }
 
     /** A builder at work on building {@code handle} this tick, at {@code rate} (BLD-03). */
@@ -433,7 +294,7 @@ public final class BuildingStore {
         return k < high && alive[k] && generation[k] == Handle.generation(handle);
     }
 
-    private int at(int handle) {
+    int at(int handle) {
         if (!alive(handle)) {
             throw new IllegalArgumentException("no building " + Handle.toString(handle));
         }
@@ -505,6 +366,18 @@ public final class BuildingStore {
         damage[at(handle)] = value;
     }
 
+    /** Building {@code handle} changes owner (CMB-10): only {@link BuildingLife#transfer} calls this. */
+    void setFaction(int handle, int faction) {
+        this.faction[at(handle)] = faction;
+        changes++;
+    }
+
+    /** Building {@code handle} becomes another template in place (BLD-12): only {@code Upgrades} calls this. */
+    public void setTemplate(int handle, int template) {
+        this.template[at(handle)] = template;
+        changes++;
+    }
+
     public void setState(int handle, int value, long progress) {
         int k = at(handle);
         if (state[k] != value) {
@@ -560,37 +433,10 @@ public final class BuildingStore {
                         x = Hasher.mix(x, c);
                     }
                 }
-                if (queue[k].length > 0
-                        || rallyKind[k] != RALLY_NONE) { // only once it trains or rallies (PROD-01, -03)
-                    x = Hasher.mix(x, queue[k].length);
-                    for (int t : queue[k]) {
-                        x = Hasher.mix(x, t);
-                    }
-                    for (int c : batch[k]) {
-                        if (c > 1) { // only batches (PROD-02), so single entries hash as before
-                            x = Hasher.mix(x, c);
-                        }
-                    }
-                    x = Hasher.mix(x, trained[k]);
-                    x = Hasher.mix(x, reserved[k] ? 1 : 0);
-                    x = Hasher.mix(x, waiting[k] ? 1 : 0);
-                    x = Hasher.mix(x, rallyKind[k]);
-                    x = Hasher.mix(x, Double.doubleToLongBits(rallyX[k]));
-                    x = Hasher.mix(x, Double.doubleToLongBits(rallyZ[k]));
-                    x = Hasher.mix(x, rallyTarget[k]);
-                }
+                x = queues.mix(x, k);
             }
         }
         return x;
-    }
-
-    private boolean batched(int k) {
-        for (int c : batch[k] == null ? new int[0] : batch[k]) {
-            if (c > 1) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** A site's construction as a snapshot keeps it (BLD-03). */
@@ -681,31 +527,7 @@ public final class BuildingStore {
                     Arrays.stream(claims[k] == null ? new int[0] : claims[k])
                             .boxed()
                             .toList());
-            List<Integer> entries = new ArrayList<>();
-            List<Integer> counts = new ArrayList<>();
-            List<String> techs = new ArrayList<>();
-            int[] q = queue[k] == null ? new int[0] : queue[k];
-            for (int e = 0; e < q.length; e++) {
-                int entry = q[e];
-                if (QueueEntry.isTech(entry)) {
-                    String id = techId.apply(QueueEntry.techIndex(entry));
-                    if (id == null) {
-                        continue;
-                    }
-                    entry = QueueEntry.techEntry(techs.size()); // -1 - the id's place in the list
-                    techs.add(id);
-                }
-                entries.add(entry);
-                counts.add(batch[k] != null && e < batch[k].length ? Math.max(1, batch[k][e]) : 1);
-            }
-            Production production = new Production(
-                    entries,
-                    trained[k],
-                    reserved[k],
-                    waiting[k],
-                    batched(k) ? counts : List.of(), // single entries save as before batches
-                    autoReseed[k],
-                    techs);
+            Production production = queues.production(k, techId, autoReseed[k]);
             out.add(new Saved(
                     generation[k],
                     alive[k],
@@ -720,7 +542,7 @@ public final class BuildingStore {
                     damage[k],
                     site,
                     production,
-                    new Rally(rallyKind[k], rallyX[k], rallyZ[k], rallyTarget[k]),
+                    queues.rally(k),
                     field[k],
                     stage[k]));
         }
@@ -757,40 +579,8 @@ public final class BuildingStore {
             for (int i = 0; i < claims[k].length && i < s.site().claims().size(); i++) {
                 claims[k][i] = s.site().claims().get(i);
             }
-            List<Integer> savedQueue = s.production().queue();
-            int[] entries = new int[savedQueue.size()];
-            int[] counts = new int[entries.length];
-            int kept = 0;
-            boolean headDropped = false;
-            for (int e = 0; e < entries.length; e++) {
-                int entry = savedQueue.get(e);
-                if (QueueEntry.isTech(entry)) {
-                    int place = QueueEntry.techIndex(entry);
-                    int index = place < s.production().techs().size()
-                            ? techIndex.applyAsInt(s.production().techs().get(place))
-                            : -1;
-                    if (index < 0) {
-                        headDropped |= e == 0;
-                        continue;
-                    }
-                    entry = QueueEntry.techEntry(index);
-                }
-                entries[kept] = entry;
-                counts[kept] = e < s.production().batches().size()
-                        ? Math.max(1, s.production().batches().get(e))
-                        : 1;
-                kept++;
-            }
-            queue[k] = Arrays.copyOf(entries, kept);
-            batch[k] = Arrays.copyOf(counts, kept);
-            trained[k] = headDropped ? 0 : s.production().trained(); // the next entry starts afresh
-            reserved[k] = s.production().reserved();
-            waiting[k] = s.production().waiting();
+            queues.restore(k, s, techIndex);
             autoReseed[k] = s.production().autoReseed();
-            rallyKind[k] = s.rally().kind();
-            rallyX[k] = s.rally().x();
-            rallyZ[k] = s.rally().z();
-            rallyTarget[k] = s.rally().target();
             field[k] = s.field();
             stage[k] = s.stage();
         }

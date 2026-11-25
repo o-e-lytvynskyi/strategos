@@ -40,7 +40,10 @@ final class NoticesChapter implements DemoChapter {
     @Override
     public void script(DemoScript s) {
         Watch watch = new Watch();
-        s.run(st -> watch.attach(st.match()))
+        s.run(st -> {
+                    st.match();
+                    watch.attach(st);
+                })
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, CENTRE_DX, -6);
                     st.building(Ids.STOREHOUSE, 0, STOREHOUSE_DX, -6);
@@ -98,7 +101,7 @@ final class NoticesChapter implements DemoChapter {
                 .pause(6);
     }
 
-    private static @Nullable BuildingView centre(DemoStage st) {
+    private static @Nullable BuildingView centre(Stage st) {
         List<BuildingView> b = st.buildings(0, Ids.CIVIC_CENTRE);
         return b.isEmpty() ? null : b.getFirst();
     }

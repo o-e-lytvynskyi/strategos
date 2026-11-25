@@ -248,6 +248,7 @@ public final class WireCodecs {
                             case OUT_OF_REACH -> 16;
                             case LIMIT -> 17;
                             case REQUIREMENTS -> 18;
+                            case OUTSIDE_TERRITORY -> 19;
                         });
     }
 
@@ -273,6 +274,7 @@ public final class WireCodecs {
             case 16 -> RejectReason.OUT_OF_REACH;
             case 17 -> RejectReason.LIMIT;
             case 18 -> RejectReason.REQUIREMENTS;
+            case 19 -> RejectReason.OUTSIDE_TERRITORY;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }

@@ -25,7 +25,7 @@ final class MeleeChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.INFANTRY, 0, -16, 0, SQUAD, 3);
                     st.units(Ids.INFANTRY, 1, 16, 0, SQUAD + 2, 3);
@@ -50,11 +50,11 @@ final class MeleeChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static int alive(DemoStage st, int faction) {
+    private static int alive(Stage st, int faction) {
         return st.handles(faction, Ids.INFANTRY).length;
     }
 
-    private static boolean hurt(DemoStage st) {
+    private static boolean hurt(Stage st) {
         for (int f = 0; f < 2; f++) {
             for (int h : st.handles(f, Ids.INFANTRY)) {
                 if (st.q().hitPoints(h) < st.q().maxHitPoints(h)) {

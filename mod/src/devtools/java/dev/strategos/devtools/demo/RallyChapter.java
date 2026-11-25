@@ -30,7 +30,7 @@ final class RallyChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -24, -10);
                     st.building(Ids.BARRACKS, 0, -4, 0);
@@ -63,7 +63,7 @@ final class RallyChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static @Nullable BuildingView barracks(DemoStage st) {
+    private static @Nullable BuildingView barracks(Stage st) {
         List<BuildingView> b = st.buildings(0, Ids.BARRACKS);
         return b.isEmpty() ? null : b.getFirst();
     }

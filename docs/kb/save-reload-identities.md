@@ -39,3 +39,33 @@ Restoring every healthy blob as PAUSED revives ENDED matches. Preserve an ENDED 
 terminal saved victory outcome even when the registry is older. Such a match must neither
 resume nor accept commands; active matches still restore PAUSED. FAULTED and quarantined saves
 retain their existing fault paths.
+
+## "Not saved, changes nothing else" is a replay divergence
+
+Any field a system reads on the next step belongs in the snapshot and the state hash, even a
+cooldown whose loss "only costs one retry". A journal is a ring: a long match replays from a
+snapshot taken mid-match, so the replay restores and the live run does not, and the retry it
+allows moves units by a fraction of a block. M9's `BreachLog` (wall-breach cooldowns) was left
+out; it turned up while chasing the AI soak's seed 13, whose replay diverged 20 ticks after its
+journal start at tick 31200. Short L1 replays start at tick 0 and never see such a store. For a new per-unit store, add an L1 test that saves
+mid-behaviour, round-trips through the codec, restores and steps both runs to the same hash
+(`GateMovementTest.aBreachCooldownSurvivesASave…`). To find such a divergence, record each
+snapshot component's `toString` at the live checkpoints and compare them in a stepped replay:
+the first differing component names the store.
+
+The same holds for a derived cache built at a fixed point of the tick. The unit grid is rebuilt
+where MOVEMENT ends; a system that sets a unit down afterwards (a put-out from a gate, a garrison
+exit) leaves the live grid behind the poses until the next tick's rebuild, while a restore builds
+it from the poses. Seed 13's real divergence was this one, on the first tick after the journal
+start. A cache a restore rebuilds must also be rebuilt at the point a restore resumes from: the
+core now rebuilds the grid before each tick's first phase (`MidTickMoveRestoreTest`).
+
+A per-tick flag that a later phase sets for the next tick's pass is the same case. `PathStore`'s
+`wanted` ("ask for a path in the request pass") is set in MOVEMENT and in the combat phases,
+after that tick's pass, so it lives into the next tick; it was not saved. Seed 15 diverged on the
+first tick after its journal start: the live archer asked for a path to its new place, the
+restored one found its path spent and gave the attack up. For every "this tick" flag, check who
+sets it and in which phase: one set after its reader runs crosses a tick boundary and must be
+saved (`MidTickMoveRestoreTest.aPathAskedForAfterTheRequestPass…`). A per-tick `parts` dump only
+finds the tick; a stack trace at the diverging decision (`finishOrder`, guarded by the unit and
+tick) names the code path in one more run.

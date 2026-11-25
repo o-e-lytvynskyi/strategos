@@ -17,10 +17,13 @@ import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.protocol.RejectReason;
+import dev.strategos.core.protocol.TerritoryUpdate;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.territory.TerritoryUpdates;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
@@ -28,6 +31,7 @@ import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -102,6 +106,18 @@ class PayloadRoundTripTest {
                 DebugFeedPayload.SPEC.cap());
         assertThat(DebugSubscribePayload.SPEC.cap()).isLessThanOrEqualTo(64);
         assertThat(DebugFeedPayload.SPEC.cap()).isLessThanOrEqualTo(64 * 1024);
+    }
+
+    @Test
+    void aTerritoryPayloadRoundTripsWithinItsCap() {
+        TerritoryGrid grid = new TerritoryGrid(40, 30);
+        grid.set(5, (byte) 0x41);
+        grid.set(700, (byte) 2);
+        for (TerritoryUpdate part : TerritoryUpdates.encode(3, 99, 1, null, grid)) {
+            roundTrip(TerritoryPayload.STREAM_CODEC, new TerritoryPayload(part), TerritoryPayload.SPEC.cap());
+        }
+        assertThat(TerritoryPayload.SPEC.cap()).isEqualTo(TerritoryUpdate.CAP);
+        assertThat(TerritoryPayload.SPEC.id().getPath()).isEqualTo("territory");
     }
 
     @Test

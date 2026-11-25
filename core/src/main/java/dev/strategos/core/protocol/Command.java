@@ -37,4 +37,7 @@ public sealed interface Command extends Hashable
                 RingBell,
                 AllClear,
                 AttackSpread,
-                Research {}
+                Research,
+                Capture,
+                UpgradeBuilding,
+                PlaceWall {}

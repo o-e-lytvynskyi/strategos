@@ -28,6 +28,9 @@ public record SelectionPanel(
     /** The rows of text beside the icon and below it, and the height of one. */
     public static final int LINE = 10;
 
+    /** The capture bar's height, in GUI pixels. */
+    public static final int CAPTURE_BAR = 4;
+
     public static final SelectionPanel EMPTY = new SelectionPanel(Kind.EMPTY, SelectionSummary.EMPTY, null, null, null);
 
     /** What the panel shows. */
@@ -110,6 +113,43 @@ public record SelectionPanel(
         int x = n < 2 ? panel.x() + padding + ICON + 4 : panel.x() + padding;
         int y = panel.y() + padding + n * LINE + (n < 2 ? 0 : 1);
         return new int[] {x, y};
+    }
+
+    /** The capture bar (CMB-10): the panel's inner width, on text line 2's row, {@value #CAPTURE_BAR} pixels tall. */
+    public static HudRect captureBar(HudRect panel, int padding) {
+        return new HudRect(
+                panel.x() + padding,
+                panel.y() + padding + 2 * LINE + 1,
+                Math.max(0, panel.width() - 2 * padding),
+                CAPTURE_BAR);
+    }
+
+    /**
+     * The capture bar's segments, {faction, x, width} by faction index, tiling the bar: each faction's share of the
+     * building's capture points. Empty for a building with no capture open.
+     */
+    public static java.util.List<int[]> captureSegments(HudRect bar, BuildingState.Entry building) {
+        java.util.List<int[]> out = new java.util.ArrayList<>();
+        int total =
+                building.captureShares().stream().mapToInt(Integer::intValue).sum();
+        if (total <= 0) {
+            return out;
+        }
+        int sum = 0;
+        int from = bar.x();
+        for (int f = 0; f < building.captureShares().size(); f++) {
+            int share = building.captureShares().get(f);
+            if (share == 0) {
+                continue;
+            }
+            sum += share;
+            int to = bar.x() + (int) Math.round((double) bar.width() * sum / total);
+            if (to > from) {
+                out.add(new int[] {f, from, to - from});
+            }
+            from = to;
+        }
+        return out;
     }
 
     /** Queue entry {@code k}'s cell, along the bottom. */

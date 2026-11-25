@@ -878,6 +878,11 @@ public final class MapTests {
      * cannot end by itself, with a saved blob if {@code persistent}.
      */
     static MatchRuntime firstSkirmish(GameTestHelper h, int lane, boolean persistent) {
+        return firstSkirmish(h, lane, persistent, 2);
+    }
+
+    /** MAP-02 with {@code factions} seated: PERF-16's four sit two on the map's starts and two beside them. */
+    static MatchRuntime firstSkirmish(GameTestHelper h, int lane, boolean persistent, int factions) {
         MapManifest m = firstSkirmishManifest(h);
         BlockPos corner = h.absolutePos(BlockPos.ZERO);
         BlockPos origin = new BlockPos(corner.getX() + lane * FAR, corner.getY(), corner.getZ());
@@ -886,6 +891,18 @@ public final class MapTests {
         MatchOptions options = MatchFixture.fogOptions(SimHarness.DEFAULT_SEED, h)
                 .withMap(FIRST_SKIRMISH, origin.getY() + m.startSlots().get(0).y())
                 .withPersistent(persistent);
+        if (factions != options.factions()) {
+            options = new MatchOptions(
+                    options.seed(),
+                    factions,
+                    options.persistent(),
+                    options.source(),
+                    options.faultPolicy(),
+                    options.metrics(),
+                    options.flatFloorY(),
+                    options.map(),
+                    options.play());
+        }
         return MatchFixture.create(h, space, options);
     }
 

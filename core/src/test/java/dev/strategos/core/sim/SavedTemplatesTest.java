@@ -34,9 +34,9 @@ class SavedTemplatesTest {
     void diskRoundTripRemapsBuildingsAndEveryQueuedProduct() {
         MatchState state = state(custom(false));
         int handle = building(state, CUSTOM_HOUSE);
-        state.buildings().enqueue(handle, FIRST + 1, 5);
-        state.buildings().enqueue(handle, FIRST + 1, 2);
-        state.buildings().setTrained(handle, 7);
+        state.buildings().queues().enqueue(handle, FIRST + 1, 5);
+        state.buildings().queues().enqueue(handle, FIRST + 1, 2);
+        state.buildings().queues().setTrained(handle, 7);
         MatchSnapshot saved = roundTrip(Snapshots.take(state));
         var restored = SavedTemplates.buildings(saved, custom(true)).getFirst();
         assertThat(restored.template()).isEqualTo(FIRST + 1);
@@ -49,7 +49,7 @@ class SavedTemplatesTest {
     void missingBuildingOrQueuedTemplateRefusesRestore() {
         MatchState state = state(custom(false));
         int handle = building(state, CUSTOM_HOUSE);
-        state.buildings().enqueue(handle, FIRST + 1);
+        state.buildings().queues().enqueue(handle, FIRST + 1);
         MatchSnapshot saved = roundTrip(Snapshots.take(state));
         assertThatThrownBy(() -> SavedTemplates.buildings(saved, TemplateSet.builtin()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -73,7 +73,7 @@ class SavedTemplatesTest {
                 .hasMessageContaining("ambiguous template index");
         MatchState customQueue = state(custom(false));
         int handle = building(customQueue, new TemplateId("strategos:building/civic_centre"));
-        customQueue.buildings().enqueue(handle, FIRST + 1);
+        customQueue.buildings().queues().enqueue(handle, FIRST + 1);
         MatchSnapshot queued = legacy(Snapshots.take(customQueue));
         assertThatThrownBy(() -> SavedTemplates.buildings(queued, custom(true)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -84,11 +84,11 @@ class SavedTemplatesTest {
     void reloadRejectsMissingQueuedProductAndChangedIndexAtomically() {
         MatchState state = state(custom(false));
         int handle = building(state, HOUSE);
-        state.buildings().enqueue(handle, FIRST + 1);
+        state.buildings().queues().enqueue(handle, FIRST + 1);
         TemplateSet before = state.templates();
         state.swapTemplates(without(before, CUSTOM_UNIT));
         assertThat(state.templates()).isSameAs(before);
-        assertThat(state.buildings().queue(handle)).containsExactly(FIRST + 1);
+        assertThat(state.buildings().queues().queue(handle)).containsExactly(FIRST + 1);
         state.swapTemplates(custom(true));
         assertThat(state.templates()).isSameAs(before);
         state.swapTemplates(before);
@@ -139,7 +139,7 @@ class SavedTemplatesTest {
                     TemplateCompiler.fromFlattened(flats, techFlats(builtin)).set());
             int handle = building(state, isBuilding ? custom : new TemplateId("strategos:building/civic_centre"));
             if (!isBuilding) {
-                state.buildings().enqueue(handle, index);
+                state.buildings().queues().enqueue(handle, index);
             }
             MatchSnapshot old = legacy(Snapshots.take(state));
             assertThatThrownBy(() -> SavedTemplates.buildings(roundTrip(old), builtin))

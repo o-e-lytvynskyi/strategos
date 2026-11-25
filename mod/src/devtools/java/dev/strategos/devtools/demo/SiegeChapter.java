@@ -25,7 +25,7 @@ final class SiegeChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 1, 16, 0);
                     st.units(Ids.RAM, 0, -22, 0, 2, 3);
@@ -50,12 +50,12 @@ final class SiegeChapter implements DemoChapter {
                 .pause(5);
     }
 
-    private static @Nullable BuildingView target(DemoStage st) {
+    private static @Nullable BuildingView target(Stage st) {
         List<BuildingView> b = st.buildings(1, Ids.CIVIC_CENTRE);
         return b.isEmpty() ? null : b.getFirst();
     }
 
-    private static boolean hurt(DemoStage st, double below) {
+    private static boolean hurt(Stage st, double below) {
         BuildingView c = target(st);
         return c == null || c.hitPoints() < below * c.maxHitPoints();
     }

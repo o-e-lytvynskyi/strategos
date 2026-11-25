@@ -5,12 +5,14 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
@@ -28,7 +30,8 @@ public final class Placing {
     public static final String CIVIC_CENTRE = "CivicCentre";
 
     public static final String SPACING = "Placement/spacing";
-    public static final String CIVIC_REACH = "Placement/civicReach";
+    /** Where a template may stand (TERR-02): {@link PlacementRules#OWN} by default, a civic centre own or neutral. */
+    public static final String TERRITORY = "Placement/territory";
 
     /** The token path of the buildings a worker may place: its build list (BLD-17, CMB-09). */
     public static final String BUILD_LIST = "Builder/buildings";
@@ -67,6 +70,9 @@ public final class Placing {
         }
         SurfaceGrid grid = s.surfaces();
         List<PlacementRules.Centre> civic = List.copyOf(centres);
+        TerritorySystem territorySystem = s.territorySystem();
+        TerritoryGrid land =
+                territorySystem == null || territorySystem.recomputes() == 0 ? null : territorySystem.grid();
         return new PlacementRules.World() {
             @Override
             public int sizeX() {
@@ -107,6 +113,11 @@ public final class Placing {
             @Override
             public List<PlacementRules.Centre> civicCentres() {
                 return civic;
+            }
+
+            @Override
+            public int territory(int x, int z) {
+                return land == null ? PlacementRules.NO_GRID : land.ownerAt(x, z);
             }
         };
     }
@@ -154,7 +165,7 @@ public final class Placing {
         return new PlacementRules.Params(
                 t.classes().contains(CIVIC_CENTRE),
                 value(s, template, faction, SPACING),
-                value(s, template, faction, CIVIC_REACH),
+                (int) Math.round(value(s, template, faction, TERRITORY)),
                 s.treasury().missing(faction, cost) == null);
     }
 

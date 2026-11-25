@@ -670,7 +670,10 @@ public final class ConstructionTests {
             JsonObject json = b.flattened(t.id()).deepCopy();
             if (t.id().equals(TemplateSet.WORKER)) {
                 JsonObject builder = json.getAsJsonObject("Builder");
-                builder.addProperty("buildings", builder.get("buildings").getAsString() + " " + open.value());
+                String list = builder.get("buildings").getAsString();
+                if (!List.of(list.split(" ")).contains(open.value())) { // the sentry tower is on it already (BLD-12)
+                    builder.addProperty("buildings", list + " " + open.value());
+                }
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }
@@ -757,6 +760,7 @@ public final class ConstructionTests {
     private static final TemplateId STOREHOUSE = new TemplateId("strategos:building/storehouse");
     private static final TemplateId FARMSTEAD = new TemplateId("strategos:building/farmstead");
     private static final TemplateId FIELD = new TemplateId("strategos:building/field");
+    private static final TemplateId SENTRY_TOWER = new TemplateId("strategos:building/sentry_tower");
 
     private static List<BuildingView> of(MatchRuntime rt, TemplateId id) {
         return core(rt).queries().buildings().stream()
@@ -844,6 +848,18 @@ public final class ConstructionTests {
     @StrategosTest(batch = "construction", timeoutTicks = 6_000)
     public static void arsenal_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
         damageStagesRemoveRankedBlocks(h, ARSENAL, 16);
+    }
+
+    /** BLD-12.3: four workers raise a sentry tower on the Village list; finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void sentry_tower_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        builtEqualsBlueprint(h, SENTRY_TOWER, false);
+    }
+
+    /** BLD-12.3: the sentry tower's third damage stage: its ranked blocks are air in the world. */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void sentry_tower_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        damageStagesRemoveRankedBlocks(h, SENTRY_TOWER, 12);
     }
 
     /** BLD-08: four workers raise a storehouse; finished, it equals its blueprint. */
