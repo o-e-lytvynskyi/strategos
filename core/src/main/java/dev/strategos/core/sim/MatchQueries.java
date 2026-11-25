@@ -53,6 +53,9 @@ public interface MatchQueries {
     /** The stance a player gave a live unit (CMB-05), or null when it fights as its template says or is dead. */
     @Nullable Stance explicitStance(int handle);
 
+    /** The ticks until live unit {@code handle} may use ability {@code ability} again (UNIT-10); 0 when it is ready or dead. */
+    int abilityCooldown(int handle, String ability);
+
     /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
     int carriedResource(int handle);
 

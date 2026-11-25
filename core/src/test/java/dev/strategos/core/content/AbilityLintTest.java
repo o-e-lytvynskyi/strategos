@@ -344,10 +344,16 @@ class AbilityLintTest {
 
     @Test
     void aSetWithoutAbilitiesIsWhatItWas() {
-        assertThat(TemplateSet.builtin().abilities()).isEmpty();
-        assertThat(TemplateSet.builtin().hasAutocast()).isFalse();
-        assertThat(TemplateSet.builtin().abilitiesOf(0)).isEmpty();
-        assertThat(TemplateSet.builtin().abilitiesOf(-1)).isEmpty();
+        TemplateSet builtin = TemplateSet.builtin();
+        assertThat(builtin.abilities()).extracting(AbilityDef::id).containsExactly("charge");
+        assertThat(builtin.abilitiesOf(
+                        java.util.Objects.requireNonNull(builtin.byId(new TemplateId("strategos:unit/horseman")))
+                                .netIndex()))
+                .extracting(AbilityDef::id)
+                .containsExactly("charge");
+        assertThat(builtin.hasAutocast()).isFalse();
+        assertThat(builtin.abilitiesOf(0)).isEmpty();
+        assertThat(builtin.abilitiesOf(-1)).isEmpty();
     }
 
     @Test

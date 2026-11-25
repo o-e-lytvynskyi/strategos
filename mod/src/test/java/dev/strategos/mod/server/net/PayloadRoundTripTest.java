@@ -18,6 +18,7 @@ import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.TerritoryUpdate;
+import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
@@ -32,6 +33,7 @@ import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.TerritoryPayload;
+import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -88,6 +90,29 @@ class PayloadRoundTripTest {
         assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackPayload.SPEC.cap()).isLessThanOrEqualTo(1024);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
+    }
+
+    /** UNIT-10: {@code unit_detail} with a unit's cooldowns round-trips through its stream codec within its cap. */
+    @Test
+    void aUnitDetailWithCooldownsRoundTripsWithinItsCap() {
+        UnitDetail detail = new UnitDetail(
+                1,
+                99,
+                List.of(new UnitDetail.Unit(
+                        5,
+                        2,
+                        1,
+                        100f,
+                        200f,
+                        0.34f,
+                        List.of(),
+                        -1,
+                        0,
+                        UnitDetail.NO_TARGET,
+                        UnitDetail.NO_STANCE,
+                        List.of(new UnitDetail.Cooldown(0, 600)))));
+        roundTrip(UnitDetailPayload.STREAM_CODEC, new UnitDetailPayload(detail), UnitDetailPayload.SPEC.cap());
+        assertThat(UnitDetailPayload.SPEC.cap()).isEqualTo(UnitDetail.WIRE.maxSize());
     }
 
     /** PATH-10's dev payloads (spec §2.7): {@code debug_subscribe} within 64 B, {@code debug_feed} within 64 KiB. */

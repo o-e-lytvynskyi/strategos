@@ -337,6 +337,32 @@ class WireCodecSizeTest {
         assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
     }
 
+    /** UNIT-10: the widest {@code unit_detail}, every optional part of every unit at its largest, fits its cap. */
+    @Test
+    void theWidestUnitDetailFitsItsCap() {
+        List<UnitDetail.Order> orders = java.util.Collections.nCopies(
+                UnitDetail.MAX_ORDERS, new UnitDetail.Order(Integer.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE));
+        List<UnitDetail.Cooldown> resting = java.util.Collections.nCopies(
+                UnitDetail.MAX_COOLDOWNS, new UnitDetail.Cooldown(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        UnitDetail.Unit widest = new UnitDetail.Unit(
+                Integer.MAX_VALUE,
+                Integer.MAX_VALUE,
+                255,
+                Float.MAX_VALUE,
+                Float.MAX_VALUE,
+                Float.MAX_VALUE,
+                orders,
+                Integer.MAX_VALUE - 1,
+                Long.MAX_VALUE,
+                Integer.MAX_VALUE,
+                255,
+                resting);
+        UnitDetail full = new UnitDetail(
+                Integer.MAX_VALUE, Long.MAX_VALUE, java.util.Collections.nCopies(UiQuery.MAX_HANDLES, widest));
+        assertThat(size(UnitDetail.WIRE, full)).isLessThanOrEqualTo(UnitDetail.WIRE.maxSize());
+        assertThat(roundTrip(UnitDetail.WIRE, full)).isEqualTo(full);
+    }
+
     @Test
     void aBatchHoldsOneToThirtyTwoCommandsInFourKilobytes() {
         Move one = Move.replace(UnitSet.of(5), new Vec2d(1, 2));

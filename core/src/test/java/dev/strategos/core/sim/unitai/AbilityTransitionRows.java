@@ -26,10 +26,17 @@ final class AbilityTransitionRows {
 
     private AbilityTransitionRows() {}
 
+    /** The index of {@code poke} in the set the unit runs on: it follows the ids of every ability the set has. */
+    private static int poke(Unit u) {
+        int at = u.state.templates().abilityIndex("poke");
+        assertThat(at).as("the rows' set carries poke").isNotNegative();
+        return at;
+    }
+
     /** The unit in the ABILITY state, its order on the enemy out of range. */
     static void start(Unit u) {
         u.place(u.enemy, 10, 8);
-        u.state.orders().replace(u.index(), OrderKind.ABILITY, 10, 8, 0, 0, u.enemy);
+        u.state.orders().replace(u.index(), OrderKind.ABILITY, 10, 8, 0, poke(u), u.enemy);
         u.state.ai().set(u.index(), UnitAi.ABILITY);
     }
 
@@ -38,7 +45,7 @@ final class AbilityTransitionRows {
         double x = u.state.motion().x(u.index()) + 6; // wherever the unit stands: a gatherer is by its tree
         double z = u.state.motion().z(u.index());
         u.place(u.enemy, x, z);
-        u.state.orders().replace(u.index(), OrderKind.ABILITY, x, z, 0, 0, u.enemy);
+        u.state.orders().replace(u.index(), OrderKind.ABILITY, x, z, 0, poke(u), u.enemy);
         return new OrderReceived(u.handle);
     }
 

@@ -5,6 +5,8 @@
   "strategos.unit.infantry": "Infantry",
   "strategos.unit.archer": "Archer",
   "strategos.unit.horseman": "Horseman",
+  "strategos.ability.charge": "Charge",
+  "strategos.ability.charge.desc": "The horseman gallops half as fast again and strikes a fifth harder for five seconds",
   "strategos.unit.ram": "Battering ram",
   "strategos.unit.worker": "Worker",
   "strategos.unit.sheep": "Sheep",

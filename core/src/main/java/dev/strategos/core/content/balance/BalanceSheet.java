@@ -2,6 +2,7 @@ package dev.strategos.core.content.balance;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Derivation;
 import dev.strategos.core.content.RawTemplate;
@@ -70,6 +71,9 @@ public final class BalanceSheet {
      */
     public record Burn(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long tenTicks) {}
 
+    /** An ability a unit template has (UNIT-10): its aim, rest in ticks, cost, and effects as the template names them. */
+    public record Ability(TemplateId template, String id, String aim, int cooldown, String cost, String effects) {}
+
     /**
      * How rams raze a building down (CMB-09): {@code hits} blows of the log's crush, each times 0.9 to the building's
      * {@code Resistance/crush}, take its hit points; two rams striking together from one tick finish in {@code
@@ -93,6 +97,7 @@ public final class BalanceSheet {
     private final Map<String, List<String>> gatherers = new TreeMap<>();
     private final List<Load> loads = new ArrayList<>();
     private final List<Burn> burns = new ArrayList<>();
+    private final List<Ability> abilities = new ArrayList<>();
     private final List<Raze> razes = new ArrayList<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
@@ -179,6 +184,7 @@ public final class BalanceSheet {
         }
         sheet.burns(result.set(), concrete);
         sheet.razes(result.set(), concrete);
+        sheet.abilities(result.set(), concrete);
         for (Yield y : yields) {
             String note =
                     provenance.getOrDefault(YIELDS, Collections.emptyMap()).get(y.key());
@@ -263,6 +269,31 @@ public final class BalanceSheet {
 
     public List<Row> rows() {
         return List.copyOf(rows);
+    }
+
+    /** Every ability of every unit template, by template and id. */
+    public List<Ability> abilities() {
+        return List.copyOf(abilities);
+    }
+
+    private void abilities(TemplateSet set, List<UnitTemplate> templates) {
+        for (UnitTemplate t : templates) {
+            for (AbilityDef def : set.abilitiesOf(t.netIndex())) {
+                List<String> cost = new ArrayList<>();
+                def.cost().forEach((resource, amount) -> cost.add(plain(BigDecimal.valueOf(amount)) + " " + resource));
+                List<String> effects = new ArrayList<>();
+                for (AbilityDef.Effect e : def.effects()) {
+                    effects.add(e.kind() + " " + e.params());
+                }
+                abilities.add(new Ability(
+                        t.id(),
+                        def.id(),
+                        def.aim().id(),
+                        def.cooldown(),
+                        String.join(", ", cost),
+                        String.join("; ", effects)));
+            }
+        }
     }
 
     /** How long torches take to burn each building, by attacker and building. */
@@ -584,6 +615,29 @@ public final class BalanceSheet {
                         .append(r.hits())
                         .append(" | ")
                         .append(seconds(r.twoTicks()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Abilities\n\n");
+        if (abilities.isEmpty()) {
+            sb.append("No template has an ability yet.\n");
+        } else {
+            sb.append("What each unit's abilities rest and cost, and what their effects are (UNIT-10); the numbers are"
+                    + " in the template's rows above, each with its note.\n\n");
+            sb.append("| Unit | Ability | Aim | Rests | Cost | Effects |\n|---|---|---|---|---|---|\n");
+            for (Ability a : abilities) {
+                sb.append("| ")
+                        .append(a.template().value())
+                        .append(" | ")
+                        .append(a.id())
+                        .append(" | ")
+                        .append(a.aim())
+                        .append(" | ")
+                        .append(seconds(a.cooldown()))
+                        .append(" | ")
+                        .append(a.cost().isEmpty() ? "–" : cell(a.cost()))
+                        .append(" | ")
+                        .append(cell(a.effects()))
                         .append(" |\n");
             }
         }

@@ -138,6 +138,21 @@ public final class RtsMode {
         orders.fired(action);
     }
 
+    /** The command card's ability button: targeting armed with the ability at index {@code ability} of the set (UNIT-10). */
+    public void armAbility(int ability) {
+        orders.armAbility(ability);
+    }
+
+    /** The ability whose target the next click picks (UNIT-10), its index in the template set; -1 when none is armed. */
+    public int abilityArmed() {
+        return orders.abilityArmed();
+    }
+
+    /** The click that aims the armed ability at what the cursor at window points picks; false when none is armed. */
+    boolean fireAbility(double x, double y, boolean shift) {
+        return orders.fireAbility(x, y, shift);
+    }
+
     /** The last command a right click or a first-person key sent, for scenarios; null before any. */
     public @Nullable Command lastCommand() {
         return orders.lastCommand();

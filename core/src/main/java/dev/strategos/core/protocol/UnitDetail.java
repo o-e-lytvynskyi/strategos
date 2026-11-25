@@ -8,13 +8,14 @@ import java.util.List;
  * The {@code unit_detail} payload (NET-08): what a player's {@code ui_query} asked for, own units only, when it
  * changed and at most ten times a second: each unit's template, state, hit points and their most, effective walk
  * speed, its orders (kind and match-local target), at most {@value #MAX_ORDERS} of them, and the load it carries
- * (UI-06): the resource's index in the match's economy, -1 for none, and the amount in thousandths. Cooldowns join with
- * the cards that bring them. A trailer after the units (CMB-17) lists the units whose current order attacks a unit the
+ * (UI-06): the resource's index in the match's economy, -1 for none, and the amount in thousandths. A trailer after the units (CMB-17) lists the units whose current order attacks a unit the
  * viewer may see, each as its place in the list and the target's index; it is left out when none does, so a frame
  * without attacks is byte-for-byte what it was. A second trailer (CMB-05) lists the units a player gave a stance, each
  * as its place in the list and the stance's code; a unit without one fights as its template says and is not listed,
- * and the trailer is left out when no unit has one. When only it is present, the attack trailer before it is an empty
- * count.
+ * and the trailer is left out when no unit has one. A third trailer (UNIT-10) lists the units with an ability on
+ * cooldown, each as its place in the list and its abilities' remaining ticks (the ability's index in the template set,
+ * at most {@value #MAX_COOLDOWNS} a unit); a ready ability is not listed, and the trailer is left out when none rests.
+ * When only a later trailer is present, each one before it is an empty count.
  */
 @CoreApi
 public record UnitDetail(int matchId, long tick, List<Unit> units) {
@@ -25,6 +26,13 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
 
     /** {@link Unit#stance}'s value for a unit that fights as its template says. */
     public static final int NO_STANCE = -1;
+
+    /** The most abilities one unit reports resting. */
+    public static final int MAX_COOLDOWNS = 8;
+
+    /** One ability still resting: its index in the template set and the ticks left (UNIT-10). */
+    @CoreApi
+    public record Cooldown(int ability, int ticks) {}
 
     /** One order: its kind ({@code OrderKind}) and its match-local target. */
     @CoreApi
@@ -43,19 +51,47 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
             int carried,
             long load,
             int target,
-            int stance) {
+            int stance,
+            List<Cooldown> cooldowns) {
         public Unit {
             orders = List.copyOf(orders.size() > MAX_ORDERS ? orders.subList(0, MAX_ORDERS) : orders);
+            cooldowns = List.copyOf(cooldowns.size() > MAX_COOLDOWNS ? cooldowns.subList(0, MAX_COOLDOWNS) : cooldowns);
         }
 
         Unit withTarget(int target) {
             return new Unit(
-                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance);
+                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
+                    cooldowns);
         }
 
         Unit withStance(int stance) {
             return new Unit(
-                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance);
+                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
+                    cooldowns);
+        }
+
+        Unit withCooldowns(List<Cooldown> cooldowns) {
+            return new Unit(
+                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
+                    cooldowns);
+        }
+
+        /** A unit with no ability resting. */
+        public Unit(
+                int handle,
+                int template,
+                int state,
+                float health,
+                float maxHealth,
+                float walkSpeed,
+                List<Order> orders,
+                int carried,
+                long load,
+                int target,
+                int stance) {
+            this(
+                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
+                    List.of());
         }
 
         /** A unit with the stance its template gives it. */
@@ -122,10 +158,12 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                 targeted += u.target() == NO_TARGET ? 0 : 1;
             }
             int stanced = 0;
+            int cooling = 0;
             for (Unit u : d.units()) {
                 stanced += u.stance() == NO_STANCE ? 0 : 1;
+                cooling += u.cooldowns().isEmpty() ? 0 : 1;
             }
-            if (targeted > 0 || stanced > 0) {
+            if (targeted > 0 || stanced > 0 || cooling > 0) {
                 out.writeVarInt(targeted);
                 for (int k = 0; k < d.units().size(); k++) {
                     int target = d.units().get(k).target();
@@ -134,12 +172,24 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                     }
                 }
             }
-            if (stanced > 0) {
+            if (stanced > 0 || cooling > 0) {
                 out.writeVarInt(stanced);
                 for (int k = 0; k < d.units().size(); k++) {
                     int stance = d.units().get(k).stance();
                     if (stance != NO_STANCE) {
                         out.writeVarInt(k).writeByte(stance);
+                    }
+                }
+            }
+            if (cooling > 0) {
+                out.writeVarInt(cooling);
+                for (int k = 0; k < d.units().size(); k++) {
+                    List<Cooldown> resting = d.units().get(k).cooldowns();
+                    if (!resting.isEmpty()) {
+                        out.writeVarInt(k).writeVarInt(resting.size());
+                        for (Cooldown c : resting) {
+                            out.writeVarInt(c.ability()).writeVarInt(c.ticks());
+                        }
                     }
                 }
             }
@@ -179,6 +229,18 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                         int at = in.readVarInt(count - 1);
                         units.set(at, units.get(at).withStance(in.readUnsignedByte()));
                     }
+                    if (in.remaining() > 0) {
+                        int cooling = in.readVarInt(count);
+                        for (int j = 0; j < cooling; j++) {
+                            int at = in.readVarInt(count - 1);
+                            int resting = in.readVarInt(MAX_COOLDOWNS);
+                            List<Cooldown> list = new ArrayList<>(resting);
+                            for (int i = 0; i < resting; i++) {
+                                list.add(new Cooldown(in.readVarInt(), in.readVarInt()));
+                            }
+                            units.set(at, units.get(at).withCooldowns(list));
+                        }
+                    }
                 }
             }
             return new UnitDetail(matchId, tick, units);
@@ -191,7 +253,9 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                     + 5
                     + UiQuery.MAX_HANDLES * (4 + 5 + 1 + 12 + 5 + MAX_ORDERS * (5 + 8) + 5 + 10 + 10 + 6)
                     + 5
-                    + 5;
+                    + 5
+                    + 5
+                    + UiQuery.MAX_HANDLES * (5 + 5 + MAX_COOLDOWNS * (5 + 5));
         }
     };
 }

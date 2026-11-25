@@ -266,6 +266,15 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public int abilityCooldown(int handle, String ability) {
+        if (!state.entities().isAlive(handle)) {
+            return 0;
+        }
+        long left = state.play().abilities().readyAt(handle, ability) - state.tick();
+        return left <= 0 ? 0 : (int) Math.min(left, Integer.MAX_VALUE);
+    }
+
+    @Override
     public int carriedResource(int handle) {
         return state.entities().isAlive(handle) ? state.carry().resource(Handle.index(handle)) : -1;
     }

@@ -2,11 +2,14 @@ package dev.strategos.mod.client.rts;
 
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.input.Action;
+import dev.strategos.core.client.order.AbilityIntents;
 import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.FocusTargets;
+import dev.strategos.core.content.AbilityDef;
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.BuildingState;
@@ -16,8 +19,10 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.Target;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.protocol.UseAbility;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode.Pick;
@@ -56,6 +61,8 @@ final class RtsOrders {
     private static final DustParticleOptions GATHER_MARKER =
             new DustParticleOptions(new Vector3f(0.3f, 0.9f, 0.3f), 4f);
 
+    private static final int NO_ABILITY = -1;
+
     private final RtsMode mode;
     private boolean previewing;
     private int clientSeq = 1;
@@ -63,6 +70,7 @@ final class RtsOrders {
     private final List<double[]> markers =
             new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
     private boolean attackMove;
+    private int ability = NO_ABILITY; // the armed ability's index in the template set (UNIT-10)
     private final FocusTargets focus = new FocusTargets();
     private @Nullable Command lastCommand;
 
@@ -74,9 +82,82 @@ final class RtsOrders {
     void fired(Action action) {
         if (action == Action.ATTACK_MOVE) {
             attackMove = true; // for the next right click
+            ability = NO_ABILITY;
         } else if (action == Action.CANCEL || action == Action.SELECT || action == Action.BOX_SELECT) {
-            attackMove = false;
+            attackMove = false; // an armed ability keeps through a click, which fires it, and goes with cancel or a box
+            if (action != Action.SELECT) {
+                ability = NO_ABILITY;
+            }
         }
+    }
+
+    /** Targeting arms with the ability at {@code index} of the set (UNIT-10): the next click aims it. */
+    void armAbility(int index) {
+        ability = index;
+        attackMove = false;
+    }
+
+    /** The armed ability's index in the template set, -1 for none. */
+    int abilityArmed() {
+        return ability;
+    }
+
+    /**
+     * The click that aims the armed ability (UNIT-10): a point on the ground for a point or area ability, the unit
+     * under the cursor for a unit ability, as one {@code UseAbility} of the selected units that have it, queued with
+     * Shift for an aimed ability. It disarms; false when none was armed.
+     */
+    boolean fireAbility(double x, double y, boolean shift) {
+        int index = ability;
+        ability = NO_ABILITY;
+        if (index == NO_ABILITY) {
+            return false;
+        }
+        TemplateSet templates = StrategosClient.templates();
+        Pick pick = mode.pick(x, y);
+        MatchJoin join = StrategosClient.match();
+        Minecraft mc = Minecraft.getInstance();
+        if (pick == null
+                || join == null
+                || mc.level == null
+                || index >= templates.abilities().size()) {
+            return true;
+        }
+        AbilityDef def = templates.abilities().get(index);
+        Map<Integer, Integer> templateOf = new HashMap<>();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().matchId() == join.matchId()) {
+                templateOf.put(body.spawnData().handle(), body.spawnData().templateIndex());
+            }
+        }
+        Target target;
+        if (def.aim() == AbilityDef.Aim.UNIT) {
+            Integer unit = pick.entityId() >= 0
+                            && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
+                            && body.spawnData() != null
+                            && body.spawnData().matchId() == join.matchId()
+                    ? body.spawnData().handle()
+                    : null;
+            if (unit == null) {
+                return true; // not on a unit: nothing is sent
+            }
+            target = Target.unit(unit);
+        } else {
+            double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+            double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+            target = Target.point(wx - join.originX(), wz - join.originZ());
+        }
+        int[] owners =
+                AbilityIntents.owners(templates, mode.selection().handles(), h -> templateOf.getOrDefault(h, -1), def);
+        UseAbility use = AbilityIntents.use(owners, def, target, shift);
+        if (use != null && send(use)) {
+            double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+            double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, shift ? 200 : 40, 2});
+        }
+        return true;
     }
 
     void preview(boolean on) {
@@ -127,6 +208,9 @@ final class RtsOrders {
      */
     void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
         previewing = false;
+        if (fireAbility(x, y, shift)) { // an armed ability takes the click (UNIT-10)
+            return;
+        }
         boolean armed = attackMove;
         attackMove = false;
         Pick pick = mode.pick(x, y);

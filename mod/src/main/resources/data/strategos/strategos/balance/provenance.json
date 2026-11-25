@@ -93,7 +93,9 @@
     "Body/width": "A horse's hit box, 1.4 blocks, the mounted body's size (ADR-0011, UNIT-06)",
     "Body/height": "Two blocks: a horse and the rider above its saddle (ADR-0011, UNIT-06)",
     "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)",
-    "Capture/strength": "One and three quarters, 0 A.D.'s cavalry: raiders burn rather than take (CMB-10)"
+    "Capture/strength": "One and three quarters, 0 A.D.'s cavalry: raiders burn rather than take (CMB-10)",
+    "Abilities/charge/cooldown": "Six hundred ticks, thirty seconds: a charge is once a skirmish, not a stance, and the rest outlasts the burst six times over; our own starting value, to be tuned against QA-16 (UNIT-10)",
+    "Abilities/charge/effects": "Its three numbers, from spec 2.7's showcase, each our own starting value to be tuned against QA-16 (UNIT-10): five seconds (a hundred ticks), about a charge's length across a skirmish map at the boosted pace and short enough to be a decision; walk speed times one and a half, so the horseman crosses archers' range in two thirds of the time; hack times one and a fifth, a ten becomes a twelve per stroke, the lance's momentum"
   },
   "strategos:unit/ram": {
     "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",

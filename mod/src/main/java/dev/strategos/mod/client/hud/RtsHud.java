@@ -113,6 +113,8 @@ public final class RtsHud {
     private SelectionPanel panel = SelectionPanel.EMPTY;
     private CommandCard card = CommandCard.EMPTY;
     private final CardController controller = new CardController();
+    private Map<Integer, Integer> templateOfUnit =
+            Map.of(); // the selection's bodies' templates, for the card's abilities
     private CommandCard.@Nullable Button hovered;
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
@@ -260,12 +262,15 @@ public final class RtsHud {
         CardController.Click c = controller.click(
                 b,
                 mode.selection().handles(),
+                h -> templateOfUnit.getOrDefault(h, -1),
                 ownBuilding(),
                 StrategosClient.templates(),
                 mode::send,
                 net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
         if (c.effect() == CardController.Effect.ARM) {
             mode.armPlacement(c.template());
+        } else if (c.effect() == CardController.Effect.TARGET) {
+            mode.armAbility(c.template()); // the next click aims it (UNIT-10)
         }
         build();
     }
@@ -341,19 +346,26 @@ public final class RtsHud {
         List<Integer> unitTemplates = new ArrayList<>();
         List<Stance> stances = new ArrayList<>();
         Map<Integer, Stance> received = new HashMap<>();
+        Map<Integer, List<UnitDetail.Cooldown>> resting = new HashMap<>();
         for (UnitDetail.Unit u : StrategosClient.model().details()) {
             Stance sent = u.stance() == UnitDetail.NO_STANCE ? null : Stance.of(u.stance());
             if (sent != null) {
                 received.put(u.handle(), sent);
             }
+            resting.put(u.handle(), u.cooldowns());
         }
+        List<List<UnitDetail.Cooldown>> restingOf = new ArrayList<>();
+        Map<Integer, Integer> templateOf = new HashMap<>();
         for (int h : selection.handles()) {
             UnitSpawnData d = bodies.get(h);
             if (d != null) {
                 unitTemplates.add(d.templateIndex());
+                templateOf.put(h, d.templateIndex());
+                restingOf.add(resting.getOrDefault(h, List.of()));
                 stances.add(CardController.stanceOf(templates, d.templateIndex(), received.get(h)));
             }
         }
+        templateOfUnit = templateOf;
         BuildingState.Entry own = selection.building() == null ? null : shown;
         card = CommandCard.of(
                 new CommandCard.Input(
@@ -365,7 +377,8 @@ public final class RtsHud {
                         StrategosClient.model().buildings(),
                         own != null && controller.demolishAsked(own.handle()),
                         CardController.shared(stances),
-                        StrategosClient.viewerCiv()),
+                        StrategosClient.viewerCiv(),
+                        CommandCard.cooldowns(templates, unitTemplates, restingOf)),
                 own);
         phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
                 templates,
@@ -682,6 +695,26 @@ public final class RtsHud {
                     paint.item(g, "minecraft:tnt", cell);
                     if (b.on()) { // asked: one more click demolishes
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
+                    }
+                }
+                case ABILITY -> {
+                    cardPresentation.abilityIcon(g, font, templates, b.template(), cell);
+                    if (b.template() == mode.abilityArmed()) { // waiting for its target: framed
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
+                    }
+                    if (b.cooldown() > 0) { // the sweep: what is left of the rest darkens the cell from the top
+                        int total = Math.max(
+                                1, templates.abilities().get(b.template()).cooldown());
+                        int h = (int) Math.ceil(cell.height() * Math.min(1.0, (double) b.cooldown() / total));
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.y() + h, 0xA0101010);
+                        String left = String.valueOf((b.cooldown() + 19) / 20);
+                        g.drawString(
+                                font,
+                                left,
+                                cell.x() + (cell.width() - font.width(left)) / 2,
+                                cell.y() + (cell.height() - font.lineHeight) / 2 + 1,
+                                theme.text(),
+                                true);
                     }
                 }
                 case RESEARCH -> {

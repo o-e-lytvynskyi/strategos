@@ -190,7 +190,9 @@ public final class RtsScreen extends Screen {
             boolean shift = Modifiers.shift(e.modifiers());
             switch (e.action()) {
                 case SELECT -> {
-                    if (!mode.placement().place(shift)) {
+                    if (mode.fireAbility(x(e.x()), y(e.y()), shift)) {
+                        // an armed ability took the click (UNIT-10)
+                    } else if (!mode.placement().place(shift)) {
                         RtsMode.Pick pick = pickAt(e.x(), e.y());
                         Seen unit = mode.seenAt(pick);
                         BuildingState.Entry building = unit == null ? mode.buildingAt(pick) : null;

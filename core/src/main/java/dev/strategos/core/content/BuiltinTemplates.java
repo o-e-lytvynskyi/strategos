@@ -98,6 +98,19 @@ final class BuiltinTemplates {
               "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
               "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
               "Look": { "weapon": 0, "armour": 0 },
+              "Abilities": {
+                "charge": {
+                  "target": "none",
+                  "cooldown": 600,
+                  "icon": "minecraft:iron_horse_armor",
+                  "effects": [
+                    { "kind": "apply_modifiers", "params": { "ticks": 100, "modifiers": [
+                      { "path": "UnitMotion/walkSpeed", "op": "mul", "value": 1.5 },
+                      { "path": "Attack/Melee/hack", "op": "mul", "value": 1.2 }
+                    ] } }
+                  ]
+                }
+              },
               "Cost": {
                 "resources": { "food": 80, "wood": 40, "iron": 30 },
                 "population": 1,
@@ -720,6 +733,7 @@ final class BuiltinTemplates {
         if (!withTechs) {
             object.remove("Researcher");
             object.remove("Look"); // TECH-03's tiers, which only the techs raise
+            object.remove("Abilities"); // UNIT-10's, long after that pin
             if (object.has("Builder")) {
                 object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
             }

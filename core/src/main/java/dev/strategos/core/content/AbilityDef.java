@@ -17,7 +17,9 @@ import org.jspecify.annotations.Nullable;
  * reaches, the ticks it rests after use, what it costs, whether an idle owner uses it by itself and the effects it has.
  * Compiled with the template; {@code effects} stay as their kinds and parameters, which {@code sim.ability} turns into
  * behaviour. {@code range} is the gap between the edges of the user and its target (the radius of an area is about its
- * centre); {@code cost} is by resource id, in whole units, paid when the ability fires.
+ * centre); {@code cost} is by resource id, in whole units, paid when the ability fires. {@code icon} is the item its
+ * command-card button is drawn with (empty: the ability's first letter); its name and description are the language
+ * keys {@link #nameKey} and {@link #descriptionKey}.
  */
 public record AbilityDef(
         String id,
@@ -28,7 +30,8 @@ public record AbilityDef(
         Map<String, Double> cost,
         boolean autocast,
         String pick,
-        List<Effect> effects) {
+        List<Effect> effects,
+        String icon) {
     /** What an ability is aimed at. */
     public enum Aim {
         NONE,
@@ -71,6 +74,16 @@ public record AbilityDef(
         effects = List.copyOf(effects);
     }
 
+    /** The language key of the ability's name. */
+    public String nameKey() {
+        return "strategos.ability." + id;
+    }
+
+    /** The language key of the ability's one-line description. */
+    public String descriptionKey() {
+        return "strategos.ability." + id + ".desc";
+    }
+
     /** Whether this ability has a timed effect (its modifiers come off again). */
     public @Nullable Effect timed() {
         for (Effect e : effects) {
@@ -88,7 +101,7 @@ public record AbilityDef(
     static @Nullable AbilityDef parse(String id, JsonObject json, String pointer, Fields f) {
         List<TemplateProblem> problems = f.problems();
         int before = problems.size();
-        f.known(json, pointer, "target", "range", "radius", "cooldown", "Cost", "autocast", "pick", "effects");
+        f.known(json, pointer, "target", "range", "radius", "cooldown", "Cost", "autocast", "pick", "effects", "icon");
         Aim aim = null;
         JsonElement t = json.get("target");
         if (t instanceof JsonPrimitive p && p.isString()) {
@@ -132,7 +145,15 @@ public record AbilityDef(
         if (problems.size() > before) {
             return null;
         }
-        return new AbilityDef(id, aim, range, radius, cooldown, cost, autocast, pick, effects);
+        String icon = "";
+        JsonElement i = json.get("icon");
+        if (i instanceof JsonPrimitive p && p.isString() && !p.getAsString().isBlank()) {
+            icon = p.getAsString().trim();
+        } else if (i != null) {
+            problems.add(TemplateProblem.error(f.file(), pointer + "/icon", "expected an item id"));
+            return null;
+        }
+        return new AbilityDef(id, aim, range, radius, cooldown, cost, autocast, pick, effects, icon);
     }
 
     private static double number(JsonObject json, String pointer, String key, double max, Fields f) {

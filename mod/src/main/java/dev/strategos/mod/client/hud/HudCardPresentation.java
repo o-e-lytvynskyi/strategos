@@ -3,6 +3,7 @@ package dev.strategos.mod.client.hud;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
@@ -48,6 +49,7 @@ final class HudCardPresentation {
             case ALL_CLEAR -> Component.translatable("strategos.card.all_clear").getString();
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
             case RESEARCH -> research(templates, b.template());
+            case ABILITY -> ability(templates, b.template());
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);
@@ -76,6 +78,20 @@ final class HudCardPresentation {
             text.append(" — ").append(reason);
         }
         return text.toString();
+    }
+
+    /** An ability button's tooltip: its name, what it does, how long it rests (UNIT-10). */
+    private static String ability(TemplateSet templates, int index) {
+        if (index < 0 || index >= templates.abilities().size()) {
+            return "?";
+        }
+        AbilityDef def = templates.abilities().get(index);
+        String text = Component.translatable(def.nameKey()).getString();
+        String about = Component.translatable(def.descriptionKey()).getString();
+        if (!about.equals(def.descriptionKey())) {
+            text += " · " + about;
+        }
+        return def.cooldown() > 0 ? text + " · rests " + plain(def.cooldown() / 20.0) + " s" : text;
     }
 
     private static String research(TemplateSet templates, int techIndex) {
@@ -107,6 +123,23 @@ final class HudCardPresentation {
     /** A number as a player reads it: a whole one bare, else to one decimal. */
     static String plain(double v) {
         return v == Math.rint(v) ? String.valueOf((long) v) : String.format(java.util.Locale.ROOT, "%.1f", v);
+    }
+
+    /** An ability button's icon: its item, or the first letter of its name. */
+    void abilityIcon(GuiGraphics g, Font font, TemplateSet templates, int index, HudRect cell) {
+        AbilityDef def = templates.abilities().get(index);
+        if (!def.icon().isEmpty()) {
+            paint.item(g, def.icon(), cell);
+            return;
+        }
+        String letter = Component.translatable(def.nameKey()).getString().substring(0, 1);
+        g.drawString(
+                font,
+                letter,
+                cell.x() + (cell.width() - font.width(letter)) / 2,
+                cell.y() + (cell.height() - font.lineHeight) / 2 + 1,
+                theme.text(),
+                false);
     }
 
     void icon(GuiGraphics g, Font font, TemplateSet templates, int template, HudRect cell) {

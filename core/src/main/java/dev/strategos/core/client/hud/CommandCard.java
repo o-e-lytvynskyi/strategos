@@ -1,5 +1,6 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Requirements;
@@ -10,12 +11,15 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -24,7 +28,9 @@ import org.jspecify.annotations.Nullable;
  * shows a button for each unit its {@code Trainer/units} names, and a field reaped empty its reseed; units show the
  * build page, when a builder is among them, the five stances (CMB-05) and stop; the build page shows each building with a blueprint, and back.
  * Each button carries its template, its cost per resource of the match in thousandths and whether the faction's stock
- * covers it. Drawing and clicks use the same cells.
+ * covers it. A selected unit's abilities (UNIT-10) show as buttons from its template, one for each ability of the
+ * selected units' templates in the set's order, in {@link #abilitySlot}; one still resting shows its ticks left.
+ * Drawing and clicks use the same cells.
  */
 public record CommandCard(Page page, List<Button> buttons) {
     public static final int COLUMNS = 5;
@@ -68,7 +74,20 @@ public record CommandCard(Page page, List<Button> buttons) {
         /** Sound the all clear at an own finished garrison holder (BLD-16): they come out and go back to work. */
         ALL_CLEAR,
         /** Research a tech at an own finished building (TECH-01, UI-13): {@link Button#template} is the tech's net index. */
-        RESEARCH
+        RESEARCH,
+        /**
+         * An ability of the selected units (UNIT-10): {@link Button#template} is its index in the template set's
+         * abilities, {@link Button#cooldown} the ticks it still rests.
+         */
+        ABILITY
+    }
+
+    /** The cells ability buttons take, in order (see {@link #abilitySlot}): beside the build page's cell, then above stop (their keys follow the grid). */
+    public static final int ABILITY_SLOT_COUNT = 8;
+
+    /** The cell of the {@code k}th ability button, {@code k} below {@link #ABILITY_SLOT_COUNT}. */
+    public static int abilitySlot(int k) {
+        return k < 4 ? 1 + k : 6 + k; // 1..4, then 10..13
     }
 
     /**
@@ -83,9 +102,23 @@ public record CommandCard(Page page, List<Button> buttons) {
             boolean affordable,
             boolean on,
             @Nullable String reason,
-            @Nullable Stance stance) {
+            @Nullable Stance stance,
+            int cooldown) {
         public Button {
             cost = List.copyOf(cost);
+        }
+
+        /** A button of no ability, nothing resting. */
+        public Button(
+                Kind kind,
+                int slot,
+                int template,
+                List<Long> cost,
+                boolean affordable,
+                boolean on,
+                @Nullable String reason,
+                @Nullable Stance stance) {
+            this(kind, slot, template, cost, affordable, on, reason, stance, 0);
         }
 
         /** A button with a reason it cannot be used, or none. */
@@ -131,11 +164,37 @@ public record CommandCard(Page page, List<Button> buttons) {
             List<BuildingState.Entry> buildings,
             boolean demolishAsked,
             @Nullable Stance stance,
-            @Nullable CivDef civ) {
+            @Nullable CivDef civ,
+            Map<Integer, Integer> cooldowns) {
         public Input {
             resources = List.copyOf(resources);
             unitTemplates = List.copyOf(unitTemplates);
             buildings = List.copyOf(buildings);
+            cooldowns = Map.copyOf(cooldowns);
+        }
+
+        /** An input of a selection whose abilities are all ready. */
+        public Input(
+                TemplateSet templates,
+                List<String> resources,
+                @Nullable FactionState faction,
+                List<Integer> unitTemplates,
+                boolean buildPage,
+                List<BuildingState.Entry> buildings,
+                boolean demolishAsked,
+                @Nullable Stance stance,
+                @Nullable CivDef civ) {
+            this(
+                    templates,
+                    resources,
+                    faction,
+                    unitTemplates,
+                    buildPage,
+                    buildings,
+                    demolishAsked,
+                    stance,
+                    civ,
+                    Map.of());
         }
 
         /** An input that knows no buildings and asked nothing: the card before UI-08's reasons. */
@@ -145,7 +204,7 @@ public record CommandCard(Page page, List<Button> buttons) {
                 @Nullable FactionState faction,
                 List<Integer> unitTemplates,
                 boolean buildPage) {
-            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false, null, null);
+            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false, null, null, Map.of());
         }
 
         /** An input of a viewer whose civilisation is not narrowed. */
@@ -158,7 +217,17 @@ public record CommandCard(Page page, List<Button> buttons) {
                 List<BuildingState.Entry> buildings,
                 boolean demolishAsked,
                 @Nullable Stance stance) {
-            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, stance, null);
+            this(
+                    templates,
+                    resources,
+                    faction,
+                    unitTemplates,
+                    buildPage,
+                    buildings,
+                    demolishAsked,
+                    stance,
+                    null,
+                    Map.of());
         }
 
         /** An input whose selection's shared stance is not known. */
@@ -170,7 +239,17 @@ public record CommandCard(Page page, List<Button> buttons) {
                 boolean buildPage,
                 List<BuildingState.Entry> buildings,
                 boolean demolishAsked) {
-            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, null, null);
+            this(
+                    templates,
+                    resources,
+                    faction,
+                    unitTemplates,
+                    buildPage,
+                    buildings,
+                    demolishAsked,
+                    null,
+                    null,
+                    Map.of());
         }
     }
 
@@ -216,12 +295,68 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (builders) {
             out.add(new Button(Kind.BUILD_PAGE, 0, -1, List.of(), true));
         }
+        abilityButtons(in, out);
         List<Stance> stances = stances();
         for (int k = 0; k < stances.size(); k++) {
             out.add(Button.stance(STANCE_ROW + k, stances.get(k), stances.get(k) == in.stance()));
         }
         out.add(new Button(Kind.STOP, SLOTS - 1, -1, List.of(), true));
         return new CommandCard(Page.UNITS, out);
+    }
+
+    /**
+     * The abilities of the selected units' templates (UNIT-10), by index in the template set, ascending: the order of
+     * their ids, so a button keeps its cell whatever else is selected.
+     */
+    public static List<Integer> abilitiesOf(TemplateSet templates, List<Integer> unitTemplates) {
+        java.util.SortedSet<Integer> out = new java.util.TreeSet<>();
+        for (int t : unitTemplates) {
+            for (AbilityDef def : templates.abilitiesOf(t)) {
+                out.add(templates.abilityIndex(def.id()));
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    /**
+     * The ticks each ability of the selection rests (UNIT-10), by ability index; an ability some unit that has it can
+     * use now is not listed. {@code resting} holds, for each of {@code unitTemplates} in step, what the server sent
+     * for that unit (empty for none).
+     */
+    public static Map<Integer, Integer> cooldowns(
+            TemplateSet templates, List<Integer> unitTemplates, List<List<UnitDetail.Cooldown>> resting) {
+        Map<Integer, Integer> least = new TreeMap<>();
+        for (int k = 0; k < unitTemplates.size(); k++) {
+            for (AbilityDef def : templates.abilitiesOf(unitTemplates.get(k))) {
+                int index = templates.abilityIndex(def.id());
+                int left = 0;
+                for (UnitDetail.Cooldown c : k < resting.size() ? resting.get(k) : List.<UnitDetail.Cooldown>of()) {
+                    if (c.ability() == index) {
+                        left = c.ticks();
+                    }
+                }
+                least.merge(index, left, Math::min);
+            }
+        }
+        least.values().removeIf(left -> left <= 0);
+        return least;
+    }
+
+    private static void abilityButtons(Input in, List<Button> out) {
+        List<Integer> abilities = abilitiesOf(in.templates(), in.unitTemplates());
+        for (int k = 0; k < abilities.size() && k < ABILITY_SLOT_COUNT; k++) {
+            int index = abilities.get(k);
+            AbilityDef def = in.templates().abilities().get(index);
+            List<Long> cost = new ArrayList<>(in.resources().size());
+            for (String r : in.resources()) {
+                double v = def.cost().getOrDefault(r, 0.0);
+                cost.add(v > 0 ? Math.round(v * 1000) : 0L);
+            }
+            Button paid = button(in, Kind.ABILITY, abilitySlot(k), index, cost);
+            int left = in.cooldowns().getOrDefault(index, 0);
+            String reason = left > 0 ? "Ready in " + (left + 19) / 20 + " s" : paid.reason();
+            out.add(new Button(Kind.ABILITY, abilitySlot(k), index, cost, reason == null, false, reason, null, left));
+        }
     }
 
     /** The stance buttons' order (CMB-05, M5 §2.4's table), and the first slot of their row. */

@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.replicate;
 
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
@@ -205,6 +206,13 @@ public final class ReplicationService {
             }
             StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
             Stance stance = q.explicitStance(handle);
+            List<UnitDetail.Cooldown> resting = new ArrayList<>();
+            for (AbilityDef def : q.templates().abilitiesOf(unit.templateIndex())) {
+                int left = q.abilityCooldown(handle, def.id());
+                if (left > 0) {
+                    resting.add(new UnitDetail.Cooldown(q.templates().abilityIndex(def.id()), left));
+                }
+            }
             units.add(new UnitDetail.Unit(
                     handle,
                     unit.templateIndex(),
@@ -216,7 +224,8 @@ public final class ReplicationService {
                     q.carriedResource(handle),
                     q.carriedAmount(handle),
                     target,
-                    stance == null ? UnitDetail.NO_STANCE : stance.code()));
+                    stance == null ? UnitDetail.NO_STANCE : stance.code(),
+                    resting));
         }
         return new UnitDetail(matchId, q.tick(), units);
     }
