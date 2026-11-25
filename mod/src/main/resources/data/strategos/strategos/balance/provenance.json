@@ -41,6 +41,8 @@
     "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own"
   },
   "strategos:unit/infantry": {
+    "Loot/resources/food": "Eleven food: 0 A.D.'s infantry loot of five food plus a tenth of its cost's sixty (research mechanics 1.21); winning a fight pays, so a raid on soldiers refunds a fraction, never the price (CMB-13)",
+    "Loot/resources/wood": "Four wood: a tenth of its forty wood cost, 0 A.D.'s share of cost (research mechanics 1.21); our own starting value, to be tuned against QA-16 (CMB-13)",
     "Attack/Melee/hack": "With 100 hit points and resistance 5, one spearman kills another in 29 blows, about half a minute at a blow a second (M2, CMB-02)",
     "Attack/Melee/reach": "A spear reaches a little past an arm's length",
     "Attack/Melee/prepare": "Half a second's wind-up before the first thrust, so a charge reads",
@@ -57,6 +59,9 @@
     "Promotion/value": "A hundred: food 60 plus wood 40, what it costs to replace: the sum of its resource cost, so a kill is worth the price of the fallen and a veteran army is the wealth of what it has beaten; our own starting value, to be tuned against QA-16 (CMB-11)"
   },
   "strategos:unit/archer": {
+    "Loot/resources/food": "Eleven food: five food plus a tenth of its sixty, as the spearman's (research mechanics 1.21, CMB-13)",
+    "Loot/resources/wood": "Four wood: a tenth of its forty (research mechanics 1.21, CMB-13)",
+    "Loot/resources/iron": "Two iron: a tenth of its twenty (research mechanics 1.21, CMB-13)",
     "Health/max": "Seventy hit points, tuned up from fifty (duel matrix, M5 UNIT-07): archers must outlast the spearmen's approach and a hill duel must run long enough for height to tell, yet stay under a spearman's hundred",
     "UnitMotion/walkSpeed": "0.2 blocks a tick: slightly faster than infantry, allowing ranged positioning (M5 UNIT-07)",
     "Attack/Ranged/pierce": "Sixteen pierce per arrow, tuned up from six (duel matrix, M5 UNIT-07): a spearman's resistance 5 lets only 59 % through, and archers of equal cost must break the spearmen before and after contact",
@@ -77,6 +82,9 @@
     "Promotion/value": "A hundred and twenty: food 60, wood 40 and iron 20, what it costs to replace: the sum of its resource cost, so a kill is worth the price of the fallen and a veteran army is the wealth of what it has beaten; our own starting value, to be tuned against QA-16 (CMB-11)"
   },
   "strategos:unit/horseman": {
+    "Loot/resources/food": "Thirteen food: five food plus a tenth of its eighty (research mechanics 1.21, CMB-13)",
+    "Loot/resources/wood": "Four wood: a tenth of its forty (research mechanics 1.21, CMB-13)",
+    "Loot/resources/iron": "Three iron: a tenth of its thirty (research mechanics 1.21, CMB-13)",
     "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Health/max": "Two hundred hit points, tuned up from a hundred and twenty (duel matrix, M5 UNIT-07): twice a spearman, the price of being hard to catch, enough to live through the archers' fire to the melee",
@@ -101,6 +109,8 @@
     "Promotion/value": "A hundred and fifty: food 80, wood 40 and iron 30, what it costs to replace: the sum of its resource cost, so a kill is worth the price of the fallen and a veteran army is the wealth of what it has beaten; our own starting value, to be tuned against QA-16 (CMB-11)"
   },
   "strategos:unit/ram": {
+    "Loot/resources/wood": "Thirty wood: a fifth of its hundred and fifty, double a soldier's share, since siege is the costly prize of a fight (research mechanics 1.21, CMB-13)",
+    "Loot/resources/iron": "Fourteen iron: a fifth of its seventy, double a soldier's share (research mechanics 1.21, CMB-13)",
     "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",
     "UnitMotion/walkSpeed": "A tenth of a block a tick: half a spearman's pace, so a ram is seen coming and a force must escort it (CMB-09)",
     "Attack/Melee/crush": "Forty crush a swing of the log: against a stone building two rams raze a civic centre in under a minute, where the same price in torch-bearers takes about three (over five before M6 T23 doubled the torch) (D-12, CMB-09)",
@@ -119,6 +129,7 @@
     "Promotion/value": "Two hundred and twenty: wood 150 and iron 70, what it costs to replace: the sum of its resource cost, so a kill is worth the price of the fallen and a veteran army is the wealth of what it has beaten; our own starting value, to be tuned against QA-16 (CMB-11)"
   },
   "strategos:unit/worker": {
+    "Loot/resources/food": "Three food: a twentieth of its sixty, a small prize, half a soldier's share, since workers fight no one and a raid on them already costs their owner the work (research mechanics 1.21, CMB-13)",
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
     "Behaviour/flee": "Eight blocks from a blow: out of a spearman's reach, near enough to go back to work",
     "Behaviour/stance": "Passive: a worker never fights; hit, it runs from the blow (M5, CMB-05)",
@@ -149,6 +160,9 @@
     "minecraft:sweet_berry_bush": "Sixty food a bush, a worker's cost; a bush left alone fills again in ten minutes, but an emptied one stays empty: early food that runs out, so fields matter (ECO-09)"
   },
   "strategos:building/civic_centre": {
+    "Loot/resources/wood": "Sixty wood: 0 A.D.'s civic centre pays sixty wood (research mechanics 1.21, CMB-13)",
+    "Loot/resources/stone": "Sixty stone: 0 A.D.'s civic centre pays sixty stone (research mechanics 1.21, CMB-13)",
+    "Loot/resources/iron": "Fifty iron: 0 A.D.'s civic centre pays fifty metal, our iron (research mechanics 1.21, CMB-13)",
     "Attack/Building/arrows": "Three arrows a volley: a lone raider is punished, a raid of four is hurt but not stopped; garrisoned units add more (CMB-07, BLD-11)",
     "Attack/Building/perGarrisoned": "One more arrow for each unit inside, so sheltering workers makes the centre deadlier (BLD-11, from T10)",
     "Attack/Building/interval": "Eighty ticks (four seconds) between volleys: slow enough that soldiers, not the centre, decide a fight (CMB-07)",
@@ -183,6 +197,7 @@
     "GarrisonHolder/ejectBelow": "A tenth of its health: 0 A.D.'s garrison holders let everyone out below 10 % (research second-pass 1.13), so a falling building does not bury its garrison (BLD-10)"
   },
   "strategos:building/house": {
+    "Loot/resources/wood": "16 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
     "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
     "Cost/time": "Thirty seconds for one builder",
@@ -197,6 +212,7 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/field": {
+    "Loot/resources/wood": "12 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
     "Cost/resources/wood": "Sixty wood: a worker's first two trips to a tree, after the berries run low",
     "Cost/time": "Twenty seconds: a field goes in faster than a house",
@@ -207,6 +223,9 @@
     "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
   },
   "strategos:building/barracks": {
+    "Loot/resources/wood": "40 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/stone": "20 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/iron": "10 iron: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Twelve hundred: between a house and the centre",
     "Cost/resources/wood": "Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping",
     "Cost/resources/stone": "A hundred stone: soldiers need the quarry, so stone matters from the first barracks; the first loop's starts bring a hundred (ECO-07, BLD-08)",
@@ -222,6 +241,8 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/tower": {
+    "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/stone": "30 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
     "Attack/Building/interval": "Forty ticks (two seconds) between arrows: half the centre's pause, a steady five pierce a second that two or three towers turn into a real wall of arrows (BLD-17)",
     "Attack/Building/pierce": "Ten pierce an arrow, more than the centre's eight and under an archer's sixteen: a tower hurts a spearman but is no match for a squad (BLD-17)",
@@ -241,6 +262,7 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/sentry_tower": {
+    "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Attack/Building/arrows": "One arrow a shot and one more for each of its three garrisoned infantry: a sentry post is a lookout with a bow, so it warns and wears a raid down but, empty, is no defence (BLD-12, BLD-11)",
     "Attack/Building/perGarrisoned": "One more arrow for each unit inside, as the defence tower's: 0 A.D.'s sentry tower adds an arrow per garrisoned infantry too (research second-pass 1.6), so a full one fires four (BLD-12)",
     "Attack/Building/interval": "Forty ticks (two seconds) between arrows, the defence tower's pace: the two differ in reach, health and garrison, not in rhythm (BLD-12)",
@@ -263,6 +285,7 @@
     "Upgrade/Cost/resources/stone": "A hundred stone: 0 A.D.'s upgrade price (research second-pass 1.6); with the post's hundred wood and the upgrade's fifty, a defence tower reached through the sentry costs 150 wood and 100 stone, a little more wood than building it outright (BLD-12)"
   },
   "strategos:building/palisade": {
+    "Loot/resources/wood": "3 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Three hundred a segment: under a house's four hundred, so a squad with torches or a ram opens a segment in seconds yet a lone raider does not get through (BLD-13, CMB-03)",
     "Resistance/fire": "Timber: fire's whole blow lands, as on a house (CMB-03)",
     "Cost/resources/wood": "Fourteen wood a four-block segment, wood alone: a palisade is a Village structure (research second-pass 1.6), cheap enough that a line of twenty blocks is seventy wood and a starting economy can wall a chokepoint (BLD-13)",
@@ -270,6 +293,7 @@
     "Wall/segment": "Four blocks a segment: a wall's unit of length, whole blocks so a line cuts into end-to-end segments with no gap (BLD-13)"
   },
   "strategos:building/palisade_gate": {
+    "Loot/resources/wood": "4 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Five hundred: a little over a segment's three hundred, so a gate is a line's strong point rather than the first thing a raid breaks (BLD-13)",
     "Resistance/fire": "Timber: fire's whole blow lands, as on a house (CMB-03)",
     "Cost/resources/wood": "Twenty wood: a segment's fourteen and a share for the hinges, so a gate costs a little over a segment (BLD-13)",
@@ -278,6 +302,8 @@
     "Wall/gate": "Marks the segment's middle two columns as a gate: 0 A.D.'s gates open for allies (research second-pass 1.6), so its owner and allies pass and enemies do not (PATH-12, BLD-13)"
   },
   "strategos:building/arsenal": {
+    "Loot/resources/wood": "40 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/stone": "30 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
     "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",
     "Cost/resources/stone": "A hundred and fifty stone: the arsenal is a Town building, paid for from the quarry as the tower is (CMB-09, D-12)",
@@ -291,6 +317,8 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/temple": {
+    "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/stone": "40 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Twelve hundred: as a barracks, a stone hall: worth a raid but not the first thing a raid breaks, so the army's wounded have somewhere to rest (CMB-12)",
     "Cost/resources/wood": "A hundred wood: the roof beams and the benches, half an arsenal's (CMB-12)",
     "Cost/resources/stone": "Two hundred stone: the dearest stone bill of the Town buildings, a hall of quartz, so healing is bought from the quarry as the tower and the arsenal are (CMB-12, D-12)",
@@ -306,6 +334,8 @@
     "GarrisonHolder/heal": "Three hit points a second for each unit inside, three times the civic centre's one: 0 A.D.'s temple heals garrisoned units 3 HP/s against the centre's 1 (research mechanics, garrisons), so a wounded squad is whole again in about half a minute, but only by leaving the field (BLD-10, CMB-12)"
   },
   "strategos:unit/healer": {
+    "Loot/resources/food": "Fifteen food: five food plus a tenth of its hundred (research mechanics 1.21, CMB-13)",
+    "Loot/resources/iron": "Three iron: a tenth of its thirty (research mechanics 1.21, CMB-13)",
     "Health/max": "Sixty: a little above a worker's fifty and well under a spearman's hundred: a healer behind the line is reached only once the line is broken, and then dies quickly (CMB-12)",
     "Behaviour/flee": "Eight blocks from a blow, as a worker: a healer runs rather than fights (CMB-12)",
     "Behaviour/stance": "Passive: a healer never picks a fight; it heals, and hit, it runs from the blow (CMB-05, CMB-12)",
@@ -378,6 +408,8 @@
     "Body/radius": "Its half width rounded up, so its body stays clear"
   },
   "strategos:building/storehouse": {
+    "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
+    "Loot/resources/stone": "10 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Between a house and a barracks: a stone store, worth raiding",
     "Cost/resources/wood": "A house's and a fifth: the first building a growing economy adds by its woods and rocks",
     "Cost/resources/stone": "Half a barracks' stone: stone's third buyer, so a quarry pays for itself early",
@@ -390,6 +422,7 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/farmstead": {
+    "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "A house's and a half: a farm building of mud and brick",
     "Cost/resources/wood": "As a storehouse: the food side's dropsite costs what the other side's does, less its stone",
     "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88",

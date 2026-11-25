@@ -2,6 +2,7 @@
   "parent": "strategos:template/unit_infantry",
   "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
   "Promotion": { "value": 120 },
+  "Loot": { "resources": { "food": 11, "wood": 4, "iron": 2 } },
   "Capture": { "strength": 2.5 },
   "Health": { "max": 70 },
   "UnitMotion": { "walkSpeed": 0.2 },

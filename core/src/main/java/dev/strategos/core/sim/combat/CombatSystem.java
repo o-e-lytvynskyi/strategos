@@ -17,6 +17,7 @@ import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.DamageStages;
 import dev.strategos.core.sim.econ.Livestock;
+import dev.strategos.core.sim.econ.Loot;
 import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayList;
@@ -51,8 +52,8 @@ public final class CombatSystem implements MatchSystem {
         EntityStore entities = s.entities();
         StatService stats = s.stats();
         HealthStore health = s.health();
-        List<int[]> dying = new ArrayList<>(); // handle, last attacker
-        List<Integer> falling = new ArrayList<>();
+        List<int[]> dying = new ArrayList<>(); // handle, last attacker, the faction its kill pays (CMB-13)
+        List<int[]> falling = new ArrayList<>(); // handle, the faction its destruction pays
         double[] resistance = new double[3]; // a unit's hack, pierce and crush: no unit takes fire
         for (Damage d : packets) {
             int target = d.target();
@@ -91,13 +92,14 @@ public final class CombatSystem implements MatchSystem {
                     Math.min(dealt, left),
                     max); // earned by what it took off, no more (CMB-11)
             if (taken + dealt >= max) {
-                dying.add(new int[] {target, d.attacker()});
+                dying.add(new int[] {target, d.attacker(), Loot.killer(s, d.attacker())});
             } else if (d.attacker() != Handle.NONE && entities.isAlive(d.attacker())) {
                 s.bus().publish(new Attacked(target, d.attacker())); // an aggressive unit hits back (CMB-02)
             }
         }
-        falling.sort(null);
-        for (int handle : falling) {
+        falling.sort((a, b) -> Integer.compare(a[0], b[0]));
+        for (int[] fell : falling) {
+            int handle = fell[0];
             FactionSlot faction = new FactionSlot(s.buildings().faction(handle));
             s.outputs().add(new BuildingDestroyed(handle, faction));
             if (faction.value() < s.config().factions()) {
@@ -106,6 +108,7 @@ public final class CombatSystem implements MatchSystem {
             s.aiSlots().wake(faction.value()); // a computer player that lost a building thinks at once
             s.recordLoss(handle); // a computer player's rebuilder places it again (AI-04)
             s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "destroyed"));
+            Loot.building(s, fell[1], handle); // before the building leaves the store (CMB-13)
             s.destroyBuilding(handle);
         }
         dying.sort((a, b) -> Integer.compare(a[0], b[0]));
@@ -121,6 +124,7 @@ public final class CombatSystem implements MatchSystem {
             } else {
                 s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "died"));
             }
+            Loot.unit(s, dead[2], handle); // its carry moves to the killer before the unit drops it
             s.removeUnit(handle);
         }
     }
@@ -130,9 +134,9 @@ public final class CombatSystem implements MatchSystem {
      * resistances, fire's from {@code Resistance/fire}, or all that is left for a lethal one; a building that reaches
      * its most falls once the tick's blows are dealt.
      */
-    private static void hitBuilding(MatchState s, Damage d, List<Integer> falling) {
+    private static void hitBuilding(MatchState s, Damage d, List<int[]> falling) {
         int target = d.target();
-        if (!s.buildings().alive(target) || falling.contains(target)) {
+        if (!s.buildings().alive(target) || fallen(falling, target)) {
             return;
         }
         double max = s.buildingMaxHp(target);
@@ -140,11 +144,20 @@ public final class CombatSystem implements MatchSystem {
         double dealt = d.lethal() ? max - taken : DamageFormula.dealt(d, resistance(s, target), classesOf(s, target));
         s.buildings().setDamage(target, Math.min(max, taken + dealt));
         if (taken + dealt >= max) {
-            falling.add(target);
+            falling.add(new int[] {target, Loot.killer(s, d.attacker())});
         } else {
             DamageStages.update(s, target); // its blocks fall at each threshold (BLD-05)
         }
         s.outputs().add(new BuildingHurt(target, d.attacker(), (float) dealt));
+    }
+
+    private static boolean fallen(List<int[]> falling, int building) {
+        for (int[] f : falling) {
+            if (f[0] == building) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The path of a building's fire resistance (CMB-03), read like its template's other values. */

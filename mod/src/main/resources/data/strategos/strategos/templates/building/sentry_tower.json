@@ -9,6 +9,7 @@
   "Vision": { "range": 20 },
   "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
   "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
+  "Loot": { "resources": { "wood": 20 } },
   "Cost": { "resources": { "wood": 100 }, "time": 40 },
   "Upgrade": {
     "to": "strategos:building/tower",

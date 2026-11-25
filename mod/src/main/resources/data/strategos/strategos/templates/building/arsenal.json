@@ -5,6 +5,7 @@
   "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
   "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
   "Health": { "max": 1500 },
+  "Loot": { "resources": { "wood": 40, "stone": 30 } },
   "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
   "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
 }

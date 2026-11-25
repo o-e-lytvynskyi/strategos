@@ -2,6 +2,7 @@
   "parent": "strategos:template/unit_base",
   "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
   "Promotion": { "value": 220 },
+  "Loot": { "resources": { "wood": 30, "iron": 14 } },
   "Health": { "max": 500 },
   "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
   "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },

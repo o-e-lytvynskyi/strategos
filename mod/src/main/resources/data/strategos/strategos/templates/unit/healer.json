@@ -2,6 +2,7 @@
   "parent": "strategos:template/unit_base",
   "Identity": { "name": "strategos.unit.healer", "icon": "minecraft:glistering_melon_slice", "classes": "+Healer +Organic" },
   "Promotion": { "value": 130 },
+  "Loot": { "resources": { "food": 15, "iron": 3 } },
   "Capture": { "strength": 1.0 },
   "Health": { "max": 60 },
   "Behaviour": { "flee": 8, "stance": "passive" },

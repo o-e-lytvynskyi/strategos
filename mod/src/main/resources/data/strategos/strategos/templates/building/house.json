@@ -6,6 +6,7 @@
   "TerritoryInfluence": { "weight": 400, "radius": 16, "root": 0 },
   "Resistance": { "fire": 0 },
   "Health": { "max": 400 },
+  "Loot": { "resources": { "wood": 16 } },
   "Cost": { "resources": { "wood": 80 }, "time": 30 },
   "Housing": { "capacity": 5 },
   "GarrisonHolder": { "capacity": 5, "classes": "Worker" }

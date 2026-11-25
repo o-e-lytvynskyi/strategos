@@ -8,5 +8,6 @@
   "Vision": { "range": 24 },
   "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 10, "range": 28 } },
   "GarrisonHolder": { "capacity": 5, "classes": "Infantry" },
+  "Loot": { "resources": { "wood": 20, "stone": 30 } },
   "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
 }

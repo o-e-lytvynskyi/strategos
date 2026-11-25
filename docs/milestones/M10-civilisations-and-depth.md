@@ -556,7 +556,10 @@ City, the tree, healers, rank-aware retreats, `charge`, formation marches; `AiCi
 run. Size: 500.
 
 #### T27 · PERF-17 · The perf gate
-`perf_m10`, `perf_m10_stress`, the report's costs, a proposed baseline where growth is the features' own cost.
+`perf_m10`, `perf_m10_stress`, the report's costs, a proposed baseline where growth is the features' own cost. First, the
+combat hot path's M10 cost (`ShotBench.volley60{preferred}` 5.576 → 6.828 µs/op after ranks and loot, T12/T14): CombatSystem
+hands `Ranks.credit` the target's value and a dying-this-tick bitset so a hit reads no extra stat, and the death pass's
+loot rows stop growing per death; then `jmhCompare`, and a proposed row only for what remains.
 Verify: the perf batch. Size: 400.
 
 #### T28 · The demo chapters
@@ -587,7 +590,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T11 (2026-11-25)
 - [x] T12 (2026-11-25)
 - [x] T13 (2026-11-25)
-- [ ] T14
+- [x] T14 (2026-11-25)
 - [ ] T15
 - [ ] T16
 - [ ] T17

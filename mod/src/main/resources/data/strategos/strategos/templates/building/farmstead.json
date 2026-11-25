@@ -5,6 +5,7 @@
   "Capturable": { "points": 300, "regen": 5, "garrisonRegen": 1 },
   "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
   "Health": { "max": 600 },
+  "Loot": { "resources": { "wood": 20 } },
   "Cost": { "resources": { "wood": 100 }, "time": 35 },
   "Dropsite": { "resources": "food" },
   "Reseeder": { "reach": 24 },

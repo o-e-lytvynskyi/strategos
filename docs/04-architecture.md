@@ -1922,7 +1922,9 @@ subtypes for rate keys ([mechanics §1.1](research/mechanics.md)). A match copie
 `MatchRules` when it is created, with each faction's starting amounts, so a reload changes only
 later matches. The treasury holds amounts per resource in thousandths and keeps income, spending
 and refund counters. Conservation is an invariant the core checks after every step: granted
-(starting resources and grants) + gathered + refunded = stock + spent (M3 spec §1.6 row 25).
+(starting resources and grants) + gathered + refunded + looted = stock + spent (M3 spec §1.6 row 25). Looted is
+what a kill pays its killer's faction from the victim's `Loot/resources` data, a source of its own (CMB-13); a unit
+victim's carry moves to the killer's stock as gathered income, so the resource ledger still balances.
 
 ### 11.2 Node types
 

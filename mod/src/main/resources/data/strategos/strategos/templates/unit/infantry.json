@@ -2,6 +2,7 @@
   "parent": "strategos:template/unit_infantry",
   "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
   "Promotion": { "value": 100 },
+  "Loot": { "resources": { "food": 11, "wood": 4 } },
   "Capture": { "strength": 2.5 },
   "Attack": {
     "Melee": {

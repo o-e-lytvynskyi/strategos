@@ -195,7 +195,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. Treasury conservation holds with loot as a source (L1).
   3. A kill pays out in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-01, ECO-01 · **Size:** S · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-25 — 1 `LootTest` (the data per kill, the carry moved once, Gaia/friends/no killer pay nothing, buildings pay their loot); 2 `InvariantsTest` (granted + gathered + refunded + looted = stock + spent every tick of seeded fights); 3 `loottests.kill_pays`; `LootPersistenceTest` (save, old saves, replay). M10 T14.
 
 #### ORD-06 · Formations (move only)
 - **Value:** Move armies in tidy box or line formations (P3).

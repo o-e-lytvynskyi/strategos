@@ -4,6 +4,7 @@
   "Building": { "blueprint": "strategos:palisade_gate", "material": "wood" },
   "Resistance": { "fire": 0 },
   "Health": { "max": 500 },
+  "Loot": { "resources": { "wood": 4 } },
   "Cost": { "resources": { "wood": 20 }, "time": 10 },
   "Wall": { "segment": 4, "gate": 1 }
 }

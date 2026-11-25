@@ -72,6 +72,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
               "Promotion": { "value": 100 },
+              "Loot": { "resources": { "food": 11, "wood": 4 } },
               "Capture": { "strength": 2.5 },
               "Attack": {
                 "Melee": {
@@ -105,6 +106,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
               "Promotion": { "value": 120 },
+              "Loot": { "resources": { "food": 11, "wood": 4, "iron": 2 } },
               "Capture": { "strength": 2.5 },
               "Health": { "max": 70 },
               "UnitMotion": { "walkSpeed": 0.2 },
@@ -124,6 +126,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_soldier",
               "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
               "Promotion": { "value": 150 },
+              "Loot": { "resources": { "food": 13, "wood": 4, "iron": 3 } },
               "Capture": { "strength": 1.75 },
               "Health": { "max": 200 },
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
@@ -156,6 +159,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
               "Promotion": { "value": 60 },
+              "Loot": { "resources": { "food": 3 } },
               "Capture": { "strength": 1.0 },
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
@@ -229,6 +233,7 @@ final class BuiltinTemplates {
               "Placement": { "territory": 2, "spacing": 64 },
               "Health": { "max": 2000 },
               "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },
+              "Loot": { "resources": { "wood": 60, "stone": 60, "iron": 50 } },
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
@@ -246,6 +251,7 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Footprint": { "obstructs": 0 },
               "Health": { "max": 200 },
+              "Loot": { "resources": { "wood": 12 } },
               "Cost": { "resources": { "wood": 60 }, "time": 20 },
               "Field": { "amount": 300, "ripenTime": 30, "reseed": { "wood": 40 } }
             }
@@ -259,6 +265,7 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 400, "radius": 16, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
+              "Loot": { "resources": { "wood": 16 } },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
               "Housing": { "capacity": 5 },
               "GarrisonHolder": { "capacity": 5, "classes": "Worker" }
@@ -273,6 +280,7 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
+              "Loot": { "resources": { "wood": 40, "stone": 20, "iron": 10 } },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
               "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 },
               "Researcher": { "techs": "" }
@@ -294,6 +302,7 @@ final class BuiltinTemplates {
               "Vision": { "range": 24 },
               "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 10, "range": 28 } },
               "GarrisonHolder": { "capacity": 5, "classes": "Infantry" },
+              "Loot": { "resources": { "wood": 20, "stone": 30 } },
               "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
             }
             """;
@@ -310,6 +319,7 @@ final class BuiltinTemplates {
               "Vision": { "range": 20 },
               "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
               "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
+              "Loot": { "resources": { "wood": 20 } },
               "Cost": { "resources": { "wood": 100 }, "time": 40 },
               "Upgrade": {
                 "to": "strategos:building/tower",
@@ -327,6 +337,7 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:palisade", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 300 },
+              "Loot": { "resources": { "wood": 3 } },
               "Cost": { "resources": { "wood": 14 }, "time": 8 },
               "Wall": { "segment": 4 }
             }
@@ -339,6 +350,7 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:palisade_gate", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 500 },
+              "Loot": { "resources": { "wood": 4 } },
               "Cost": { "resources": { "wood": 20 }, "time": 10 },
               "Wall": { "segment": 4, "gate": 1 }
             }
@@ -352,6 +364,7 @@ final class BuiltinTemplates {
               "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1500 },
+              "Loot": { "resources": { "wood": 40, "stone": 30 } },
               "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
               "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
             }
@@ -365,6 +378,7 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1200 },
               "GarrisonHolder": { "capacity": 10, "classes": "Worker Infantry Healer", "heal": 3 },
+              "Loot": { "resources": { "wood": 20, "stone": 40 } },
               "Cost": { "resources": { "wood": 100, "stone": 200 }, "time": 80 },
               "Trainer": { "units": "strategos:unit/healer", "batchExponent": 0.8 }
             }
@@ -374,6 +388,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.healer", "icon": "minecraft:glistering_melon_slice", "classes": "+Healer +Organic" },
               "Promotion": { "value": 130 },
+              "Loot": { "resources": { "food": 15, "iron": 3 } },
               "Capture": { "strength": 1.0 },
               "Health": { "max": 60 },
               "Behaviour": { "flee": 8, "stance": "passive" },
@@ -404,6 +419,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
               "Promotion": { "value": 220 },
+              "Loot": { "resources": { "wood": 30, "iron": 14 } },
               "Health": { "max": 500 },
               "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
               "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },
@@ -425,6 +441,7 @@ final class BuiltinTemplates {
               "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 800 },
+              "Loot": { "resources": { "wood": 20, "stone": 10 } },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
               "Dropsite": { "resources": "wood stone iron" },
               "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1" }
@@ -564,6 +581,7 @@ final class BuiltinTemplates {
               "Capturable": { "points": 300, "regen": 5, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 600 },
+              "Loot": { "resources": { "wood": 20 } },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
               "Dropsite": { "resources": "food" },
               "Reseeder": { "reach": 24 },
@@ -750,7 +768,7 @@ final class BuiltinTemplates {
                 raw("strategos:unit/pig", PIG),
                 raw("strategos:unit/chicken", CHICKEN),
                 raw("strategos:building/civic_centre", CIVIC_CENTRE, withTechs),
-                raw("strategos:building/field", FIELD),
+                raw("strategos:building/field", FIELD, withTechs),
                 raw("strategos:building/house", HOUSE, withTechs),
                 raw("strategos:building/barracks", BARRACKS, withTechs),
                 raw("strategos:building/storehouse", STOREHOUSE, withTechs),
@@ -819,6 +837,7 @@ final class BuiltinTemplates {
             object.remove("Look"); // TECH-03's tiers, which only the techs raise
             object.remove("Abilities"); // UNIT-10's, long after that pin
             object.remove("Promotion"); // CMB-11's ranks and values, likewise
+            object.remove("Loot"); // CMB-13's, too
             if (object.has("Builder")) {
                 object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
             }

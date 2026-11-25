@@ -176,11 +176,16 @@ final class Snapshots {
         Techs.reapply(state, null); // the stats start empty: the researched techs' effects, before anything reads them
         long[] counters =
                 new long[state.treasury().factions() * state.treasury().resources() * 5];
-        if (!snapshot.treasury().isEmpty() && snapshot.treasury().size() != counters.length) {
+        if (!snapshot.treasury().isEmpty()
+                && snapshot.treasury().size() != counters.length
+                && snapshot.treasury().size() != counters.length / 5 * 6) { // the looted block (CMB-13) is optional
             throw new IllegalArgumentException(
                     "a saved treasury of " + snapshot.treasury().size() + " counters for "
                             + state.treasury().factions() + " factions and "
                             + state.treasury().resources() + " resources");
+        }
+        if (snapshot.treasury().size() > counters.length) {
+            counters = new long[snapshot.treasury().size()];
         }
         for (int k = 0; k < snapshot.treasury().size(); k++) {
             counters[k] = snapshot.treasury().get(k);
