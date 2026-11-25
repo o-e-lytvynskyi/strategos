@@ -448,7 +448,7 @@ Results, the health check, the hand-in. Size: records.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
-- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [x] T17 (2026-11-24) · [x] T18 (2026-11-24) · [x] T19 (2026-11-24) · [ ] T20
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [x] T17 (2026-11-24) · [x] T18 (2026-11-24) · [x] T19 (2026-11-24) · [x] T20 (2026-11-25)
 
 ## 8. Acceptance checklist (M9 exit)
 
@@ -457,7 +457,7 @@ Results, the health check, the hand-in. Size: records.
 - [x] L3: a garrison round trip keeps every unit's state; gates open for allies only (with `FakeAllies` until M7).
 - [x] L6: `perf_territory` within A–C and E; territory never blocks a tick; the stress pass holds.
 - [x] Consent batch: border goldens, also under Sodium; PERF-14's border scene.
-- [ ] Cumulative: `verify verifySlow verifySoak`, `jmhCompare`, the earlier milestones' gates.
+- [x] Cumulative: `verify verifySlow verifySoak`, `jmhCompare`, the earlier milestones' gates.
 - [ ] Owner: a playtest with the questionnaire; no P0 or P1 open.
 
 ## 9. Owner inputs
@@ -480,15 +480,17 @@ are listed in the branch file.
 
 | What | Result | Bound |
 |---|---|---|
-| `perf_territory` (18,000 ticks, 134 units, 156 buildings) | A p50 0.93 ms, A p99 9.89 ms, C p95 9.12 ms, E ≤ 3.8 KB/s | 5, 10, 23 ms; 100 KB/s |
+| `perf_territory` (18,000 ticks, 134 units, 156 buildings) | A p50 0.80 ms, A p99 7.19 ms, C p95 7.96 ms (T18: 0.93, 9.89, 9.12 before row 27), E ≤ 3.8 KB/s | 5, 10, 23 ms; 100 KB/s |
+| the cumulative `runGameTestPerf`, 26 scenes (after row 27) | green, 2 h 36 min, foreign load ≤ 4.4 %; `mvp_soak` A p50/p99 0.70/6.98 ms (M6: 0.70/8.86), C p95 7.27; `mvp_stress` C p95 9.05 | every earlier budget |
 | the territory system / the tick's join on its job | p99 16.5 µs / p99 0, max 25 µs; ≤ 1 recompute in 20 ticks | join p99 0.5 ms |
-| `perf_territory_stress` (223 units) | C p95 9.0 ms; territory p99 119 µs | 50 ms |
+| `perf_territory_stress` (223 units) | C p95 7.80 ms (T18: 9.0); territory p99 119 µs | 50 ms |
 | garrisons and capture in the soak scene | p99 24 µs, capture p99 1.4 µs | reported (R) |
 | `BorderBench.extractSection` | 0.069 µs/op, 0 B/op | baseline proposed |
 | `SpatialBench.rebuild1000` (now twice a tick) | 5.2 µs/op | — |
 | PERF-14 `rts_frame_borders`, vanilla / Sodium | frame p50 3.72 / 1.75 ms, p99 8.88 / 4.70 ms, ours 0.72 / 0.68 ms | F: 16.7, 25, 3 ms |
 | `m9_goldens`, macos and macos-sodium | six frames each, nmse 0 on rerun | 1e-5 |
 | the AI soak, 20 seeds | see §10.5 | every journal replays |
+| `verify verifySlow verifySoak` on the head | green, 3 h 16 min | — |
 | `verify` / `verify verifySlow` | 2 min 39 s / 5 min 14 s | 5 min for `verify` |
 
 ### 10.3 Deviations
@@ -505,6 +507,10 @@ Findings rows 1–27 (§1.6). The ones a reviewer should read first:
   start: the path store's "ask for a path" flag, set in MOVEMENT and the combat phases after the tick's
   request pass, outlived its tick unsaved, and a restored archer gave its attack up as settled. It is
   saved with the unit's path and hashed when set.
+- **Row 27, the tick's tail (T20).** The cumulative perf batch held 24 of 26 scenes: `territory_soak` and
+  `mvp_soak` broke budget A's p99 by about 2 %. The tail was the terrain rebuild, the same on `main`; a
+  rebuilt page hashed its slice twice for nothing. `VoxelSlice` hashes on first use, and the two soaks'
+  p99 fell to 7.19 and 6.98 ms; play is unchanged (the soak's matches end on the same ticks).
 - **Row 25, the borders under Sodium (T19).** Some first dirty marks were lost to section builds in
   flight; the touched sections are dirtied again 10 client ticks later.
 - **Row 4,** territory deltas split above 7 KB: the card's 8 KB cannot hold a full 1,024² grid.
@@ -525,7 +531,7 @@ Findings rows 1–27 (§1.6). The ones a reviewer should read first:
 
 ### 10.5 The AI soak
 
-`:mod:runGameTestSoak` on bade2c53, unsharded in a worktree, 3 h 12 min: green. 20 matches of Normal
+`:mod:runGameTestSoak` on bade2c53, unsharded in a worktree, 3 h 12 min: green; again on the head with `verifySoak`, the same 20 endings. 20 matches of Normal
 against Normal, 18 by conquest (27.9–43.5 min, median about 34 min), seeds 7 and 8 at the 45-minute limit;
 856,314 game ticks in all; every journal replays to the live hash, the rolled ones from their mid-match
 start. Two earlier runs were red and each found a replay bug: 9f0c53f8 at seed 13 (rows 23–24) and

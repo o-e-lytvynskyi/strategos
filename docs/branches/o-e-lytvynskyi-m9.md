@@ -1,15 +1,15 @@
 # M9 on dev/o-e-lytvynskyi/m9
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m9 · **Work:** M9 · **Base:** main @ d39069e · **Claimed:** 2026-11-24 · **Status:** in progress
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m9 · **Work:** M9 · **Base:** main @ d39069e · **Claimed:** 2026-11-24 · **Status:** ready for review
 
 **Note:** the owner's word in the developer session, 2026-11-24: «надо начинать м9 … м7 и м8 заняты другим человеком, надо делать то, что не требует их участия», and the approval of all ten M9 cards («Одобряю все 10»). The claim covers the M9 spec and every M9 task; the parts that need M7 (MATCH-06, PERF-10) are built against a contract and finished after M7 merges.
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 19 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 20 of 20 tasks done, handed in; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T18 (2026-11-24).
-- **Next task:** T20: the cumulative perf batch (unfiltered), the client smoke, then the hand-in.
+- **Last finished task:** T20 (2026-11-25).
+- **Next task:** none: the review, and the owner's playtest (spec §8).
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,8 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T19
+### 2026-11-24 — M9 spec, T1–T20
 
+- **M9 T20 · the close** — on the lazy slice hash: the unfiltered `:mod:runGameTestPerf` green, all 26 scenes, 2 h 36 min, foreign load at most 4.4 %; `territory_soak` A p50/p99 0.80/7.19 ms, C p95 7.96; `mvp_soak` 0.70/6.98 ms, C p95 7.27; `territory_stress` C p95 7.80, `mvp_stress` 9.05. `verify verifySlow verifySoak` green, 3 h 16 min: the AI soak's 20 matches end on the same ticks as on bade2c53 (18 by conquest, 856,314 ticks), every journal replays. T20 done; M9 handed in.
 - **M9 T20 · the perf tail at the limit (spec §1.6 row 27)** — the second unfiltered `:mod:runGameTestPerf` (2 h 36 min, foreign load 2 %) held 24 of 26 scenes; `territory_soak` and `mvp_soak` broke budget A's p99 by about 2 % (10.19 and 10.22 ms; `mvp_soak` also its per-unit p95, 9637 against 9009 ns). JFR and a core-only tail diagnostic (per-system times of the slowest 1 % of ticks, hard against hard on MAP-02, 72,000 ticks, the same on `main`: no M9 growth) found the terrain rebuild every 20 ticks, each rebuilt page hashing its slice twice for nothing. `VoxelSlice` hashes on first use: the diagnostic's p99 2.48 → 1.90 ms, the rebuild's share of the slow ticks 1.85 → 0.69 ms; `TerrainEditBench.rebuildOnePage` 186 µs; `verify` 2 min 8 s, `:core:jmh :core:jmhCompare` green. The full batch runs again on the fix.
 - **M9 T20 · the cumulative perf batch and the client smoke** — the unfiltered `:mod:runGameTestPerf` ran 25 of 26 scenes without a failure in 148 minutes and was stopped by the task's 150-minute timeout in `perf_battle`; the timeout is now 180 (a Decisions line). `perf_battle` and `perf_battle_stress` alone passed their tests but were INVALID (foreign CPU load 9.8–10.1 % above 7.5 %: the machine was in use); the full batch reruns on a quiet machine. `runClientSmokeJar` green (the title screen, no dev class loaded).
 - **M9 T18 · the AI soak, green** — `:mod:runGameTestSoak` on bade2c53 (worktree, unsharded, 3 h 12 min): 20 matches, 18 by conquest at 27.9–43.5 min, seeds 7 and 8 at the 45-minute limit, 856,314 game ticks, every journal replays; `verifySlow` 3 min 57 s green on the fix. T18 done.
@@ -126,6 +127,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Pitfalls
 
+- docs/kb/perf-tick-tail.md (new) — finding a tick's tail: GC first, per-system times of the slowest 1 % of ticks headless and on `main`; no hash nobody reads in an immutable value's constructor (M9 T20).
 - docs/kb/save-reload-identities.md — a "this tick" flag set after its reader's phase crosses the tick and must be saved (M9 T18, the AI soak's seed 15).
 - docs/kb/minecraft-mod-client-render.md — section geometry under Sodium: a dirty mark can be lost (M9 T19).
 - docs/kb/minecraft-mod-gametest-arena.md — a command sent to a match that is still preparing is lost without a word; a demo chapter's L1 fake has no terrain (M9 T19).
