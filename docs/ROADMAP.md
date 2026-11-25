@@ -509,7 +509,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | TECH-04 | City phase | M | TECH-02, TERR-01 | specified |
 | TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | specified |
 | UNIT-10 | Abilities | M | CORE-03, DATA-02 | done |
-| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | specified |
+| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | in_progress |
 | CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | specified |
 | CMB-13 | Loot | S | CMB-01, ECO-01 | specified |
 | ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | specified |

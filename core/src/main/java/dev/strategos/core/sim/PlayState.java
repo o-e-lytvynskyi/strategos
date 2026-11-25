@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.sim.ability.AbilityStore;
 import dev.strategos.core.sim.capture.CaptureStore;
 import dev.strategos.core.sim.nav.GateOverlay;
+import dev.strategos.core.sim.rank.ExperienceStore;
 import dev.strategos.core.sim.territory.TerritorySystem;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -18,6 +19,8 @@ public final class PlayState {
     private final GateOverlay gates;
     private final BreachLog breaches = new BreachLog(); // saved and hashed (Play.breaches)
     private final AbilityStore abilities = new AbilityStore(); // saved and hashed while it holds anything (UNIT-10)
+    private final ExperienceStore experience =
+            new ExperienceStore(); // saved and hashed while it holds anything (CMB-11)
     private @Nullable TerritorySystem territorySystem;
 
     PlayState(MatchState owner, MatchConfig config) {
@@ -30,6 +33,11 @@ public final class PlayState {
     /** The abilities' cooldowns and timed modifiers (UNIT-10). */
     public AbilityStore abilities() {
         return abilities;
+    }
+
+    /** The experience and ranks the units have earned (CMB-11). */
+    public ExperienceStore experience() {
+        return experience;
     }
 
     /** What the units have breached lately (BLD-13). */

@@ -488,7 +488,16 @@ public final class RtsHud {
         }
         int health = StrategosClient.model().health(Handle.index(d.handle()));
         return new SelectionPanel.Unit(
-                d.handle(), d.templateIndex(), d.faction(), health, UnitHud.WHOLE, -1, -1, 0, false);
+                d.handle(),
+                d.templateIndex(),
+                d.faction(),
+                health,
+                UnitHud.WHOLE,
+                -1,
+                -1,
+                0,
+                false,
+                UnitDetail.Standing.NONE);
     }
 
     /** The selection's details, asked for again when it changes, at most every {@value #QUERY_EVERY} ticks (NET-08). */
@@ -626,7 +635,8 @@ public final class RtsHud {
                         state += " · " + u.load() / 1000 + " "
                                 + (u.carried() < resources.size() ? resources.get(u.carried()) : "?");
                     }
-                    paint.text(g, font, r, 2, state, theme.dimText());
+                    String rank = SelectionPanel.rankLine(u.standing());
+                    paint.text(g, font, r, 2, rank.isEmpty() ? state : state + " · " + rank, theme.dimText());
                 }
             }
             case BUILDING ->

@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive;
 import dev.strategos.core.content.AbilityDef.Aim;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The closed vocabulary of abilities (UNIT-10, 04 §7.6): the effect kinds and target pickers a template may name, which
@@ -138,8 +139,11 @@ public final class AbilityKinds {
     }
 
     private static void modifiers(JsonObject params, String pointer, Fields f) {
-        JsonElement e = params.get("modifiers");
-        String at = pointer + "/modifiers";
+        modifierList(params.get("modifiers"), pointer + "/modifiers", f);
+    }
+
+    /** Checks a list of one to {@link #MAX_MODIFIERS} modifier objects ({@code path}, {@code op}, {@code value}) at {@code at}. */
+    static void modifierList(@Nullable JsonElement e, String at, Fields f) {
         if (e == null || !e.isJsonArray() || e.getAsJsonArray().isEmpty()) {
             f.problems().add(TemplateProblem.error(f.file(), at, "expected a list of at least one modifier"));
             return;

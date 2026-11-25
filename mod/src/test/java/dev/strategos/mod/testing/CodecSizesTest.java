@@ -15,8 +15,8 @@ class CodecSizesTest {
     void passesAtTheCap() {
         int size = CodecSizes.encodedSize(UnitSpawnData.STREAM_CODEC, DATA);
         assertThat(size)
-                .as("1 + 4 + 1 + 1 + 1: the handle (3 << 20 | 12) takes four VarInt bytes")
-                .isEqualTo(8);
+                .as("1 + 4 + 1 + 1 + 1 + 1: the handle (3 << 20 | 12) takes four VarInt bytes, the rank one")
+                .isEqualTo(9);
 
         CodecSizes.assertEncodedSize(UnitSpawnData.STREAM_CODEC, DATA, size);
     }
@@ -25,6 +25,6 @@ class CodecSizesTest {
     void failsAboveTheCapNamingTheTypeTheSizeAndTheCap() {
         assertThatThrownBy(() -> CodecSizes.assertEncodedSize(UnitSpawnData.STREAM_CODEC, DATA, 7))
                 .isInstanceOf(AssertionError.class)
-                .hasMessage("UnitSpawnData encoded to 8 bytes, cap 7");
+                .hasMessage("UnitSpawnData encoded to 9 bytes, cap 7");
     }
 }

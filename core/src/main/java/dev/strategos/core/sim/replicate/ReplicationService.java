@@ -4,6 +4,7 @@ import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.PromotionDef;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
@@ -225,9 +226,22 @@ public final class ReplicationService {
                     q.carriedAmount(handle),
                     target,
                     stance == null ? UnitDetail.NO_STANCE : stance.code(),
-                    resting));
+                    resting,
+                    standing(q, handle, unit.templateIndex())));
         }
         return new UnitDetail(matchId, q.tick(), units);
+    }
+
+    /** A unit's rank and what the next needs (CMB-11), none for a unit that has earned nothing. */
+    private static UnitDetail.Standing standing(MatchQueries q, int handle, int template) {
+        int rank = q.rank(handle);
+        long earned = q.experience(handle);
+        if (rank == 0 && earned == 0) {
+            return UnitDetail.Standing.NONE;
+        }
+        PromotionDef def = q.templates().promotion(template);
+        long next = def == null || rank >= def.count() ? 0 : def.thresholds().get(rank);
+        return new UnitDetail.Standing(rank, earned, next);
     }
 
     /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2, GATHERING 3, BUILDING 4, GARRISONED 5. */

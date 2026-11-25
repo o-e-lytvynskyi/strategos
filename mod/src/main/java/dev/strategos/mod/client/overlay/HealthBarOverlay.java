@@ -43,6 +43,13 @@ public final class HealthBarOverlay {
     private static final float LINE_LIFT = 0.08F;
     private static final int FLASH_RGB = 0xFF3020;
 
+    /** The insignia (CMB-11): a pip a rank, this tall and wide, this far above the bar, gold, brighter at the top ranks. */
+    private static final float PIP = 0.34F;
+
+    private static final float PIP_GAP = 0.12F;
+    private static final float PIP_ABOVE = 0.22F;
+    private static final int PIP_BACK = 0xFF101418;
+
     private final AttackLines.Buffer lines = new AttackLines.Buffer();
     private final Flashes.Buffer flashes = new Flashes.Buffer();
     private int[] selected = new int[0];
@@ -84,6 +91,7 @@ public final class HealthBarOverlay {
         Selection selection = rts.selection();
         List<HealthBars.Unit> units = new ArrayList<>();
         List<HealthBars.Bar> glows = new ArrayList<>();
+        List<double[]> insignia = new ArrayList<>();
         List<Integer> chosen = selection.handles();
         if (chosen.size() > selected.length) {
             selected = new int[chosen.size()];
@@ -109,6 +117,11 @@ public final class HealthBarOverlay {
                                 1,
                                 (int) (glow * 0xC0) << 24 | FLASH_RGB));
                     }
+                    if (body.rank() > 0) {
+                        insignia.add(new double[] {
+                            at.x, at.y + body.getBbHeight() + HealthBars.ABOVE + PIP_ABOVE, at.z, body.rank()
+                        });
+                    }
                     units.add(new HealthBars.Unit(
                             at.x,
                             at.y,
@@ -123,8 +136,8 @@ public final class HealthBarOverlay {
         List<HealthBars.Bar> bars = new ArrayList<>(HealthBars.extract(units));
         bars.addAll(HealthBars.sites(model.buildings(), StrategosClient.templates(), join.originX(), join.originZ()));
         drawn = bars.size();
-        if (!bars.isEmpty() || !glows.isEmpty()) {
-            draw(event, glows, bars);
+        if (!bars.isEmpty() || !glows.isEmpty() || !insignia.isEmpty()) {
+            draw(event, glows, bars, insignia);
         }
         if (lines.count() > 0) {
             drawLines(event, join, mc);
@@ -165,7 +178,11 @@ public final class HealthBarOverlay {
         buffers.endBatch(RenderType.debugQuads());
     }
 
-    private static void draw(RenderLevelStageEvent event, List<HealthBars.Bar> glows, List<HealthBars.Bar> bars) {
+    private static void draw(
+            RenderLevelStageEvent event,
+            List<HealthBars.Bar> glows,
+            List<HealthBars.Bar> bars,
+            List<double[]> insignia) {
         MultiBufferSource.BufferSource buffers =
                 Minecraft.getInstance().renderBuffers().bufferSource();
         VertexConsumer quads = buffers.getBuffer(RenderType.debugQuads());
@@ -189,20 +206,57 @@ public final class HealthBarOverlay {
                     -half,
                     half,
                     b.argb(),
-                    -0.01F);
+                    -0.01F,
+                    THICK);
         }
         for (HealthBars.Bar b : bars) {
             float x = (float) (b.x() - c.x);
             float y = (float) (b.y() - c.y);
             float z = (float) (b.z() - c.z);
             float half = (float) b.width() / 2;
-            quad(quads, p, x, y, z, left, up, look, -half, half, BACK, 0);
-            quad(quads, p, x, y, z, left, up, look, -half, -half + (float) (b.width() * b.fill()), b.argb(), 0.01F);
+            quad(quads, p, x, y, z, left, up, look, -half, half, BACK, 0, THICK);
+            quad(
+                    quads,
+                    p,
+                    x,
+                    y,
+                    z,
+                    left,
+                    up,
+                    look,
+                    -half,
+                    -half + (float) (b.width() * b.fill()),
+                    b.argb(),
+                    0.01F,
+                    THICK);
+        }
+        for (double[] i :
+                insignia) { // a row of pips centred over the bar, each on a dark backing so it reads on any ground
+            int rank = (int) i[3];
+            float x = (float) (i[0] - c.x);
+            float y = (float) (i[1] - c.y);
+            float z = (float) (i[2] - c.z);
+            float row = rank * PIP + (rank - 1) * PIP_GAP;
+            int colour = pipColour(rank);
+            for (int k = 0; k < rank; k++) {
+                float from = -row / 2 + k * (PIP + PIP_GAP);
+                quad(quads, p, x, y, z, left, up, look, from - 0.04F, from + PIP + 0.04F, PIP_BACK, 0, PIP + 0.08F);
+                quad(quads, p, x, y, z, left, up, look, from, from + PIP, colour, 0.01F, PIP);
+            }
         }
         buffers.endBatch(RenderType.debugQuads());
     }
 
-    /** A quad from {@code from} to {@code to} along the camera's right, {@link #THICK} tall, nudged toward the camera. */
+    /** The pips' gold, brighter with each rank. */
+    private static int pipColour(int rank) {
+        return switch (rank) {
+            case 1 -> 0xFFD9A441;
+            case 2 -> 0xFFF2C14E;
+            default -> 0xFFFFE27A;
+        };
+    }
+
+    /** A quad from {@code from} to {@code to} along the camera's right, {@code thick} tall, nudged toward the camera. */
     private static void quad(
             VertexConsumer quads,
             PoseStack.Pose p,
@@ -215,15 +269,16 @@ public final class HealthBarOverlay {
             float from,
             float to,
             int argb,
-            float nudge) {
+            float nudge,
+            float thick) {
         // the camera's right is minus its left; the nudge goes against the look, toward the camera, so the fill is
         // drawn in front of its back
         float rx = -left.x();
         float ry = -left.y();
         float rz = -left.z();
-        float ux = up.x() * THICK / 2;
-        float uy = up.y() * THICK / 2;
-        float uz = up.z() * THICK / 2;
+        float ux = up.x() * thick / 2;
+        float uy = up.y() * thick / 2;
+        float uz = up.z() * thick / 2;
         float nx = -look.x() * nudge;
         float ny = -look.y() * nudge;
         float nz = -look.z() * nudge;

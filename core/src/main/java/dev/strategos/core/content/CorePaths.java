@@ -186,6 +186,13 @@ public final class CorePaths {
 
     public static final String ABILITY_COST_RESOURCES = "Cost/resources/";
 
+    /**
+     * What killing or hurting a unit is worth to the one who does it (CMB-11): an ordinary number path, optional, so it
+     * stays out of {@link #all()}. A unit without it is worth nothing. Its ranks are {@code Promotion/thresholds} and
+     * {@code Promotion/ranks}, lists that {@link PromotionDef} reads.
+     */
+    public static final String PROMOTION_VALUE = "Promotion/value";
+
     private CorePaths() {}
 
     public static double min(String path) {

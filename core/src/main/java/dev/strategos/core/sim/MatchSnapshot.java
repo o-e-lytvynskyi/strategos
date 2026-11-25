@@ -10,6 +10,7 @@ import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.StanceStore;
+import dev.strategos.core.sim.rank.ExperienceStore;
 import java.util.List;
 
 /**
@@ -56,7 +57,8 @@ public record MatchSnapshot(
             List<Long> capture,
             List<Long> gates,
             List<Long> breaches,
-            AbilityStore.Saved abilities) {
+            AbilityStore.Saved abilities,
+            ExperienceStore.Saved experience) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -72,7 +74,44 @@ public record MatchSnapshot(
                 List.of(),
                 List.of(),
                 List.of(),
-                AbilityStore.Saved.EMPTY);
+                AbilityStore.Saved.EMPTY,
+                ExperienceStore.Saved.EMPTY);
+
+        /** A play without experience, as before CMB-11 saved it (M10 spec §0.3). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture,
+                List<Long> gates,
+                List<Long> breaches,
+                AbilityStore.Saved abilities) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    gates,
+                    breaches,
+                    abilities,
+                    ExperienceStore.Saved.EMPTY);
+        }
 
         /** A play without abilities, as before UNIT-10 saved them (M10 spec §0.3). */
         public Play(

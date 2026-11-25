@@ -22,9 +22,38 @@ final class BuiltinTemplates {
               "Body": { "entityType": "strategos:unit_humanoid", "model": "humanoid", "width": 0.6, "height": 1.8, "radius": 0.35 }
             }
             """;
-    static final String UNIT_INFANTRY = """
+    static final String UNIT_SOLDIER = """
             {
               "parent": "strategos:template/unit_base",
+              "abstract": true,
+              "Promotion": {
+                "thresholds": [200, 500, 1000],
+                "ranks": [
+                  [
+                    { "path": "Health/max", "op": "mul", "value": 1.05 },
+                    { "path": "Attack/Melee/hack", "op": "mul", "value": 1.05 },
+                    { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.05 },
+                    { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.05 }
+                  ],
+                  [
+                    { "path": "Health/max", "op": "mul", "value": 1.10 },
+                    { "path": "Attack/Melee/hack", "op": "mul", "value": 1.10 },
+                    { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.10 },
+                    { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.10 }
+                  ],
+                  [
+                    { "path": "Health/max", "op": "mul", "value": 1.15 },
+                    { "path": "Attack/Melee/hack", "op": "mul", "value": 1.15 },
+                    { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.15 },
+                    { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.15 }
+                  ]
+                ]
+              }
+            }
+            """;
+    static final String UNIT_INFANTRY = """
+            {
+              "parent": "strategos:template/unit_soldier",
               "abstract": true,
               "Identity": { "classes": "+Infantry +Organic" },
               "Look": { "weapon": 0, "armour": 0 }
@@ -42,6 +71,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
+              "Promotion": { "value": 100 },
               "Capture": { "strength": 2.5 },
               "Attack": {
                 "Melee": {
@@ -74,6 +104,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
+              "Promotion": { "value": 120 },
               "Capture": { "strength": 2.5 },
               "Health": { "max": 70 },
               "UnitMotion": { "walkSpeed": 0.2 },
@@ -90,8 +121,9 @@ final class BuiltinTemplates {
             """;
     static final String HORSEMAN = """
             {
-              "parent": "strategos:template/unit_base",
+              "parent": "strategos:template/unit_soldier",
               "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+              "Promotion": { "value": 150 },
               "Capture": { "strength": 1.75 },
               "Health": { "max": 200 },
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
@@ -123,6 +155,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
+              "Promotion": { "value": 60 },
               "Capture": { "strength": 1.0 },
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
@@ -327,6 +360,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
+              "Promotion": { "value": 220 },
               "Health": { "max": 500 },
               "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
               "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },
@@ -656,12 +690,13 @@ final class BuiltinTemplates {
     static TemplateSet compile(boolean withTechs) {
         List<RawTemplate> templates = new ArrayList<>(List.of(
                 raw("strategos:template/unit_base", UNIT_BASE),
+                raw("strategos:template/unit_soldier", UNIT_SOLDIER, withTechs),
                 raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
                 raw("strategos:template/unit_fauna", UNIT_FAUNA),
                 raw("strategos:template/building_base", BUILDING_BASE),
                 raw("strategos:unit/debug_walker", DEBUG_WALKER),
-                raw("strategos:unit/infantry", INFANTRY),
-                raw("strategos:unit/archer", ARCHER),
+                raw("strategos:unit/infantry", INFANTRY, withTechs),
+                raw("strategos:unit/archer", ARCHER, withTechs),
                 raw("strategos:unit/horseman", HORSEMAN, withTechs),
                 raw("strategos:unit/worker", WORKER, withTechs),
                 raw("strategos:unit/sheep", SHEEP),
@@ -734,12 +769,15 @@ final class BuiltinTemplates {
             object.remove("Researcher");
             object.remove("Look"); // TECH-03's tiers, which only the techs raise
             object.remove("Abilities"); // UNIT-10's, long after that pin
+            object.remove("Promotion"); // CMB-11's ranks and values, likewise
             if (object.has("Builder")) {
                 object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
             }
             JsonObject identity = object.getAsJsonObject("Identity");
-            identity.addProperty(
-                    "classes", identity.get("classes").getAsString().replace(" +Village", ""));
+            if (identity != null) { // the soldier base (CMB-11) names no classes
+                identity.addProperty(
+                        "classes", identity.get("classes").getAsString().replace(" +Village", ""));
+            }
         }
         String path = id.substring(id.indexOf(':') + 1);
         return new RawTemplate(new TemplateId(id), "builtin/" + path + ".json", object);

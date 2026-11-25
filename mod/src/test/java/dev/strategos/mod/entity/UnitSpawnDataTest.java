@@ -41,7 +41,25 @@ class UnitSpawnDataTest {
     void theLargestFitsIn16Bytes() {
         CodecSizes.assertEncodedSize(UnitSpawnData.STREAM_CODEC, LARGEST, 16);
         assertThat(CodecSizes.encodedSize(UnitSpawnData.STREAM_CODEC, LARGEST))
-                .as("5 + 5 + 1 + 1 + 1: a negative handle takes a full VarInt")
-                .isEqualTo(13);
+                .as("5 + 5 + 1 + 1 + 1 + 1: a negative handle takes a full VarInt, the rank a byte")
+                .isEqualTo(14);
+    }
+
+    /** CMB-11: the rank rides the spawn data, a byte, and a body without one reads as rank 0. */
+    @Test
+    void theRankSurvivesTheWireAndDefaultsToNone() {
+        UnitSpawnData veteran = new UnitSpawnData(1, Handle.of(0, 1), 2, 0, UnitSpawnData.KINEMATIC, (byte) 3);
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            UnitSpawnData.STREAM_CODEC.encode(buf, veteran);
+            UnitSpawnData read = UnitSpawnData.STREAM_CODEC.decode(buf);
+            assertThat(read.rank()).isEqualTo((byte) 3);
+            assertThat(read).isEqualTo(veteran);
+            assertThat(buf.readableBytes()).isZero();
+        } finally {
+            buf.release();
+        }
+        assertThat(new UnitSpawnData(1, Handle.of(0, 1), 2, 0, UnitSpawnData.KINEMATIC).rank())
+                .isZero();
     }
 }

@@ -18,6 +18,8 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.prod.Techs;
+import dev.strategos.core.sim.rank.ExperienceStore;
+import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
@@ -56,6 +58,7 @@ final class Snapshots {
                     orders.saved(i),
                     s.health().damage(i)));
         }
+        ExperienceStore.Saved ranked = s.play().experience().save(entities);
         return new MatchSnapshot(
                 s.config(),
                 s.tick(),
@@ -96,7 +99,8 @@ final class Snapshots {
                         s.play().capture().save(),
                         s.play().gates().save(),
                         s.play().breaches().save(entities::isAlive),
-                        s.play().abilities().save(s)),
+                        s.play().abilities().save(s),
+                        ranked),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -242,6 +246,7 @@ final class Snapshots {
         state.play().capture().restore(snapshot.play().capture());
         state.play().breaches().restore(snapshot.play().breaches());
         state.play().abilities().restore(snapshot.play().abilities(), templates, state.stats(), state.entities());
+        Ranks.restore(state, snapshot.play().experience());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

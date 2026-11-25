@@ -337,7 +337,7 @@ class WireCodecSizeTest {
         assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
     }
 
-    /** UNIT-10: the widest {@code unit_detail}, every optional part of every unit at its largest, fits its cap. */
+    /** UNIT-10, CMB-11: the widest {@code unit_detail}, every optional part of every unit at its largest, fits its cap. */
     @Test
     void theWidestUnitDetailFitsItsCap() {
         List<UnitDetail.Order> orders = java.util.Collections.nCopies(
@@ -356,7 +356,8 @@ class WireCodecSizeTest {
                 Long.MAX_VALUE,
                 Integer.MAX_VALUE,
                 255,
-                resting);
+                resting,
+                new UnitDetail.Standing(Integer.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE));
         UnitDetail full = new UnitDetail(
                 Integer.MAX_VALUE, Long.MAX_VALUE, java.util.Collections.nCopies(UiQuery.MAX_HANDLES, widest));
         assertThat(size(UnitDetail.WIRE, full)).isLessThanOrEqualTo(UnitDetail.WIRE.maxSize());

@@ -168,7 +168,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. Rank modifiers apply, compounding as documented (L1).
   3. Insignia are visible at 40 blocks (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CMB-01, DATA-02 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress (criteria 1–2 pass: `ExperienceTest`, `RankModifiersTest` — ranks replace each other, they never compound; criterion 3, the insignia at 40 blocks, is in the consent batch)
 
 #### CMB-12 · Healing
 - **Value:** Keep an army alive between fights (P4).

@@ -1,5 +1,6 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.PromotionDef;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.UnitDetail;
@@ -52,7 +53,8 @@ public record SelectionPanel(
             int state,
             int carried,
             long load,
-            boolean own) {
+            boolean own,
+            UnitDetail.Standing standing) {
         /** An own unit's, from its {@code unit_detail}. */
         public static Unit of(UnitDetail.Unit d, int faction) {
             return new Unit(
@@ -64,8 +66,22 @@ public record SelectionPanel(
                     d.state(),
                     d.carried(),
                     d.load(),
-                    true);
+                    true,
+                    d.standing());
         }
+    }
+
+    /**
+     * A unit's rank line (CMB-11): its rank and its experience toward the next, in whole points, or at its top rank the
+     * experience alone; empty for a unit that has earned nothing.
+     */
+    public static String rankLine(UnitDetail.Standing s) {
+        if (s.equals(UnitDetail.Standing.NONE)) {
+            return "";
+        }
+        String earned =
+                s.experience() / PromotionDef.SCALE + (s.next() > 0 ? " / " + s.next() / PromotionDef.SCALE : "");
+        return "Rank " + s.rank() + " · " + earned + " XP";
     }
 
     /** From what is selected, no deposit among it. */

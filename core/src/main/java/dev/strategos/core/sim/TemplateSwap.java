@@ -7,6 +7,7 @@ import dev.strategos.core.sim.ability.AbilitySwap;
 import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.civ.FactionCivs;
 import dev.strategos.core.sim.prod.Techs;
+import dev.strategos.core.sim.rank.Ranks;
 import org.jspecify.annotations.Nullable;
 
 /** INGEST's template swap (DATA-03) and its guard: every template the live state refers to must survive it unchanged. */
@@ -32,6 +33,7 @@ final class TemplateSwap {
         Techs.dropRetired(state, old);
         AiHandicap.reapply(state); // the computer players' open handicaps, from the new set (AI-05)
         CivBonuses.reapply(state); // the civilisations' bonuses, from the new set (CIV-01)
+        Ranks.reapply(state); // the ranks' sets, from the new set (CMB-11)
         state.costs().swap(state.stats());
         state.gatherRates().swap(state.stats());
         state.spatial().swap(set);

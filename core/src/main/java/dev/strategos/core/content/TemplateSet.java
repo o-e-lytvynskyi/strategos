@@ -47,6 +47,9 @@ public final class TemplateSet {
     private final List<AbilityDef> abilities; // every ability of the set by id, ascending (UNIT-10)
     private final List<List<AbilityDef>> abilitiesOf; // by net index: a template's own, ascending by id
     private final boolean autocasts; // whether any ability is used by itself
+    private final @Nullable PromotionDef[] promotionByIndex; // by net index: a unit's ranks, null for most (CMB-11)
+    private final long[][] promotionMilli; // by net index: the thresholds as primitives, null where no ranks
+    private final boolean hasRanks; // whether any template has ranks
 
     /** A set from code: each template's JSON is {@link UnitTemplate#toJson()}. */
     public TemplateSet(List<UnitTemplate> templates) {
@@ -160,6 +163,27 @@ public final class TemplateSet {
         this.abilities = List.copyOf(byId.values());
         this.abilitiesOf = List.copyOf(own);
         this.autocasts = abilities.stream().anyMatch(AbilityDef::autocast);
+        List<@Nullable PromotionDef> ranked = new ArrayList<>();
+        for (int k = 0; k < indices; k++) {
+            ranked.add(null);
+        }
+        for (int i = 0; i < templates.size(); i++) {
+            if (!templates.get(i).isBuilding()) {
+                ranked.set(templates.get(i).netIndex(), PromotionChecks.def(copies.get(i)));
+            }
+        }
+        this.promotionByIndex = ranked.toArray(new PromotionDef[0]);
+        this.promotionMilli = new long[indices][];
+        boolean any = false;
+        for (int k = 0; k < indices; k++) {
+            PromotionDef def = promotionByIndex[k];
+            if (def != null) {
+                any = true;
+                promotionMilli[k] =
+                        def.thresholds().stream().mapToLong(Long::longValue).toArray();
+            }
+        }
+        this.hasRanks = any;
         this.sha = CanonicalJson.sha256(CanonicalJson.write(canonical));
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
@@ -359,6 +383,21 @@ public final class TemplateSet {
     /** Template {@code netIndex}'s abilities, ascending by id; none for a building or a retired index. */
     public List<AbilityDef> abilitiesOf(int netIndex) {
         return netIndex >= 0 && netIndex < abilitiesOf.size() ? abilitiesOf.get(netIndex) : List.of();
+    }
+
+    /** Template {@code netIndex}'s ranks (CMB-11), or null for a template that has none: most, and every building. */
+    public @Nullable PromotionDef promotion(int netIndex) {
+        return netIndex >= 0 && netIndex < promotionByIndex.length ? promotionByIndex[netIndex] : null;
+    }
+
+    /** Whether any template of the set has ranks; false makes experience crediting a no-op. */
+    public boolean hasPromotions() {
+        return hasRanks;
+    }
+
+    /** Template {@code netIndex}'s rank thresholds in milli-experience as primitives; null without ranks. */
+    public long @Nullable [] promotionThresholds(int netIndex) {
+        return netIndex >= 0 && netIndex < promotionMilli.length ? promotionMilli[netIndex] : null;
     }
 
     /** Whether some ability of the set is used by its idle owners by themselves. */

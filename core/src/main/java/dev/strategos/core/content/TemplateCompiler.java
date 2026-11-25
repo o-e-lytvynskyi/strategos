@@ -175,6 +175,7 @@ public final class TemplateCompiler {
                     units.get(k).isBuilding()));
         }
         AbilityChecks.cross(sources, problems);
+        PromotionChecks.cross(sources, problems);
         List<TechDef> drafts = new ArrayList<>();
         Map<String, RawTech> techById = new TreeMap<>();
         for (RawTech raw : rawTechs) {
@@ -246,6 +247,7 @@ public final class TemplateCompiler {
                     units.get(k).isBuilding()));
         }
         AbilityChecks.cross(sources, problems);
+        PromotionChecks.cross(sources, problems);
         int top = kept.stream().mapToInt(Flat::netIndex).max().orElse(-1);
         for (int k = 0; k <= top; k++) {
             int index = k;
@@ -591,6 +593,7 @@ public final class TemplateCompiler {
             problems.add(TemplateProblem.error(file, "/Body/radius", "large mobility needs a radius of at least 0.7"));
         }
         AbilityChecks.template(json, file, false, problems);
+        PromotionChecks.template(json, file, false, problems);
         if (problems.size() > before) {
             return null;
         }
@@ -639,6 +642,7 @@ public final class TemplateCompiler {
             }
         }
         AbilityChecks.template(json, file, true, problems);
+        PromotionChecks.template(json, file, true, problems);
         if (problems.size() > before) {
             return null;
         }

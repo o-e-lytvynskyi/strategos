@@ -17,6 +17,7 @@ import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.DamageStages;
 import dev.strategos.core.sim.econ.Livestock;
+import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +84,12 @@ public final class CombatSystem implements MatchSystem {
             }
             health.setDamage(i, taken + dealt);
             s.outputs().add(new UnitHurt(target, d.attacker(), (float) dealt));
+            Ranks.credit(
+                    s,
+                    d.attacker(),
+                    target,
+                    Math.min(dealt, left),
+                    max); // earned by what it took off, no more (CMB-11)
             if (taken + dealt >= max) {
                 dying.add(new int[] {target, d.attacker()});
             } else if (d.attacker() != Handle.NONE && entities.isAlive(d.attacker())) {

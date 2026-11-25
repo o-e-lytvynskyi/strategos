@@ -15,6 +15,7 @@ final class UnitLifecycle {
             m.population().remove(faction, m.unitPopulation(i));
         }
         m.health().reset(i);
+        m.play().experience().reset(i);
         m.stances().clear(i);
         m.garrison().remove(i);
         releaseClaim(m, i, handle);
@@ -35,6 +36,7 @@ final class UnitLifecycle {
         m.motion().setExtra(index, MotionStore.Extra.NONE);
         m.stats().clearPersonal(index);
         m.health().reset(index);
+        m.play().experience().reset(index);
         m.stances().clear(index);
         m.garrison().remove(index);
         m.ai().reset(index, UnitAi.IDLE);

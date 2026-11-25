@@ -37,6 +37,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.order.StanceStore;
+import dev.strategos.core.sim.rank.ExperienceStore;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -471,6 +472,11 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("timed", List.of()).forGetter(AbilityStore.Saved::timed))
             .apply(i, AbilityStore.Saved::new));
 
+    private static final Codec<ExperienceStore.Saved> EXPERIENCE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.listOf().optionalFieldOf("earned", List.of()).forGetter(ExperienceStore.Saved::earned),
+                    Codec.LONG.listOf().optionalFieldOf("ranks", List.of()).forGetter(ExperienceStore.Saved::ranks))
+            .apply(i, ExperienceStore.Saved::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
@@ -494,7 +500,10 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches),
                     ABILITIES
                             .optionalFieldOf("abilities", AbilityStore.Saved.EMPTY)
-                            .forGetter(MatchSnapshot.Play::abilities))
+                            .forGetter(MatchSnapshot.Play::abilities),
+                    EXPERIENCE
+                            .optionalFieldOf("experience", ExperienceStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play::experience))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(

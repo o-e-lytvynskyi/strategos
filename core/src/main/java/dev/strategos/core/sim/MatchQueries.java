@@ -56,6 +56,16 @@ public interface MatchQueries {
     /** The ticks until live unit {@code handle} may use ability {@code ability} again (UNIT-10); 0 when it is ready or dead. */
     int abilityCooldown(int handle, String ability);
 
+    /** Live unit {@code handle}'s rank (CMB-11): 0 for none, or when it is dead. */
+    default int rank(int handle) {
+        return 0;
+    }
+
+    /** Live unit {@code handle}'s experience in thousandths of a point (CMB-11); 0 when it has none or is dead. */
+    default long experience(int handle) {
+        return 0;
+    }
+
     /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
     int carriedResource(int handle);
 

@@ -15,6 +15,8 @@ import java.util.List;
  * and the trailer is left out when no unit has one. A third trailer (UNIT-10) lists the units with an ability on
  * cooldown, each as its place in the list and its abilities' remaining ticks (the ability's index in the template set,
  * at most {@value #MAX_COOLDOWNS} a unit); a ready ability is not listed, and the trailer is left out when none rests.
+ * A fourth trailer (CMB-11) lists the units with a rank or experience, each as its place in the list, its rank, its
+ * experience and the total of the next rank (thousandths of a point; 0 for none), and is left out when none has any.
  * When only a later trailer is present, each one before it is an empty count.
  */
 @CoreApi
@@ -34,6 +36,23 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
     @CoreApi
     public record Cooldown(int ability, int ticks) {}
 
+    /**
+     * A unit's rank and what it has earned toward the next (CMB-11): the rank (0 for none), its experience and the
+     * total the next rank needs, both in thousandths of a point; {@code next} is 0 for a unit at its top rank or whose
+     * template has no ranks.
+     */
+    @CoreApi
+    public record Standing(int rank, long experience, long next) {
+        /** A unit that has earned nothing. */
+        public static final Standing NONE = new Standing(0, 0, 0);
+
+        public Standing {
+            if (rank < 0 || experience < 0 || next < 0) {
+                throw new IllegalArgumentException("a standing is not negative");
+            }
+        }
+    }
+
     /** One order: its kind ({@code OrderKind}) and its match-local target. */
     @CoreApi
     public record Order(int kind, float x, float z) {}
@@ -52,7 +71,8 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
             long load,
             int target,
             int stance,
-            List<Cooldown> cooldowns) {
+            List<Cooldown> cooldowns,
+            Standing standing) {
         public Unit {
             orders = List.copyOf(orders.size() > MAX_ORDERS ? orders.subList(0, MAX_ORDERS) : orders);
             cooldowns = List.copyOf(cooldowns.size() > MAX_COOLDOWNS ? cooldowns.subList(0, MAX_COOLDOWNS) : cooldowns);
@@ -61,19 +81,55 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
         Unit withTarget(int target) {
             return new Unit(
                     handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
-                    cooldowns);
+                    cooldowns, standing);
         }
 
         Unit withStance(int stance) {
             return new Unit(
                     handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
-                    cooldowns);
+                    cooldowns, standing);
         }
 
         Unit withCooldowns(List<Cooldown> cooldowns) {
             return new Unit(
                     handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
-                    cooldowns);
+                    cooldowns, standing);
+        }
+
+        Unit withStanding(Standing standing) {
+            return new Unit(
+                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
+                    cooldowns, standing);
+        }
+
+        /** A unit without rank or experience. */
+        public Unit(
+                int handle,
+                int template,
+                int state,
+                float health,
+                float maxHealth,
+                float walkSpeed,
+                List<Order> orders,
+                int carried,
+                long load,
+                int target,
+                int stance,
+                List<Cooldown> cooldowns) {
+            this(
+                    handle,
+                    template,
+                    state,
+                    health,
+                    maxHealth,
+                    walkSpeed,
+                    orders,
+                    carried,
+                    load,
+                    target,
+                    stance,
+                    cooldowns,
+                    Standing.NONE);
         }
 
         /** A unit with no ability resting. */
@@ -90,8 +146,19 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                 int target,
                 int stance) {
             this(
-                    handle, template, state, health, maxHealth, walkSpeed, orders, carried, load, target, stance,
-                    List.of());
+                    handle,
+                    template,
+                    state,
+                    health,
+                    maxHealth,
+                    walkSpeed,
+                    orders,
+                    carried,
+                    load,
+                    target,
+                    stance,
+                    List.of(),
+                    Standing.NONE);
         }
 
         /** A unit with the stance its template gives it. */
@@ -159,11 +226,13 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
             }
             int stanced = 0;
             int cooling = 0;
+            int ranked = 0;
             for (Unit u : d.units()) {
                 stanced += u.stance() == NO_STANCE ? 0 : 1;
                 cooling += u.cooldowns().isEmpty() ? 0 : 1;
+                ranked += u.standing().equals(Standing.NONE) ? 0 : 1;
             }
-            if (targeted > 0 || stanced > 0 || cooling > 0) {
+            if (targeted > 0 || stanced > 0 || cooling > 0 || ranked > 0) {
                 out.writeVarInt(targeted);
                 for (int k = 0; k < d.units().size(); k++) {
                     int target = d.units().get(k).target();
@@ -172,7 +241,7 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                     }
                 }
             }
-            if (stanced > 0 || cooling > 0) {
+            if (stanced > 0 || cooling > 0 || ranked > 0) {
                 out.writeVarInt(stanced);
                 for (int k = 0; k < d.units().size(); k++) {
                     int stance = d.units().get(k).stance();
@@ -181,7 +250,7 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                     }
                 }
             }
-            if (cooling > 0) {
+            if (cooling > 0 || ranked > 0) {
                 out.writeVarInt(cooling);
                 for (int k = 0; k < d.units().size(); k++) {
                     List<Cooldown> resting = d.units().get(k).cooldowns();
@@ -190,6 +259,18 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                         for (Cooldown c : resting) {
                             out.writeVarInt(c.ability()).writeVarInt(c.ticks());
                         }
+                    }
+                }
+            }
+            if (ranked > 0) {
+                out.writeVarInt(ranked);
+                for (int k = 0; k < d.units().size(); k++) {
+                    Standing standing = d.units().get(k).standing();
+                    if (!standing.equals(Standing.NONE)) {
+                        out.writeVarInt(k)
+                                .writeVarInt(standing.rank())
+                                .writeVarLong(standing.experience())
+                                .writeVarLong(standing.next());
                     }
                 }
             }
@@ -240,6 +321,17 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                             }
                             units.set(at, units.get(at).withCooldowns(list));
                         }
+                        if (in.remaining() > 0) {
+                            int ranked = in.readVarInt(count);
+                            for (int j = 0; j < ranked; j++) {
+                                int at = in.readVarInt(count - 1);
+                                units.set(
+                                        at,
+                                        units.get(at)
+                                                .withStanding(new Standing(
+                                                        in.readVarInt(), in.readVarLong(), in.readVarLong())));
+                            }
+                        }
                     }
                 }
             }
@@ -255,7 +347,9 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                     + 5
                     + 5
                     + 5
-                    + UiQuery.MAX_HANDLES * (5 + 5 + MAX_COOLDOWNS * (5 + 5));
+                    + UiQuery.MAX_HANDLES * (5 + 5 + MAX_COOLDOWNS * (5 + 5))
+                    + 5
+                    + UiQuery.MAX_HANDLES * (5 + 5 + 10 + 10);
         }
     };
 }

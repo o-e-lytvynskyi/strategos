@@ -152,6 +152,9 @@ public final class StateHasher {
         if (!s.play().abilities().empty()) { // only while an ability is on cooldown or its modifiers last (UNIT-10)
             h = s.play().abilities().mix(h, s.entities());
         }
+        if (!s.play().experience().empty()) { // only once a unit has earned experience (CMB-11)
+            h = s.play().experience().mix(h, s.entities());
+        }
         if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
             h = s.garrison().mix(h);
         }

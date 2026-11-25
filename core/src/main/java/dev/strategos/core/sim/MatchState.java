@@ -432,6 +432,7 @@ public final class MatchState {
         health.ensureCapacity(size);
         carry.ensureCapacity(size);
         garrison.ensureCapacity(size);
+        play.experience().ensureCapacity(size);
     }
 
     /** The damage each unit has taken (CMB-01). */

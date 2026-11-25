@@ -1,6 +1,7 @@
 {
   "parent": "strategos:template/unit_base",
   "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
+  "Promotion": { "value": 60 },
   "Capture": { "strength": 1.0 },
   "Health": { "max": 50 },
   "Behaviour": { "flee": 8, "stance": "passive" },

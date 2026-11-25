@@ -70,12 +70,9 @@ final class AbilityChecks {
      * path), every spawned template in the set and a unit.
      */
     static void cross(List<Source> sources, List<TemplateProblem> problems) {
-        Set<String> paths = new TreeSet<>(CorePaths.all());
+        Set<String> paths = numberPaths(sources);
         Set<String> units = new TreeSet<>();
         for (Source s : sources) {
-            List<String> numbers = new ArrayList<>();
-            TemplateSet.leafPaths(s.json(), "", numbers, new ArrayList<>());
-            paths.addAll(numbers);
             if (!s.building()) {
                 units.add(s.id().value());
             }
@@ -109,6 +106,17 @@ final class AbilityChecks {
                 }
             }
         }
+    }
+
+    /** Every value path of the sources: the core's and each number some template has. */
+    static Set<String> numberPaths(List<Source> sources) {
+        Set<String> paths = new TreeSet<>(CorePaths.all());
+        for (Source s : sources) {
+            List<String> numbers = new ArrayList<>();
+            TemplateSet.leafPaths(s.json(), "", numbers, new ArrayList<>());
+            paths.addAll(numbers);
+        }
+        return paths;
     }
 
     private static void effectReferences(

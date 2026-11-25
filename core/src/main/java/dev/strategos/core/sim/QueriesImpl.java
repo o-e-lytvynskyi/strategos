@@ -30,6 +30,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTier;
@@ -272,6 +273,16 @@ final class QueriesImpl implements MatchQueries {
         }
         long left = state.play().abilities().readyAt(handle, ability) - state.tick();
         return left <= 0 ? 0 : (int) Math.min(left, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public int rank(int handle) {
+        return state.entities().isAlive(handle) ? Ranks.effectiveRank(state, Handle.index(handle)) : 0;
+    }
+
+    @Override
+    public long experience(int handle) {
+        return state.entities().isAlive(handle) ? state.play().experience().experience(Handle.index(handle)) : 0;
     }
 
     @Override

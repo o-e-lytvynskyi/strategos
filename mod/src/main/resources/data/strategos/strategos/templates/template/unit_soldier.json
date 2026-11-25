@@ -1,0 +1,27 @@
+{
+  "parent": "strategos:template/unit_base",
+  "abstract": true,
+  "Promotion": {
+    "thresholds": [200, 500, 1000],
+    "ranks": [
+      [
+        { "path": "Health/max", "op": "mul", "value": 1.05 },
+        { "path": "Attack/Melee/hack", "op": "mul", "value": 1.05 },
+        { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.05 },
+        { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.05 }
+      ],
+      [
+        { "path": "Health/max", "op": "mul", "value": 1.10 },
+        { "path": "Attack/Melee/hack", "op": "mul", "value": 1.10 },
+        { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.10 },
+        { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.10 }
+      ],
+      [
+        { "path": "Health/max", "op": "mul", "value": 1.15 },
+        { "path": "Attack/Melee/hack", "op": "mul", "value": 1.15 },
+        { "path": "Attack/Melee/pierce", "op": "mul", "value": 1.15 },
+        { "path": "Attack/Ranged/pierce", "op": "mul", "value": 1.15 }
+      ]
+    ]
+  }
+}

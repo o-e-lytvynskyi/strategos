@@ -195,7 +195,7 @@ class TemplateSetTest {
     // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10); M9 T11: the sentry tower,
     // its blueprint, its place on the Village worker's list and its Upgrade (BLD-12); M9 T13: the palisade and its
     // gate, the worker's list (BLD-13). Rebaselined after merging M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "b90547d76455b5cbc8d1afcb3e3fbaed22ddb9a12a3d5dc82f35bb343262e1d3";
+    private static final String BUILTIN_VERSION = "f6f3bf00662fca30f8a8693157ed57f870b8fb34ab793295b1854883a8784573";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

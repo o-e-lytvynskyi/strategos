@@ -70,3 +70,12 @@ Accepted
 | Both: the pipeline writes attribute base values for the stats vanilla consumes (B) | Two read locations per stat and a per-path rule every change must respect; only needed with vanilla physics, which the kinematic body doesn't use |
 | Hard-coded stat fields per unit class | Contradicts "content is data"; no technology system |
 | Insertion-ordered evaluation | Floating-point results would depend on the order sources were added, which breaks determinism |
+
+## 2026-11-25 — max HP keeps the ratio: ranks only so far
+
+M10 T12 found that "max HP keeps the HP ratio" on `StatsChanged` was not implemented in the core. It now holds
+for rank changes (`Ranks.apply` rescales a unit's damage by the change of its max HP, and never moves a unit across
+the lethal line); a restore does not rescale, because saved damage is already scaled. Technologies and other
+faction modifiers that change max HP still leave damage as it was. Extending the rule to every max-HP change is a
+follow-up for the milestone that next touches the stat pipeline; it changes the hashes of any match that researches
+a max-HP technology, so it needs its own re-pin.
