@@ -76,7 +76,7 @@ M15 cards passes.
   1. Each mechanic's rules pass their tests (L1).
   2. Each mechanic works in a GameTest (L3).
   3. QA-16 pairings stay within 80–120 of 200 (L1).
-- **Tests:** L0, L1, L3 · **Depends on:** CIV-03, TECH-05 · **Size:** L · **Tier:** T3
+- **Tests:** L0, L1, L3 · **Depends on:** CIV-03, CIV-05, TECH-05 · **Size:** L · **Tier:** T3
 - **Status:** proposed
 
 #### DATA-05 · Public content API and authoring guide

@@ -5,7 +5,8 @@ Date: 2026-10-21
 ## Status
 
 Accepted; the leaf rule (leaves only at exhaustion) superseded by [ADR-0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md)
-on 2026-10-23
+on 2026-10-23; amended by [ADR-0028](0028-civilisations-and-rule-seams.md) on 2026-11-25: drop-off and builder-driven
+construction are the defaults of per-civilisation rules (`DeliveryRule`, `ConstructionRule`)
 
 ## Context
 

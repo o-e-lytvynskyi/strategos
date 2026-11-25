@@ -1503,6 +1503,29 @@ NeoForge data maps on `minecraft:block`, registered in `RegisterDataMapTypesEven
   provides. A new archetype needs Java (fact 23). An unknown model falls back to a placeholder with
   a client warning.
 
+### 8.9 Civilisations and rule seams
+
+[ADR-0028](adr/0028-civilisations-and-rule-seams.md); M10 builds it ([spec §2.1–2.6](milestones/M10-civilisations-and-depth.md)).
+
+- **Content.** `strategos/civs/<id>.json` compiles to `CivDef`: name and phase names, roster (the templates and
+  technologies its factions may own), roles (engine role → template), start kit, bonuses (faction modifiers under
+  `CivBonuses.SOURCE`), rules (per seam: variant id and parameters), AI profile. The default civilisation,
+  `strategos:default`, is today's content with every rule at its default.
+- **Binding.** `MatchConfig.civs` names each faction's civilisation (empty: the default for all);
+  `CivRules.bind` resolves them once at start, restore and content swap; `StateHasher` mixes them only when one is
+  not the default.
+- **Seams.** `core.sim.civ` holds eight rule interfaces — population, delivery, construction, upkeep,
+  resources, phase, placement, defeat — each with today's behaviour as its default, and the closed `RuleCatalogue`
+  of variants (M10: `fixed` population, `direct` delivery, `self` construction). Systems ask
+  `civRules().of(faction)`; nothing outside `core.sim.civ` and `core.content` reads a civilisation id, and core rules
+  name roles or class tokens, never template ids (ArchUnit). The placement seam is a parameter of the pure
+  `PlacementRules`, so the client preview runs the same variant.
+- **The engine's vocabulary.** The class tokens the core reads are engine words, fixed like the value paths:
+  `Gatherer`, `Builder`, `Structure`, `Phase`, `Village` (the implicit phase), `Organic`, `Fauna`; M10 T8 lists each
+  with the seam or system that reads it.
+- **A new civilisation** is data; a new mechanic is one variant class in the catalogue with its tests; a mechanic
+  that fits no seam is a new seam, reviewed as a change to `core.sim.civ`.
+
 ---
 
 ## 9. Pathfinding and movement

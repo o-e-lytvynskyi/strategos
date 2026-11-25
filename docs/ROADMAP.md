@@ -98,7 +98,7 @@ below, and mirror the statuses here. Revised on 2026-10-21 from the
 | [M7 Multiplayer](roadmap/M7-multiplayer.md) | 2–4 players: lobby, teams, shared control, reconnects, hardening, S11; ART-03 beside it | 2 v 2 with a friend and AIs; a reconnect; co-op in one faction | Hostile packets refused; ≤ 100 KB/s per client · a two-client session | 13 / 51 |
 | [M8 Fog of war](roadmap/M8-fog-of-war.md) | Team vision, targeted re-tracking, mirages, leak audit, a scouting AI | Fair fog in a 2 v 2 | Reveal within 6 ticks, hide within 15; one leak test per channel · a session | 5 / 20 |
 | [M9 Territory, capture and defence](roadmap/M9-territory-capture-and-defence.md) | Territory, capture, the full garrison, towers, palisades | Capturing a barracks; holding a chokepoint | Capture maths; territory never blocks a tick · playtest | 10 / 49 |
-| [M10 Second civilisation and depth](roadmap/M10-second-civilisation.md) | A second civilisation, City, the tech tree, abilities, ranks, healing, formations, hunting, the first Minecraft twist | Two civilisations meet; night falls | Civilisation pairings 80–120 of 200 · playtest and art approval | 18 / 78 |
+| [M10 Civilisations foundation and depth](roadmap/M10-second-civilisation.md) | The default civilisation and the civilisation foundation (rules per civilisation), City, the tech tree, abilities, ranks, healing, formations, hunting, the first Minecraft twist | The default civilisation; night falls | Pairings 80–120 of 200 (the mirror per slot) · the probe replays · playtest | 17 / 68 |
 | [M11 Adaptive AI](roadmap/M11-adaptive-ai.md) | Managers with one budget, expansion, attack plans, five levels | Losing to the top level | Each level beats the one below ≥ 124 of 200 · two levels played | 7 / 40 |
 | [M12 Maps and game setup](roadmap/M12-maps-and-setup.md) | Random maps, authoring tools, the full setup screen, a tutorial | A generated four-player map; a friend finishes the tutorial | Fairness on every seed; the 512² gate · a friend's tutorial run | 7 / 38 |
 | [M13 Open world](roadmap/M13-open-world.md) | Matches in an ordinary survival world | A claimed valley in a survival world | Armies cross unloaded chunks with no duplicates · a session | 6 / 37 |
@@ -124,7 +124,7 @@ flowchart LR
   M6 --> G{"MVP gate"} --> M7["M7 Multiplayer"]
   M7 --> M8["M8 Fog"]
   M7 --> M9["M9 Territory"]
-  M9 --> M10["M10 Second civilisation"]
+  M9 --> M10["M10 Civilisations foundation"]
   M8 --> M11["M11 Adaptive AI"]
   M10 --> M11
   M10 --> M12["M12 Maps"]
@@ -226,7 +226,7 @@ singleplayer; no pause in multiplayer at first. **Owner:** as recommended (2026-
 | D-17 Arena size | M6 | 384² for 1 v 1; 512² after PERF-12 (with D-13) | [M1](roadmap/M1-movement.md#d-17--arena-size) | as recommended (2026-10-21) |
 | D-19 AI fairness | M6 | Open penalties at every level; bonuses only at a labelled top level; fog-fair once fog exists | [M6](roadmap/M6-first-skirmish.md#d-19--ai-fairness-and-difficulty) | as recommended (2026-10-21) |
 | D-24 Exploration in the MVP | M6 | (c) solo-grade fog: five cards, +9 card-days (with D-08) | [M2](roadmap/M2-command.md#d-24--exploration-in-the-mvp) | as recommended (2026-10-21) |
-| D-03 Civilisation themes | M7 (ART-03) | Antiquity if its art bill is accepted, else biome cultures (theme bundle) | [M3](roadmap/M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10) | pending |
+| D-03 Civilisation themes | M14 (CIV-02); ART-03 (M7) names it too | Antiquity if its art bill is accepted, else biome cultures (theme bundle) | [M3](roadmap/M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10) | pending |
 | D-20 Multiplayer hosting | M7 | Dedicated servers first, Open to LAN supported | [M7](roadmap/M7-multiplayer.md#d-20--multiplayer-hosting) | pending |
 | D-07 Licence | first public release | MPL-2.0 for code; assets all rights reserved with modpack permission | [M8](roadmap/M8-fog-of-war.md#d-07--licence) | decided by the owner (2026-10-25): PolyForm Noncommercial 1.0.0 until the full release |
 | D-21 Public release and name | first public release | Friends from M6; public alpha after M8; keep "Strategos" after the checks | [M8](roadmap/M8-fog-of-war.md#d-21--public-release-and-name) | pending |
@@ -496,30 +496,38 @@ Cards: [roadmap/M9-territory-capture-and-defence.md](roadmap/M9-territory-captur
 > 2026-11-24: the owner approved all ten cards («Одобряю все 10»); specified the same day in
 > [M9's spec](milestones/M9-territory-capture-and-defence.md). MATCH-06 and PERF-10 (M7) are built against a contract (spec §2.1, §1.5).
 
-### M10 · Second civilisation and depth
+### M10 · Civilisations foundation and depth
 
-Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#cards). 18 cards, at most 78 card-days.
+Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#cards). 17 active cards, at most 68 card-days; 2 deferred to M14.
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CIV-01 | Civilisation framework | M | DATA-03, MATCH-02 | proposed |
-| CIV-02 | Civilisation 2: roster, bonuses and abilities | L | CIV-01, UNIT-10, D-03 | proposed |
-| ART-04 | Civilisation 2 art set | L | CIV-02, ART-03 | proposed |
-| TECH-04 | City phase | M | TECH-02, TERR-01 | proposed |
-| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | proposed |
-| UNIT-10 | Abilities | M | CORE-03, DATA-02 | proposed |
-| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | proposed |
-| CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | proposed |
-| CMB-13 | Loot | S | CMB-01, ECO-01 | proposed |
-| ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | proposed |
-| ORD-07 | Patrol and guard | M | ORD-04 | proposed |
-| ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | proposed |
-| UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | proposed |
-| CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | proposed |
-| MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | proposed |
-| AI-09 | AI uses the new content | M | AI-08, CIV-02, TECH-04 | proposed |
-| QA-16 | Balance matrix | M | QA-12, CIV-02 | proposed |
-| PERF-17 | Second-civilisation perf gate | S | CIV-02, ORD-06, ECO-10, PERF-16 | proposed |
+| CIV-01 | Civilisation framework and the default civilisation | M | DATA-03, MATCH-02 | specified |
+| CIV-05 | Civilisation rules: gameplay that differs | L | CIV-01 | specified |
+| CIV-02 | Civilisation 2: roster, bonuses and abilities | L | CIV-01, UNIT-10, D-03 | deferred (M14) |
+| ART-04 | Civilisation 2 art set | L | CIV-02, ART-03 | deferred (M14) |
+| TECH-04 | City phase | M | TECH-02, TERR-01 | specified |
+| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | specified |
+| UNIT-10 | Abilities | M | CORE-03, DATA-02 | specified |
+| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | specified |
+| CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | specified |
+| CMB-13 | Loot | S | CMB-01, ECO-01 | specified |
+| ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | specified |
+| ORD-07 | Patrol and guard | M | ORD-04 | specified |
+| ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | specified |
+| UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | specified |
+| CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | specified |
+| MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | specified |
+| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | specified |
+| QA-16 | Balance matrix | M | QA-12, CIV-01 | specified |
+| PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | specified |
+
+> 2026-11-25: the owner reshaped and approved M10 («сейчас сделать 1 дефолтную нацию, начальную, самую простую и
+> понятную по типу того, что у нас уже есть, и так же сделать фундамент для того, чтобы правильно и бестпрактисно,
+> без переписывания ядра мы потом могли добавлять экстравагантные нации с отличающимся геймплеем. в остальном,
+> следуй уже намеченым планам»): CIV-05 added, CIV-02 and ART-04 deferred to M14 (D-03 with them), AI-09, QA-16 and
+> PERF-17 follow; specified the same day in [M10's spec](milestones/M10-civilisations-and-depth.md) (§1.5, §1.6) with
+> [ADR-0028](adr/0028-civilisations-and-rule-seams.md).
 
 ### M11 · Adaptive AI
 
@@ -593,7 +601,7 @@ Cards: [roadmap/M15-long-tail.md](roadmap/M15-long-tail.md#cards). 8 cards, at m
 | MATCH-12 | Scenarios and campaigns | L | MATCH-03, UI-18 | proposed |
 | MATCH-13 | Replays | L | CORE-11, MATCH-04 | proposed |
 | FOW-06 | Terrain secrecy | L | FOW-05 | proposed |
-| CIV-04 | Civilisation-unique mechanics and mercenaries | L | CIV-03, TECH-05 | proposed |
+| CIV-04 | Civilisation-unique mechanics and mercenaries | L | CIV-03, CIV-05, TECH-05 | proposed |
 | DATA-05 | Public content API and authoring guide | M | DATA-03, CIV-01 | proposed |
 | UI-19 | Localisation and accessibility | M | UI-17 | proposed |
 | NET-07 | Spectators and observers | M | NET-02, FOW-02 | proposed |

@@ -1,4 +1,4 @@
-# M10 · Second civilisation and depth
+# M10 · Civilisations foundation and depth
 
 Feature cards of milestone M10. [ROADMAP.md](../ROADMAP.md) holds the overview, the conventions
 and the status of every card (the source of truth); the statuses below mirror it. Cards after the
@@ -6,34 +6,41 @@ MVP are coarser by design and are refined at the review that opens their milesto
 
 ## Milestone
 
-**Goal.** A second civilisation proves the data model; the City phase, the full technology tree
-with its equipment lines, abilities, promotion, healing, loot, formations, patrols, hunting, the
+**Reshaped by the owner, 2026-11-25** («сейчас сделать 1 дефолтную нацию, начальную, самую простую и
+понятную по типу того, что у нас уже есть, и так же сделать фундамент для того, чтобы правильно и бестпрактисно,
+без переписывания ядра мы потом могли добавлять экстравагантные нации с отличающимся геймплеем. в остальном, следуй
+уже намеченым планам»): one default civilisation and the foundation for distinctive ones; the second civilisation
+and its art (CIV-02, ART-04) move to M14. Spec: [M10](../milestones/M10-civilisations-and-depth.md).
+
+**Goal.** One default civilisation — today's content, the simplest — and a civilisation foundation: each faction
+plays a civilisation that is content and that selects its gameplay rules through seams in the core
+([ADR-0028](../adr/0028-civilisations-and-rule-seams.md)), proved by a test-only probe civilisation, so that later
+civilisations with gameplay of their own need no rewrite of the core. On top of it, the City phase, the full
+technology tree with its equipment lines, abilities, promotion, healing, loot, formations, patrols, hunting, the
 full hotkey set, an optional orthographic view and the first Minecraft twist deepen the game.
 
-**The owner plays.** The two civilisations of D-03 meet on the MVP map with different rosters,
-bonuses, abilities and architecture. Veterans show their rank, healers mend troops at a temple,
-armies march in box and line formations, and, with the day-and-night twist, night falls and the
-torches on buildings light up the fog.
+**The owner plays.** The default civilisation on the MVP map, chosen in setup. Veterans show their rank, healers
+mend troops at a temple, armies march in box and line formations, and, with the day-and-night twist, night falls
+and the torches on buildings light up the fog.
 
 **Done gate** (automated and consent-batch items; plus the cumulative rule):
 1. Every acceptance criterion of the M10 cards passes.
-2. QA-16 (L1, 200 fixed seeds per pairing): each civilisation wins 80–120 of 200 mirrored matches;
-   the L3 samples are smoke tests with no win-rate threshold.
+2. QA-16 (L1, 200 fixed seeds per pairing): every pairing within 80–120 of 200; with one playable
+   civilisation, the mirror pairing per start slot; the L3 samples are smoke tests with no win-rate threshold.
 3. L1: a generated test per technology proves its effect, with one L3 integration sample.
-4. L6 (PERF-17): two civilisations, formations of 40 and fauna within A–E; the 2× stress pass
-   holds.
-5. Consent batch: the M10 goldens and PERF-14.
+4. L1: the default civilisation keeps every M0–M9 hash; the probe civilisation plays and replays (CIV-05).
+5. L6 (PERF-17): formations of 40, fauna, abilities and the City phase within A–E; the 2× stress pass holds.
+6. Consent batch: the M10 goldens and PERF-14.
 
-**Acceptance** (owner): a playtest with both civilisations and the questionnaire; the owner
-approves ART-04's look.
+**Acceptance** (owner): a playtest with the default civilisation and the questionnaire.
 
-**Retires.** F-R17 for two civilisations; F-R18 for the second art set.
+**Retires.** F-R17 for the default civilisation's mirror; F-R18 moves to M14 with ART-04.
 
-**Size and critical path.** 18 cards (2 S, 12 M, 4 L), at most 78 card-days. Critical path: CIV-01 →
-CIV-02 → ART-04 (23 card-days).
+**Size and critical path.** 17 active cards (2 S, 12 M, 3 L), at most 68 card-days, and 2 deferred to M14. Critical path: CIV-01 →
+CIV-05 → AI-09.
 
-D-03 (the theme bundle, [M3](M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10)) must be decided
-before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
+D-03 (the theme bundle, [M3](M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10)) is now needed by CIV-02 in M14;
+D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
 ([M1](M1-movement.md#d-13--which-minecraft-systems-run-and-which-become-mechanics)) MATCH-16.
 
 ---
@@ -41,20 +48,43 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
 ## Cards
 
 #### CIV-01 · Civilisation framework
-- **Value:** Civilisations differ in data (rosters, buildings, bonuses), so adding one needs no
-  code.
-- **In scope:** civilisation definitions in data: roster, buildings, technologies, bonuses as
-  modifiers, starting entities, names, house size, optional citizen-soldiers (D-02), unique
-  abilities through UNIT-10; civilisation choice in setup; trainer-list entries that resolve per
-  civilisation.
-- **Out of scope:** the second civilisation's content (CIV-02).
+- **Value:** Civilisations differ in data (rosters, roles, start kits, bonuses), so a civilisation that
+  differs only in content needs no code; and the game ships its first, the default civilisation.
+- **In scope:** civilisation definitions in data (`strategos/civs`): roster, roles, start kit, technologies,
+  bonuses as faction modifiers, phase display names, house size, optional citizen-soldiers (D-02), the AI
+  profile, unique abilities through UNIT-10; each faction's civilisation in the match configuration; the roster
+  rule; civilisation choice in setup; start kits in scenarios; the default civilisation, `strategos:default`,
+  holding today's content.
+- **Out of scope:** rules that differ (CIV-05); the second civilisation's content (CIV-02).
 - **Acceptance:**
   1. Civilisation data loads and validates (L2).
   2. Changing a faction's civilisation changes its roster and buildings (L1).
   3. Bonuses appear in tooltips through the modifier breakdown (L1).
-  4. A match with two civilisations runs in a GameTest (L3).
+  4. A match where the factions play different civilisations (the default and the probe) runs in a GameTest (L3).
+  5. Old saves and journals load as the default civilisation, and every pinned hash holds (L1).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** DATA-03, MATCH-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
+
+#### CIV-05 · Civilisation rules: gameplay that differs
+- **Value:** Later civilisations can play differently — no houses, no drop-off, buildings that raise themselves,
+  other ways to lose — through data and, for a new mechanic, one rule variant, never a rewrite of the core or the
+  AI (the owner's goal, 2026-11-25; ADR-0028).
+- **In scope:** a closed, versioned catalogue of rule variants selected per civilisation; seams for population,
+  delivery, construction, upkeep, the resource set, phases, placement and defeat, each with
+  today's behaviour as its default; three non-default variants (a fixed population cap, direct delivery,
+  self-building foundations); roles instead of template ids in the core and the AI; the AI's capabilities; the
+  engine's class vocabulary documented; a probe civilisation in the test fixtures.
+- **Out of scope:** a playable distinctive civilisation (CIV-02, CIV-04).
+- **Acceptance:**
+  1. Every seam's default keeps today's behaviour: the pinned seeded hashes and journals replay unchanged (L1).
+  2. Each non-default variant passes table-driven tests (L1).
+  3. Probe-against-default headless matches, 20 seeds, replay to their live hashes, and the AI reaches Town with
+     the probe (L1).
+  4. No core class outside the civilisation package reads a civilisation id, and no template id is written in the
+     core's rules outside the built-in set and migrations (L0).
+  5. The probe lives in the test fixtures only (L1).
+- **Tests:** L0, L1, L3 · **Depends on:** CIV-01 · **Size:** L · **Tier:** T1
+- **Status:** specified
 
 #### CIV-02 · Civilisation 2: roster, bonuses and abilities
 - **Value:** A second people that plays differently, not just in another colour (P4).
@@ -66,7 +96,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. The balance sheet has a complete section for it (L1).
   3. QA-16 pairings fall within 80–120 of 200 (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** CIV-01, UNIT-10, D-03 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** deferred (M14) — the owner's word of 2026-11-25: one default civilisation now; the second comes with D-03 beside CIV-03, on CIV-05's rules
 
 #### ART-04 · Civilisation 2 art set
 - **Value:** The second civilisation is recognisable at a glance (P2).
@@ -78,7 +108,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. Goldens (L4, consent).
   3. The owner approves the look (L7, acceptance).
 - **Tests:** L2, L3, L4 (consent), L7 · **Depends on:** CIV-02, ART-03 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** deferred (M14) — follows CIV-02
 
 #### TECH-04 · City phase
 - **Value:** A late-game goal with its own power spike (P4).
@@ -90,7 +120,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. The territory radius bonus applies on completion (L1).
   3. A GameTest phase-up to City applies the bonuses (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TECH-02, TERR-01 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### TECH-05 · Technology tree and tree screen
 - **Value:** Real strategic choices across three phases, with upgrades you can see (P2, P4).
@@ -105,7 +135,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   4. Tree-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-04, UI-13, TECH-03 · **Size:** L ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### UNIT-10 · Abilities
 - **Value:** Units with special actions, the cheapest asymmetry between civilisations, without a
@@ -122,7 +152,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   3. Command-card buttons come from the template (L1).
   4. The showcase ability works in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-03, DATA-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### CMB-11 · Promotion and ranks
 - **Value:** Veterans matter: units that survive fights get stronger and show it (P2).
@@ -135,7 +165,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. Rank modifiers apply, compounding as documented (L1).
   3. Insignia are visible at 40 blocks (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CMB-01, DATA-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### CMB-12 · Healing
 - **Value:** Keep an army alive between fights (P4).
@@ -149,7 +179,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   3. Siege engines and buildings can't be healed (L1).
   4. A heal works in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-05, BLD-10, UNIT-10 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### CMB-13 · Loot
 - **Value:** Winning a fight pays (P4).
@@ -161,7 +191,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. Treasury conservation holds with loot as a source (L1).
   3. A kill pays out in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-01, ECO-01 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### ORD-06 · Formations (move only)
 - **Value:** Move armies in tidy box or line formations (P3).
@@ -181,7 +211,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
      and keep moving (L1).
   6. A click on a member selects only that unit; Alt+click selects its whole formation (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-03, PATH-09 · **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### ORD-07 · Patrol and guard
 - **Value:** Standing orders that keep working while you look elsewhere (P3).
@@ -193,7 +223,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. A guard follows its charge and defends it (L1).
   3. Both orders work in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-04 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### ECO-10 · Wild herds and hunting
 - **Value:** Hunting is a fast early food source and a reason to scout (P1).
@@ -205,7 +235,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. Animals flee as their stance says (L1).
   3. Fauna fit the unit budgets (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** ECO-16, UNIT-06 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### UI-17 · Full hotkeys and idle-unit cycling
 - **Value:** Experienced players can play at speed from the keyboard (P3).
@@ -217,7 +247,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   2. The key reference matches the bindings (L1).
   3. Idle-soldier and idle-worker cycling work on screen (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-08 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### CAM-06 · Orthographic view (optional)
 - **Value:** The classic flat RTS look for players who prefer it.
@@ -232,7 +262,7 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   3. Switching projection never freezes the game (L4, consent).
   4. Under Sodium and Iris it works or falls back cleanly (L4, consent).
 - **Tests:** L0, L1, L2, L4 (consent) · **Depends on:** CAM-02, D-09 · **Size:** M · **Tier:** T2
-- **Status:** proposed
+- **Status:** specified
 
 #### MATCH-16 · First Minecraft twist: day and night
 - **Value:** A signature mechanic only Minecraft can give: night shrinks what you see, and the
@@ -251,43 +281,43 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
   4. Night goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** FOW-01, MATCH-01, D-13 · **Size:** M ·
   **Tier:** T2
-- **Status:** proposed
+- **Status:** specified
 
 #### AI-09 · AI uses the new content
-- **Value:** The AI plays both civilisations and the late game well (P5).
-- **In scope:** rosters per civilisation, the City phase, abilities, healers, rank-aware retreats,
-  formations for marches.
+- **Value:** The AI plays any civilisation it is given, by its rules, and the late game well (P5).
+- **In scope:** rosters through roles and capabilities from the civilisation's rules (housing, dropsites,
+  builders), the City phase, abilities, healers, rank-aware retreats, formations for marches.
 - **Out of scope:** the manager architecture (AI-10).
 - **Acceptance:**
-  1. The AI reaches City with both civilisations in seeded runs (L1).
-  2. The AI trains at least one unique unit of each civilisation (L1).
+  1. The AI reaches City with the default civilisation in seeded runs (L1).
+  2. The AI plays the probe civilisation and reaches Town with no houses, dropsites or builders (L1).
   3. An L3 sample reaches the hash of its L1 run (L3).
-- **Tests:** L0, L1, L3 · **Depends on:** AI-08, CIV-02, TECH-04 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Tests:** L0, L1, L3 · **Depends on:** AI-08, CIV-05, TECH-04 · **Size:** M · **Tier:** T1
+- **Status:** specified
 
 #### QA-16 · Balance matrix
 - **Value:** Civilisations and difficulty levels stay fair as content grows (P4).
-- **In scope:** AI-versus-AI matrices by civilisation pairing and difficulty, 200 fixed seeds per
-  pairing in L1, with 20-seed L3 samples as smoke tests; win rates, match length and phase times; a
+- **In scope:** AI-versus-AI matrices by civilisation pairing and difficulty (with one playable
+  civilisation, the mirror pairing over levels and start slots), 200 fixed seeds per pairing in L1, with 20-seed L3 samples as smoke tests; win rates, match length and phase times; a
   diff of the balance sheet between runs.
 - **Out of scope:** human playtests.
 - **Acceptance:**
   1. The matrix runs from one command (L1).
-  2. The report flags any pairing outside 80–120 of 200 (L1).
+  2. The report flags any pairing outside 80–120 of 200, a mirror per start slot (L1).
   3. Results reproduce from their seeds (L1).
   4. The L3 samples complete and replay to the same hash (L3).
-- **Tests:** L1, L3 · **Fixtures:** balance seed sets · **Depends on:** QA-12, CIV-02 ·
+- **Tests:** L1, L3 · **Fixtures:** balance seed sets · **Depends on:** QA-12, CIV-01 ·
   **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
-#### PERF-17 · Second-civilisation perf gate
+#### PERF-17 · M10 perf gate
 - **Value:** More content never costs tick rate.
-- **In scope:** the M10 row of the budget matrix: two civilisations, formations of 40 and fauna for
-  15 minutes; A–E; the 2× stress pass; PERF-14 with consent.
+- **In scope:** the M10 row of the budget matrix: formations of 40, fauna, abilities and the City phase
+  for 15 minutes; A–E; the 2× stress pass; PERF-14 with consent.
 - **Out of scope:** AI cost (PERF-11).
 - **Acceptance:**
   1. Budgets A–E hold (L6).
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists the cost of formations, fauna and abilities (R).
-- **Tests:** L6, R · **Depends on:** CIV-02, ORD-06, ECO-10, PERF-16 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Tests:** L6, R · **Depends on:** CIV-01, ORD-06, ECO-10, PERF-16 · **Size:** S · **Tier:** T1
+- **Status:** specified

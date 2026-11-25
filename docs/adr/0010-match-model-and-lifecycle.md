@@ -5,7 +5,8 @@ Date: 2026-10-21
 ## Status
 
 Accepted; amended by [ADR-0023](0023-plan-alignment-after-roadmap-approval.md) (map-scale
-GameTests place and release their own tickets, with a batch-end check). Spike S2 (2026-10-22)
+GameTests place and release their own tickets, with a batch-end check) and by
+[ADR-0028](0028-civilisations-and-rule-seams.md) (2026-11-25: the match configuration names each faction's civilisation). Spike S2 (2026-10-22)
 confirmed the `ticking=false` tickets and the three sizes with numbers
 ([S2](../spikes/S2-force-loaded-arena.md)).
 
