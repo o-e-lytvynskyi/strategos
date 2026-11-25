@@ -211,12 +211,7 @@ public final class Production {
             case BuildingStore.RALLY_NODE -> {
                 if (target >= 1
                         && target <= s.nodes().count()
-                        && s.gatherRates()
-                                .gathers(
-                                        s.stats(),
-                                        i,
-                                        s.nodes().resource(target),
-                                        s.nodes().subtype(target))) {
+                        && s.canGather(i, s.nodes().resource(target), s.nodes().subtype(target))) {
                     s.orders().replace(i, OrderKind.GATHER, x, z, 0, 0, target);
                 } else {
                     s.orders().replace(i, OrderKind.MOVE, x, z, 0, 0);

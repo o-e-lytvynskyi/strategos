@@ -112,4 +112,41 @@ class FactionCivsTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("1 civilisations for 2 factions");
     }
+
+    @Test
+    void eachFactionsRulesAreResolvedAtBindAndAMissingEntryIsTheDefault() {
+        TemplateSet set = CivScene.with(TestRules.civ("{\"phase\":{\"id\":\"buildings\"}}"));
+        FactionCivs civs = FactionCivs.bind(config(List.of(CivScene.LEAN, CivId.DEFAULT)), set, TestRules.catalogue());
+
+        assertThat(civs.rules(0).phase()).as("the selected variant").isNotSameAs(PhaseRule.DEFAULT);
+        assertThat(civs.rules(0).defeat()).as("no entry: the seam's default").isSameAs(DefeatRule.DEFAULT);
+        assertThat(civs.rules(1)).isEqualTo(CivRules.DEFAULTS);
+        assertThat(civs.rules(2)).as("Gaia").isEqualTo(CivRules.DEFAULTS);
+    }
+
+    @Test
+    void aRuleTheCatalogueLacksDoesNotBind() {
+        TemplateSet set = CivScene.with(TestRules.civ("{\"phase\":{\"id\":\"buildings\"}}"));
+        MatchConfig config = config(List.of(CivScene.LEAN, CivId.DEFAULT));
+
+        assertThat(FactionCivs.problem(config, set)).contains("t:lean").contains("unknown rule 'buildings'");
+        assertThatThrownBy(() -> FactionCivs.bind(config, set))
+                .isInstanceOf(CivBindException.class)
+                .hasMessageContaining("unknown rule 'buildings'");
+        assertThat(FactionCivs.problem(config, set, TestRules.catalogue())).isNull();
+        assertThatThrownBy(() -> SimHarness.builder()
+                        .templates(set)
+                        .civs(List.of(CivScene.LEAN, CivId.DEFAULT))
+                        .build())
+                .isInstanceOf(CivBindException.class);
+    }
+
+    @Test
+    void aSwapToASetWithAnUnknownRuleIsRefused() {
+        SimHarness h = CivScene.match(CivScene.lean("[]"), List.of(CivScene.LEAN, CivId.DEFAULT));
+        MatchState s = KernelAccess.state(h.core());
+        TemplateSet bad = CivScene.with(TestRules.civ("{\"upkeep\":{\"id\":\"income\"}}"));
+
+        assertThat(s.templateSwapProblem(bad)).contains("unknown rule 'income'");
+    }
 }

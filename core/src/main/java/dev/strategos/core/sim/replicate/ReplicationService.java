@@ -144,12 +144,11 @@ public final class ReplicationService {
             workers.add(r < counted.length - 1 ? counted[r] : 0);
         }
         List<Integer> researched = new ArrayList<>();
-        int phase = 0;
-        for (TechId id : q.researched(faction)) { // UI-13: the techs by net index, and the highest phase reached
+        int phase = q.phase(faction); // UI-13: the faction's phase, by its civilisation's rule
+        for (TechId id : q.researched(faction)) { // and the techs by net index
             TechDef tech = q.templates().tech(id);
             if (tech != null) {
                 researched.add(tech.netIndex());
-                phase = Math.max(phase, tech.isPhase() ? tech.ordinal() : 0);
             }
         }
         return new FactionState(

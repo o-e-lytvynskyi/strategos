@@ -26,9 +26,6 @@ import java.util.List;
  */
 @CoreApi
 public final class Placing {
-    /** The class token of a civic centre (BLD-02's spacing and reach). */
-    public static final String CIVIC_CENTRE = "CivicCentre";
-
     public static final String SPACING = "Placement/spacing";
     /** Where a template may stand (TERR-02): {@link PlacementRules#OWN} by default, a civic centre own or neutral. */
     public static final String TERRITORY = "Placement/territory";
@@ -54,7 +51,10 @@ public final class Placing {
                     taken.set(x * bounds.sizeZ() + z);
                 }
             }
-            if (s.templates().byIndex(buildings.template(handle)).classes().contains(CIVIC_CENTRE)) {
+            if (s.templates()
+                    .byIndex(buildings.template(handle))
+                    .classes()
+                    .contains(s.civs().centreClass(buildings.faction(handle)))) {
                 centres.add(new PlacementRules.Centre(at, buildings.faction(handle)));
             }
         }
@@ -163,7 +163,7 @@ public final class Placing {
         UnitTemplate t = s.templates().byIndex(template);
         long[] cost = s.costs().of(s.stats(), template, faction);
         return new PlacementRules.Params(
-                t.classes().contains(CIVIC_CENTRE),
+                t.classes().contains(s.civs().centreClass(faction)), // its civilisation's centre class (CIV-01)
                 value(s, template, faction, SPACING),
                 (int) Math.round(value(s, template, faction, TERRITORY)),
                 s.treasury().missing(faction, cost) == null);

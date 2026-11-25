@@ -123,6 +123,28 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public String centreClass(FactionSlot faction) {
+        return state.civs().centreClass(faction.value());
+    }
+
+    @Override
+    public boolean usesResource(FactionSlot faction, String resource) {
+        List<dev.strategos.core.sim.econ.ResourceDef> all =
+                state.config().rules().economy().resources();
+        for (int r = 0; r < all.size(); r++) {
+            if (all.get(r).id().equals(resource)) {
+                return state.civs().rules(faction.value()).resource().uses(faction.value(), r);
+            }
+        }
+        return true; // not a resource of the match: nothing to refuse
+    }
+
+    @Override
+    public int phase(FactionSlot faction) {
+        return dev.strategos.core.sim.prod.Techs.phase(state, faction.value());
+    }
+
+    @Override
     public List<TechId> researched(FactionSlot faction) {
         return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
     }
@@ -511,6 +533,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
+                        state.civs().rules(faction).placement(),
                         placementWorld(faction),
                         b,
                         at,

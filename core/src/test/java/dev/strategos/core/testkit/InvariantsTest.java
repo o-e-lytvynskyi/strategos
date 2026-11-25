@@ -189,6 +189,21 @@ class InvariantsTest {
         }
 
         @Override
+        public int phase(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String centreClass(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean usesResource(FactionSlot faction, String resource) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public FactionTreasury treasury(FactionSlot faction) {
             throw new UnsupportedOperationException();
         }

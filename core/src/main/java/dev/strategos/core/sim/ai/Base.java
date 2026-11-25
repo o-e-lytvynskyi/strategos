@@ -22,13 +22,11 @@ record Base(
         double aimX,
         double aimZ,
         boolean fallen) {
-    static final String CENTRE = "CivicCentre";
-
     /** The base in {@code view}, or null while the player holds no finished centre. */
     static @Nullable Base of(AiView view) {
         BuildingView own = null;
         for (BuildingView b : view.buildings()) {
-            if (b.state() == 2 && view.is(b.template(), CENTRE)) {
+            if (b.state() == 2 && view.isCentre(b)) {
                 own = b;
                 break;
             }
@@ -42,7 +40,7 @@ record Base(
         BuildingView enemy = null;
         double best = Double.POSITIVE_INFINITY;
         for (BuildingView b : view.enemyBuildings()) {
-            if (view.is(b.template(), CENTRE)) {
+            if (view.isCentre(b)) {
                 Footprint e = b.footprint();
                 double d = DetMath.length(e.anchorX() + e.spanX() / 2.0 - x, e.anchorZ() + e.spanZ() / 2.0 - z);
                 if (d < best) {

@@ -315,6 +315,16 @@ public final class BuildingStore {
         return changes;
     }
 
+    /** How many slots {@link #handleAt} may be asked: an allocation-free walk over the live buildings. */
+    public int capacity() {
+        return high;
+    }
+
+    /** The handle of the building in slot {@code k} (below {@link #capacity}), or {@link Handle#NONE} for a free one. */
+    public int handleAt(int k) {
+        return alive[k] ? Handle.of(BASE + k, generation[k]) : Handle.NONE;
+    }
+
     /** The live buildings' handles, by slot. */
     public int[] handles() {
         int n = 0;

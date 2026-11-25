@@ -38,7 +38,8 @@ final class TemplateSwap {
 
     /** Why {@code next} cannot replace the match's set, or null when it can. */
     static @Nullable String problem(MatchState state, TemplateSet next) {
-        String civ = FactionCivs.problem(state.config(), next); // a civilisation in use must survive the swap
+        String civ = FactionCivs.problem(
+                state.config(), next, state.catalogue()); // a civilisation in use must survive the swap
         if (civ != null) {
             return civ;
         }

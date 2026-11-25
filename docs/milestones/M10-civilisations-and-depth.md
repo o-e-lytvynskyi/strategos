@@ -154,6 +154,8 @@ view and the first Minecraft twist, day and night.
 | 11 | ART-03 (M7) names D-03 | Not M10's card: put to the owner (branch file "For the owner") |
 | 12 | Kit frame (T4) | Kits are written for yaw 270 (`first_skirmish`'s slot 0); a quarter turn maps `(dx, dz) → (−dz, dx)` and adds 1 to a building's rotation. Slot 1 (yaw 90) gets exactly its hand-mirrored offsets, but the kit turns its civic centre to rotation 2 where the written list has 0. Both slots play the written lists today, so nothing changes; a kit-played slot 1 shows its centre turned, which mirrors the map |
 | 13 | Kit resources (T4) | A kit's starting resources replace the slot's when the kit has any |
+| 15 | T5's shapes | A rule reference is `CivDef.Rule` (no separate `RuleRef`); systems reach a faction's rules by `s.civs().rules(f)`, not `MatchState.civRules()`; `PlacementRule` lives in `core.content` beside the pure `PlacementRules`, because `core.client` may not depend on `core.sim`; the load-time lint runs in the mod's `ServerTemplates` (`core.content` cannot see `core.sim.civ`); `PhaseRule` answers both `phase` and `reached(name)`, the default keeping today's exact-researched test; population, delivery and construction are placeholder ids in `RuleCatalogue.DEFAULT` until T6–T7 |
+| 16 | The centre class (T5, from T8) | `Placing`, `ClientPlacement` and `ai/Base` read the civilisation's `centreClass` in T5 with `DefeatRule`, so one civilisation never has two centre classes |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -569,7 +571,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T2 (2026-11-25)
 - [x] T3 (2026-11-25)
 - [x] T4 (2026-11-25)
-- [ ] T5
+- [x] T5 (2026-11-25)
 - [ ] T6
 - [ ] T7
 - [ ] T8

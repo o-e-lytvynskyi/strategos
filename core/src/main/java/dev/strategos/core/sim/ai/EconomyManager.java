@@ -55,7 +55,13 @@ final class EconomyManager implements AiModule {
             stocks.put(r, view.stock(r));
         }
         int[] gatherers = view.gatherers();
-        List<NodeView> everyNode = view.nodes();
+        List<NodeView> everyNode = new java.util.ArrayList<>();
+        for (NodeView n : view.nodes()) {
+            if (view.uses(
+                    n.resource())) { // the AI plays the rules it is given: no node of a resource its faction lacks
+                everyNode.add(n);
+            }
+        }
         int walker = scout(
                 view, budget, sink, everyNode, base,
                 gatherers); // AI-18: nodes in the dark are explored first, by the worker it returns

@@ -1,17 +1,14 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.FactionSlot;
-import dev.strategos.core.sim.build.BuildingStore;
 
 /**
  * The first victory rule (MATCH-01, M3 spec §1.6 row 18), each FINAL under {@link PlayRules.Victory#CIVIC_CENTRE}: a
- * faction that holds a finished civic centre is in play; one in play that holds none any more is defeated, as one that
+ * faction that holds a finished civic centre (its civilisation's {@code DefeatRule}) is in play; one in play that holds none any more is defeated, as one that
  * resigned is; once someone was defeated and at most one in play stands, the match ends, that one the winner. A centre
  * still a foundation or a site counts as none. The same tick its last centre falls, so well within 20 ticks.
  */
 final class VictoryCheck {
-    static final String CENTRE = "CivicCentre";
-
     private VictoryCheck() {}
 
     static void run(MatchState s) {
@@ -20,19 +17,11 @@ final class VictoryCheck {
             return;
         }
         int factions = s.config().factions();
-        long holding = 0;
-        BuildingStore b = s.buildings();
-        for (int handle : b.handles()) {
-            if (b.state(handle) == BuildingStore.COMPLETE
-                    && s.templates().byIndex(b.template(handle)).classes().contains(CENTRE)) {
-                holding |= 1L << b.faction(handle);
-            }
-        }
         boolean anyDefeated = false;
         int standing = 0;
         int last = Outcome.NONE;
         for (int f = 0; f < factions; f++) {
-            boolean holds = (holding & (1L << f)) != 0;
+            boolean holds = s.civs().rules(f).defeat().holds(s, f);
             if (holds) {
                 o.hold(f);
             }

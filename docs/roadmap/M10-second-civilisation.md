@@ -84,7 +84,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
      core's rules outside the built-in set and migrations (L0).
   5. The probe lives in the test fixtures only (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** CIV-01 · **Size:** L · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### CIV-02 · Civilisation 2: roster, bonuses and abilities
 - **Value:** A second people that plays differently, not just in another colour (P4).

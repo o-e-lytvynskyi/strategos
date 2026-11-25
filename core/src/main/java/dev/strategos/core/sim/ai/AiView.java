@@ -93,6 +93,16 @@ public final class AiView {
         return q.config().bounds();
     }
 
+    /** Whether building {@code b} is a centre of its owner: it has the class its owner's civilisation names (CIV-01). */
+    public boolean isCentre(BuildingView b) {
+        return is(b.template(), q.centreClass(new FactionSlot(b.faction())));
+    }
+
+    /** Whether its faction's civilisation uses resource {@code id}: it gathers none it does not (CIV-05). */
+    public boolean uses(String id) {
+        return q.usesResource(new FactionSlot(faction), id);
+    }
+
     /** The match's resources in order. */
     public List<String> resources() {
         List<String> out = new ArrayList<>();

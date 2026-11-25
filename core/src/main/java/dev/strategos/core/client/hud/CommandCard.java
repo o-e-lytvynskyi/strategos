@@ -261,7 +261,7 @@ public record CommandCard(Page page, List<Button> buttons) {
             }
             out.add(train);
         }
-        ClientFactionView view = new ClientFactionView(in.templates(), in.faction(), in.buildings());
+        ClientFactionView view = new ClientFactionView(in.templates(), in.faction(), in.buildings(), in.civ());
         for (TechDef tech : researches(in.templates(), b.template())) {
             if (slot >= SLOTS - 3) { // the bell, the all clear and demolish keep their cells
                 break;

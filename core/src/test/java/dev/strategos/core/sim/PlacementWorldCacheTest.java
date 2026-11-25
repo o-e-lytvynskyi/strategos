@@ -33,6 +33,7 @@ final class PlacementWorldCacheTest {
     private static @Nullable String fresh(MatchState s, UnitTemplate t, int x, int z, int faction) {
         var b = s.templates().blueprint(t.netIndex());
         var failed = PlacementRules.check(
+                        s.civs().rules(faction).placement(),
                         Placing.world(s, faction),
                         b,
                         Footprint.of(b, x, z, 0),

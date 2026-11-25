@@ -127,6 +127,15 @@ public interface MatchQueries {
         return List.of();
     }
 
+    /** {@code faction}'s phase ordinal, as its civilisation's phase rule tells it (CIV-05); 0 is Village. */
+    int phase(FactionSlot faction);
+
+    /** The class token of {@code faction}'s centres, from its civilisation (CIV-01). */
+    String centreClass(FactionSlot faction);
+
+    /** Whether {@code faction}'s civilisation uses resource {@code resource} (an id of the match's economy), CIV-05. */
+    boolean usesResource(FactionSlot faction, String resource);
+
     /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
     default @Nullable TechId techOf(int sourceId) {
         return null;

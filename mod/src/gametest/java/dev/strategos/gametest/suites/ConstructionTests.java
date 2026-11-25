@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 import dev.strategos.core.client.build.ClientPlacement;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.PlacementRule;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
@@ -144,7 +145,11 @@ public final class ConstructionTests {
                     Blueprint b =
                             Objects.requireNonNull(core.queries().templates().blueprint(index));
                     PlacementRules.World blind = ClientPlacement.world(
-                            core.queries().templates(), List.of(), 32, 32, new ClientPlacement.Columns() {
+                            core.queries().templates(),
+                            List.of(),
+                            32,
+                            32,
+                            new ClientPlacement.Columns() {
                                 @Override
                                 public double floor(int x, int z) {
                                     return Math.floor(h.getBounds().minY) + 1;
@@ -154,10 +159,11 @@ public final class ConstructionTests {
                                 public boolean node(int x, int z) {
                                     return false; // this client has not seen the log
                                 }
-                            });
+                            },
+                            f -> "CivicCentre");
                     PlacementRules.Params params = new PlacementRules.Params(false, 0, 0, true); // its own centre aside
                     check(
-                            PlacementRules.check(blind, b, Footprint.of(b, 18, 18, 0), 0, params)
+                            PlacementRules.check(PlacementRule.DEFAULT, blind, b, Footprint.of(b, 18, 18, 0), 0, params)
                                     .ok(),
                             "the client refused it too");
                     rt.submit(

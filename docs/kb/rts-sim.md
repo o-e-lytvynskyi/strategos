@@ -142,6 +142,15 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
 - The fix: return results in ascending index order through a bit mask (a `long[]` by index, a walk
   over the set bits). No sorting, and faster: a query over 1000 units 0.39 → 0.25 ms.
 
+## A for-each over a `List` in a hot path allocates its iterator
+
+- `for (CivId c : civs)` over an immutable list (`List.copyOf`, `List.of` with more than two
+  elements) builds an `Iterator` on every call; escape analysis does not always remove it. M10 T3's
+  hash guard did this inside `StateHasher.hash`, and `ShotBench.hashActive300` in `jmhCompare`
+  failed the allocation gate (32 B/op against 1). Use an index loop (`for (int i = 0; i < n; i++)`)
+  in anything a `@HotPath` kernel or the hash calls, and run `:core:jmh :core:jmhCompare` for any
+  task that touches the hash, even through a small helper.
+
 ## `-prof gc` counts JMH service threads too
 
 - The JMH service threads allocate about 7 KB/s, and `gc.alloc.rate.norm` spreads this over the

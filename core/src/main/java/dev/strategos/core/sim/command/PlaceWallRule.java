@@ -96,8 +96,13 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
                 continue;
             }
             Footprint at = Footprint.of(b, segment.x(), segment.z(), segment.rotation());
-            PlacementRules.Verdict verdict =
-                    PlacementRules.check(world, b, at, faction, Placing.params(state, template.netIndex(), faction));
+            PlacementRules.Verdict verdict = PlacementRules.check(
+                    state.civs().rules(faction).placement(),
+                    world,
+                    b,
+                    at,
+                    faction,
+                    Placing.params(state, template.netIndex(), faction));
             PlacementRules.Rule failed = verdict.failed();
             if (failed != null) {
                 refused++;

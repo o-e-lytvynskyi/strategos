@@ -124,6 +124,35 @@ class ShippedCivsTest {
                         Tuple.tuple("data/test/strategos/civs/torn.json", ""));
     }
 
+    @Test
+    void aCivilisationWithAnUnknownRuleIdOrBadParametersIsReportedWithItsFileAndPointer(@TempDir Path pack)
+            throws IOException {
+        Path file = pack.resolve("data/test/strategos/civs/odd.json");
+        Files.createDirectories(file.getParent());
+        Files.writeString(
+                file,
+                "{ \"roles\": { \"house\": \"strategos:building/house\" }, \"rules\": {"
+                        + " \"phase\": { \"id\": \"by_magic\" },"
+                        + " \"upkeep\": { \"id\": \"default\", \"params\": { \"x\": 1 } },"
+                        + " \"morale\": { \"id\": \"default\" } } }");
+
+        Pack read = read(resourceRoot(), pack);
+        ServerTemplates server = new ServerTemplates();
+        ServerTemplates.Outcome outcome =
+                server.load(read.raws, read.techs, read.civs, read.problems, REGISTRIES, List.of(), read.blueprints);
+
+        assertThat(outcome.accepted())
+                .as("a civilisation with an unknown rule never loads")
+                .isFalse();
+        assertThat(server.set().civ(new CivId("test:odd"))).isNull();
+        assertThat(outcome.problems())
+                .extracting(TemplateProblem::file, TemplateProblem::pointer)
+                .containsExactlyInAnyOrder(
+                        Tuple.tuple("data/test/strategos/civs/odd.json", "/rules/phase/id"),
+                        Tuple.tuple("data/test/strategos/civs/odd.json", "/rules/upkeep/params"),
+                        Tuple.tuple("data/test/strategos/civs/odd.json", "/rules/morale"));
+    }
+
     private static Path resourceRoot() {
         URL walker = ShippedCivsTest.class.getResource("/data/strategos/strategos/civs/default.json");
         assertThat(walker)
@@ -138,6 +167,31 @@ class ShippedCivsTest {
                     .getParent();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    private record Pack(
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<RawCiv> civs,
+            Map<String, Blueprint> blueprints,
+            List<TemplateProblem> problems) {}
+
+    private static Pack read(Path... roots) {
+        List<PathPackResources> packs = new ArrayList<>();
+        for (Path root : roots) {
+            packs.add(new PathPackResources(
+                    new PackLocationInfo("test", Component.literal("test"), PackSource.BUILT_IN, Optional.empty()),
+                    root));
+        }
+        try (MultiPackResourceManager resources =
+                new MultiPackResourceManager(PackType.SERVER_DATA, List.copyOf(packs))) {
+            TemplateFiles.Read read = new TemplateReloadListener().prepare(resources, null);
+            List<TemplateProblem> problems = new ArrayList<>(read.problems());
+            List<RawTemplate> raws = TemplateFiles.raws(read, JsonOps.INSTANCE, problems);
+            List<RawTech> techs = TemplateFiles.rawTechs(read, JsonOps.INSTANCE, problems);
+            List<RawCiv> civs = TemplateFiles.rawCivs(read, JsonOps.INSTANCE, problems);
+            return new Pack(raws, techs, civs, TemplateFiles.blueprints(read, problems), problems);
         }
     }
 

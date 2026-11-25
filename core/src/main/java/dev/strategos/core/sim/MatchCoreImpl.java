@@ -7,6 +7,7 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.sim.capture.CaptureSystem;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.combat.ShotSystem;
 import dev.strategos.core.sim.combat.TownArrows;
@@ -96,7 +97,18 @@ final class MatchCoreImpl implements MatchCore {
 
     static MatchCoreImpl create(
             MatchConfig config, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
-        MatchState state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
+        return create(config, templates, RuleCatalogue.DEFAULT, ports, checkpointEvery, maxJournalTicks);
+    }
+
+    static MatchCoreImpl create(
+            MatchConfig config,
+            TemplateSet templates,
+            RuleCatalogue catalogue,
+            CorePorts ports,
+            int checkpointEvery,
+            int maxJournalTicks) {
+        MatchState state =
+                new MatchState(config, templates, catalogue, new EntityStore(), MatchLog.forSim(config.id()));
         return new MatchCoreImpl(
                 state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks, List.of(), List.of());
     }
@@ -104,12 +116,17 @@ final class MatchCoreImpl implements MatchCore {
     static MatchCoreImpl restore(
             MatchSnapshot snapshot,
             TemplateSet templates,
+            RuleCatalogue catalogue,
             CorePorts ports,
             SliceSource slices,
             int checkpointEvery,
             int maxJournalTicks) {
         MatchState state = Snapshots.restore(
-                snapshot, templates, MatchLog.forSim(snapshot.config().id()), slices);
+                snapshot,
+                templates,
+                catalogue,
+                MatchLog.forSim(snapshot.config().id()),
+                slices);
         return new MatchCoreImpl(
                 state,
                 ports,

@@ -77,8 +77,8 @@ public record MatchConfig(
 
     /** Whether some faction plays a civilisation other than the default. */
     public boolean hasCustomCivs() {
-        for (CivId c : civs) {
-            if (!c.equals(CivId.DEFAULT)) {
+        for (int i = 0; i < civs.size(); i++) { // an index loop: no iterator per hash
+            if (!civs.get(i).equals(CivId.DEFAULT)) {
                 return true;
             }
         }

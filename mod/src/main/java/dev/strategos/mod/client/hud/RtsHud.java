@@ -34,6 +34,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.civ.ResourceRule;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -371,7 +372,8 @@ public final class RtsHud {
                 new ClientFactionView(
                         templates,
                         StrategosClient.model().faction(),
-                        StrategosClient.model().buildings()),
+                        StrategosClient.model().buildings(),
+                        StrategosClient.viewerCiv()),
                 own);
         overlays.update(
                 !selection.handles().isEmpty() || selection.building() != null,
@@ -385,7 +387,9 @@ public final class RtsHud {
             news.notices().population(faction.populationUsed(), faction.populationCap());
         }
         shownNotices = news.notices().shown(clientTicks);
-        resources = ResourceBar.of(faction, StrategosClient.resources(), income);
+        ResourceRule used = StrategosClient.viewerRules().resource();
+        int slot = faction == null ? 0 : faction.faction();
+        resources = ResourceBar.of(faction, StrategosClient.resources(), income, r -> used.uses(slot, r));
         segments = ResourceBarSegments.of(mc.font, layout().resourceBar(), resources);
         barHover = null;
         for (ResourceBarSegments.Segment s : segments) {

@@ -39,11 +39,16 @@ public final class Techs {
         return techs != null && techs.contains(tech.id().value());
     }
 
-    /**
-     * {@code faction}'s phase: the highest ordinal among the phase techs it has researched, 0 (Village) for none (spec
-     * row 19: Village is never researched, so a match without research keeps its hash).
-     */
+    /** {@code faction}'s phase, as its civilisation's phase rule tells it (CIV-05): by default the highest researched. */
     public static int phase(MatchState s, int faction) {
+        return s.civs().rules(faction).phase().phase(s, faction);
+    }
+
+    /**
+     * The phase rule's default: the highest ordinal among the phase techs {@code faction} has researched, 0 (Village)
+     * for none (spec row 19: Village is never researched, so a match without research keeps its hash).
+     */
+    public static int highestResearchedPhase(MatchState s, int faction) {
         int phase = 0;
         for (TechId id : s.progress().of(faction)) {
             TechDef t = s.templates().tech(id);

@@ -56,7 +56,12 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         }
         Footprint at = Footprint.of(b, place.x(), place.z(), place.rotation());
         PlacementRules.Verdict verdict = PlacementRules.check(
-                Placing.world(state, faction), b, at, faction, Placing.params(state, template.netIndex(), faction));
+                state.civs().rules(faction).placement(),
+                Placing.world(state, faction),
+                b,
+                at,
+                faction,
+                Placing.params(state, template.netIndex(), faction));
         PlacementRules.Rule failed = verdict.failed();
         long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
         if (failed == PlacementRules.Rule.AFFORDABLE) {

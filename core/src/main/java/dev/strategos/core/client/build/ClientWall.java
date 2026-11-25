@@ -2,6 +2,7 @@ package dev.strategos.core.client.build;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.PlacementRule;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -45,9 +46,11 @@ public final class ClientWall {
      * The preview of the run from ({@code x1}, {@code z1}) to ({@code x2}, {@code z2}) of {@code wall}'s segments, the
      * {@code gates} indices of its gate template's; empty when {@code wall} is no wall, or the line is too long for one
      * command, or a gate is asked for and {@code wall} has none. {@code stock} (null: it can pay) is the faction's per
-     * resource of {@code resources}, in thousandths.
+     * resource of {@code resources}, in thousandths. Each segment is judged by {@code rule}, the faction's civilisation's
+     * placement rule (CIV-05), its civic centres by {@code centreClass}.
      */
     public static List<Segment> preview(
+            PlacementRule rule,
             TemplateSet templates,
             int wall,
             int x1,
@@ -58,7 +61,8 @@ public final class ClientWall {
             PlacementRules.World world,
             int faction,
             List<String> resources,
-            @Nullable List<Long> stock) {
+            @Nullable List<Long> stock,
+            String centreClass) {
         int length = segmentLength(templates, wall);
         int gate = gateOf(templates, wall);
         Blueprint wallBlueprint = length > 0 ? templates.blueprint(wall) : null;
@@ -76,8 +80,8 @@ public final class ClientWall {
                 return List.of();
             }
             Footprint at = Footprint.of(b, s.x(), s.z(), s.rotation());
-            PlacementRules.Params base = ClientPlacement.params(templates, template, resources, left);
-            PlacementRules.Verdict verdict = PlacementRules.check(world, b, at, faction, base);
+            PlacementRules.Params base = ClientPlacement.params(templates, template, resources, left, centreClass);
+            PlacementRules.Verdict verdict = PlacementRules.check(rule, world, b, at, faction, base);
             if (verdict.ok() && left != null) {
                 for (int r = 0; r < resources.size() && r < left.size(); r++) {
                     long cost = Math.round(

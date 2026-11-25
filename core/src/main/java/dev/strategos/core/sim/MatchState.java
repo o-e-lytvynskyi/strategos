@@ -9,6 +9,7 @@ import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.civ.FactionCivs;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -95,6 +96,7 @@ public final class MatchState {
     private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private final MatchTerrain terrain;
+    private final RuleCatalogue catalogue;
     private FactionCivs civs;
     private final MobilityCache mobilityCache = new MobilityCache(this);
     private final NodeStore nodes = new NodeStore();
@@ -108,8 +110,13 @@ public final class MatchState {
     private final dev.strategos.core.diag.SystemTimes systemTimes = new dev.strategos.core.diag.SystemTimes();
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
+        this(config, templates, RuleCatalogue.DEFAULT, entities, log);
+    }
+
+    MatchState(MatchConfig config, TemplateSet templates, RuleCatalogue catalogue, EntityStore entities, MatchLog log) {
         this.config = config;
-        this.civs = FactionCivs.bind(config, templates); // refuses a civilisation the set lacks
+        this.catalogue = catalogue;
+        this.civs = FactionCivs.bind(config, templates, catalogue); // refuses a civilisation or a rule the set lacks
         this.allies = Allies.sameFaction(config.factions());
         this.play = new PlayState(this, config);
         this.templates = templates;
@@ -598,6 +605,21 @@ public final class MatchState {
         return templates;
     }
 
+    /**
+     * Whether unit {@code i} may gather {@code resource}'s {@code subtype}: it can (a rate and a capacity) and its
+     * faction's civilisation uses the resource (CIV-05). The one test every gather order, rally and AI choice makes.
+     */
+    public boolean canGather(int i, int resource, int subtype) {
+        int faction = identity.faction(i);
+        return gatherRates.gathers(stats, i, resource, subtype)
+                && civs.rules(faction).resource().uses(faction, resource);
+    }
+
+    /** The rule variants this match's civilisations may select; the same through restore and replay (CIV-05). */
+    public RuleCatalogue catalogue() {
+        return catalogue;
+    }
+
     /** Each faction's civilisation bound to the set (CIV-01). */
     public FactionCivs civs() {
         return civs;
@@ -738,7 +760,8 @@ public final class MatchState {
 
     void setTemplates(TemplateSet set) {
         templates = set;
-        civs = FactionCivs.bind(config, set); // TemplateSwap checked that the set has every civilisation in use
+        civs = FactionCivs.bind(
+                config, set, catalogue); // TemplateSwap checked that the set has every civilisation in use
     }
 
     /** One guard for both the server reload and INGEST, before any template-dependent state changes. */

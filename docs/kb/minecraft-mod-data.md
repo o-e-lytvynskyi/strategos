@@ -78,6 +78,17 @@ in a nested object) and pass it to `group` as one field through `forGetter(r -> 
 `apply` then gets a lambda of 16 arguments and unpacks the pair itself. Old saves are read if
 both keys are `optionalFieldOf`.
 
+## Gson's getters throw more than `IllegalArgumentException` on a wrong shape
+
+- `JsonElement.getAsInt()` on a string `"x"` throws `NumberFormatException`; on an object or an array
+  `UnsupportedOperationException` or `IllegalStateException`; a cast to `JsonObject` throws
+  `ClassCastException`. A content lint that catches only `IllegalArgumentException` crashes the
+  reload on a bad data pack instead of reporting it (M10 T5's rule parameters).
+- Read data through small helpers that check the shape first and throw the lint's own exception with
+  the JSON pointer (`RuleParams.integer`, `string`, `bool`), and wrap any decoder in a
+  `catch (RuntimeException)` that turns it into a lint line. Test with `"x"`, `{}`, `[1]`, `1.5`,
+  `true` and `null`.
+
 ## A load after which the match goes differently: how to look for the cause
 
 The hash at the load tick matches, but a tick or two later it diverges — so something that is

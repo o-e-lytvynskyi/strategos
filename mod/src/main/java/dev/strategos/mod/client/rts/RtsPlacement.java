@@ -160,12 +160,26 @@ final class RtsPlacement {
         }
         checkedAt = ticks;
         PlacementRules.World world = ClientPlacement.world(
-                templates, StrategosClient.model().buildings(), join.sizeX(), join.sizeZ(), new Columns(level, join));
+                templates,
+                StrategosClient.model().buildings(),
+                join.sizeX(),
+                join.sizeZ(),
+                new Columns(level, join),
+                StrategosClient::centreClass);
         FactionState faction = StrategosClient.model().faction();
         PlacementRules.Params params = ClientPlacement.params(
-                templates, armed, StrategosClient.resources(), faction == null ? null : faction.stock());
-        PlacementRules.Verdict verdict =
-                PlacementRules.check(world, b, at, join.slot().value(), params);
+                templates,
+                armed,
+                StrategosClient.resources(),
+                faction == null ? null : faction.stock(),
+                StrategosClient.centreClass(join.slot().value()));
+        PlacementRules.Verdict verdict = PlacementRules.check(
+                StrategosClient.viewerRules().placement(),
+                world,
+                b,
+                at,
+                join.slot().value(),
+                params);
         double stand = Double.NEGATIVE_INFINITY;
         for (int cell : verdict.cells()) {
             double f = world.floor(cell >>> 16, cell & 0xFFFF);
@@ -223,9 +237,15 @@ final class RtsPlacement {
         wallZ2 = z2;
         int length = ClientWall.segmentLength(templates, armed);
         PlacementRules.World world = ClientPlacement.world(
-                templates, StrategosClient.model().buildings(), join.sizeX(), join.sizeZ(), new Columns(level, join));
+                templates,
+                StrategosClient.model().buildings(),
+                join.sizeX(),
+                join.sizeZ(),
+                new Columns(level, join),
+                StrategosClient::centreClass);
         FactionState faction = StrategosClient.model().faction();
         wall = ClientWall.preview(
+                StrategosClient.viewerRules().placement(),
                 templates,
                 armed,
                 x1,
@@ -236,7 +256,8 @@ final class RtsPlacement {
                 world,
                 join.slot().value(),
                 StrategosClient.resources(),
-                faction == null ? null : faction.stock());
+                faction == null ? null : faction.stock(),
+                StrategosClient.centreClass(join.slot().value()));
     }
 
     /** The gate indices of the line: its middle segment while the gate key is on and the wall has a gate template. */

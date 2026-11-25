@@ -2,6 +2,7 @@ package dev.strategos.core.sim.civ;
 
 import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.TechDef;
+import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CivId;
@@ -10,6 +11,7 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.MatchConfig;
 import java.util.BitSet;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -23,11 +25,13 @@ public final class FactionCivs {
     private final CivDef[] defs;
     private final @Nullable BitSet[] templates; // null = every template
     private final @Nullable BitSet[] techs; // null = every technology
+    private final CivRules[] rules;
 
-    private FactionCivs(CivDef[] defs, @Nullable BitSet[] templates, @Nullable BitSet[] techs) {
+    private FactionCivs(CivDef[] defs, @Nullable BitSet[] templates, @Nullable BitSet[] techs, CivRules[] rules) {
         this.defs = defs;
         this.templates = templates;
         this.techs = techs;
+        this.rules = rules;
     }
 
     /**
@@ -35,6 +39,11 @@ public final class FactionCivs {
      * lacks, or an empty list over a set that has civilisations but not {@link CivId#DEFAULT}.
      */
     public static @Nullable String problem(MatchConfig config, TemplateSet set) {
+        return problem(config, set, RuleCatalogue.DEFAULT);
+    }
+
+    /** As {@link #problem(MatchConfig, TemplateSet)}, and a rule {@code catalogue} that cannot make a faction's rules. */
+    public static @Nullable String problem(MatchConfig config, TemplateSet set, RuleCatalogue catalogue) {
         for (int f = 0; f < config.factions(); f++) {
             CivId id = config.civ(f);
             if (set.civ(id) == null) {
@@ -44,12 +53,27 @@ public final class FactionCivs {
                         : "faction " + f + " plays civilisation " + id + ", which the template set lacks";
             }
         }
+        for (int f = 0; f < config.factions(); f++) {
+            CivDef def = java.util.Objects.requireNonNull(set.civ(config.civ(f)));
+            List<TemplateProblem> rules = catalogue.problems(def);
+            if (!rules.isEmpty()) {
+                return "faction " + f + "'s civilisation " + def.id() + ": " + rules.get(0);
+            }
+        }
         return null;
     }
 
-    /** Binds each faction of {@code config} to its civilisation in {@code set}; throws {@link CivBindException} when {@link #problem} is set. */
+    /** As {@link #bind(MatchConfig, TemplateSet, RuleCatalogue)} with the core's {@link RuleCatalogue#DEFAULT}. */
     public static FactionCivs bind(MatchConfig config, TemplateSet set) {
-        String problem = problem(config, set);
+        return bind(config, set, RuleCatalogue.DEFAULT);
+    }
+
+    /**
+     * Binds each faction of {@code config} to its civilisation in {@code set}, its rules made by {@code catalogue};
+     * throws {@link CivBindException} when {@link #problem} is set.
+     */
+    public static FactionCivs bind(MatchConfig config, TemplateSet set, RuleCatalogue catalogue) {
+        String problem = problem(config, set, catalogue);
         if (problem != null) {
             throw new CivBindException(problem);
         }
@@ -57,9 +81,11 @@ public final class FactionCivs {
         CivDef[] defs = new CivDef[n];
         @Nullable BitSet[] templates = new BitSet[n];
         @Nullable BitSet[] techs = new BitSet[n];
+        CivRules[] rules = new CivRules[n];
         for (int f = 0; f < n; f++) {
             CivDef def = java.util.Objects.requireNonNull(set.civ(config.civ(f))); // checked by problem()
             defs[f] = def;
+            rules[f] = catalogue.resolve(def);
             CivDef.Roster roster = def.roster();
             if (roster.templates() != null) {
                 BitSet bits = new BitSet();
@@ -82,12 +108,26 @@ public final class FactionCivs {
                 techs[f] = bits;
             }
         }
-        return new FactionCivs(defs, templates, techs);
+        return new FactionCivs(defs, templates, techs, rules);
     }
 
     /** Faction {@code faction}'s civilisation; null for a faction outside the match. */
     public @Nullable CivDef of(int faction) {
         return faction >= 0 && faction < defs.length ? defs[faction] : null;
+    }
+
+    /**
+     * The class token whose buildings are {@code faction}'s centres: its civilisation's {@code centreClass}, one source
+     * for defeat, placement and the AI. {@link CivDef#DEFAULT_CENTRE_CLASS} for a faction outside the match.
+     */
+    public String centreClass(int faction) {
+        CivDef def = of(faction);
+        return def == null ? CivDef.DEFAULT_CENTRE_CLASS : def.centreClass();
+    }
+
+    /** Faction {@code faction}'s rule seams; every default for a faction outside the match. */
+    public CivRules rules(int faction) {
+        return faction >= 0 && faction < rules.length ? rules[faction] : CivRules.DEFAULTS;
     }
 
     /** Whether {@code faction}'s roster has the template at {@code netIndex}. */

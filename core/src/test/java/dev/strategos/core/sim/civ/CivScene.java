@@ -15,9 +15,12 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.KernelAccess;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
+import dev.strategos.core.testkit.VoxelWorld;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +28,7 @@ import java.util.List;
 final class CivScene {
     static final CivId LEAN = new CivId("t:lean");
     static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
+    static final TemplateId HOUSE = new TemplateId("strategos:building/house");
     static final TemplateId STOREHOUSE = new TemplateId("strategos:building/storehouse");
     static final TemplateId WORKER = new TemplateId("strategos:unit/worker");
     static final TemplateId FARMSTEAD = new TemplateId("strategos:building/farmstead");
@@ -55,6 +59,23 @@ final class CivScene {
         civ.add("roster", roster);
         civ.add("bonuses", JsonParser.parseString(bonuses));
         return with(civ);
+    }
+
+    /** The built-in templates with the default civilisation written as {@code json} (its rules, say), no other. */
+    static TemplateSet withDefault(JsonObject json) {
+        TemplateSet builtin = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : builtin.all()) {
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+        }
+        List<TemplateCompiler.TechFlat> techs =
+                builtin.techs().stream().map(TemplateCompiler.TechFlat::of).toList();
+        TemplateCompiler.Result r =
+                TemplateCompiler.fromFlattened(flats, techs, List.of(new RawCiv(CivId.DEFAULT, "default.json", json)));
+        if (!r.problems().isEmpty()) {
+            throw new AssertionError(r.problems().toString());
+        }
+        return r.set();
     }
 
     /** The default beside a civilisation {@link #LEAN} of {@code json}. */
@@ -95,14 +116,31 @@ final class CivScene {
 
     /** A 64 x 64 match of two factions with a civic centre each, at (2, 2) and (50, 50), and stock to spend. */
     static SimHarness match(TemplateSet set, List<CivId> civs) {
+        return match(
+                set,
+                civs,
+                RuleCatalogue.DEFAULT,
+                MatchRules.DEFAULTS.withPlay(new PlayRules(PlayRules.Victory.NONE, false, true, false)));
+    }
+
+    /** As {@link #match(TemplateSet, List)}, the rules drawn from {@code catalogue} and the match run by {@code rules}. */
+    static SimHarness match(TemplateSet set, List<CivId> civs, RuleCatalogue catalogue, MatchRules rules) {
+        return match(set, civs, catalogue, rules, VoxelFixtures.flat(64, 64, 32, 1));
+    }
+
+    /** As above, over {@code world} (64 x 64, 32 high). */
+    static SimHarness match(
+            TemplateSet set, List<CivId> civs, RuleCatalogue catalogue, MatchRules rules, VoxelWorld world) {
         SimHarness h = SimHarness.builder()
                 .templates(set)
+                .catalogue(catalogue)
+                .rules(rules)
                 .size(64, 64)
                 .yBand(0, 31, 1)
                 .factions(2)
                 .civs(civs)
                 .build();
-        h.publishAll(VoxelFixtures.flat(64, 64, 32, 1));
+        h.publishAll(world);
         for (int f = 0; f < 2; f++) {
             h.submit(
                     PlayerSlot.ADMIN,

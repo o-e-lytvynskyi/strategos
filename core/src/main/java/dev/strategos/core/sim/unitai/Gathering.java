@@ -308,7 +308,7 @@ final class Gathering {
         if (node < 1 || node > nodes.count() || nodes.exhausted(node)) {
             return false;
         }
-        return s.gatherRates().gathers(s.stats(), i, nodes.resource(node), nodes.subtype(node))
+        return s.canGather(i, nodes.resource(node), nodes.subtype(node))
                 && nodes.hasRoom(node, handle, standable(s, node));
     }
 

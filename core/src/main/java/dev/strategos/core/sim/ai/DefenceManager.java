@@ -159,8 +159,8 @@ final class DefenceManager implements AiModule {
         for (BuildingView b : view.enemyBuildings()) {
             double d = DetMath.length(
                     b.footprint().anchorX() - base.x(), b.footprint().anchorZ() - base.z());
-            if (d <= NEAR + 16 && (view.is(b.template(), Base.CENTRE) ? d - 1_000 : d) < best) {
-                best = view.is(b.template(), Base.CENTRE) ? d - 1_000 : d;
+            if (d <= NEAR + 16 && (view.isCentre(b) ? d - 1_000 : d) < best) {
+                best = view.isCentre(b) ? d - 1_000 : d;
                 civic = b;
             }
         }

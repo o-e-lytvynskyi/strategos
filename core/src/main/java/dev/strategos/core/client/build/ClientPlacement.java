@@ -22,8 +22,6 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ClientPlacement {
     /** The class token of a civic centre, as the server's {@code Placing}. */
-    public static final String CIVIC_CENTRE = "CivicCentre";
-
     private ClientPlacement() {}
 
     /** What a client reads of a column from its loaded blocks. */
@@ -58,9 +56,17 @@ public final class ClientPlacement {
                 Math.floorDiv(x, ShroudExtract.CELL_BLOCKS), Math.floorDiv(z, ShroudExtract.CELL_BLOCKS));
     }
 
-    /** The match of {@code sizeX} × {@code sizeZ} as the rules read it on a client. */
+    /**
+     * The match of {@code sizeX} × {@code sizeZ} as the rules read it on a client; {@code centreClass} gives the class
+     * token whose buildings are a faction's centres, from its civilisation (CIV-01).
+     */
     public static PlacementRules.World world(
-            TemplateSet templates, List<BuildingState.Entry> buildings, int sizeX, int sizeZ, Columns columns) {
+            TemplateSet templates,
+            List<BuildingState.Entry> buildings,
+            int sizeX,
+            int sizeZ,
+            Columns columns,
+            java.util.function.IntFunction<String> centreClass) {
         BitSet taken = new BitSet(sizeX * sizeZ);
         List<PlacementRules.Centre> centres = new ArrayList<>();
         for (BuildingState.Entry e : buildings) {
@@ -77,7 +83,7 @@ public final class ClientPlacement {
                 }
             }
             if (templates.has(e.template())
-                    && templates.byIndex(e.template()).classes().contains(CIVIC_CENTRE)) {
+                    && templates.byIndex(e.template()).classes().contains(centreClass.apply(e.faction()))) {
                 centres.add(new PlacementRules.Centre(at, e.faction()));
             }
         }
@@ -126,7 +132,11 @@ public final class ClientPlacement {
      * client with no stock yet predicts it can pay.
      */
     public static PlacementRules.Params params(
-            TemplateSet templates, int template, List<String> resources, @Nullable List<Long> stock) {
+            TemplateSet templates,
+            int template,
+            List<String> resources,
+            @Nullable List<Long> stock,
+            String centreClass) {
         UnitTemplate t = templates.byIndex(template);
         boolean affordable = true;
         if (stock != null) {
@@ -138,7 +148,7 @@ public final class ClientPlacement {
             }
         }
         return new PlacementRules.Params(
-                t.classes().contains(CIVIC_CENTRE),
+                t.classes().contains(centreClass),
                 value(templates, template, "Placement/spacing"),
                 (int) Math.round(value(templates, template, "Placement/territory")),
                 affordable);

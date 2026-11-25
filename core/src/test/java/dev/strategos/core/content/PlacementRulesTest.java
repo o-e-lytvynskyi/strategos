@@ -180,7 +180,7 @@ class PlacementRulesTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("rows")
     void theRules(String name, PlacementRules.World w, Blueprint b, int x, int z, Params p, @Nullable Rule expected) {
-        Verdict v = PlacementRules.check(w, b, Footprint.of(b, x, z, 0), 0, p);
+        Verdict v = PlacementRules.check(PlacementRule.DEFAULT, w, b, Footprint.of(b, x, z, 0), 0, p);
         assertThat(v.failed()).isEqualTo(expected);
         assertThat(v.ok()).isEqualTo(expected == null);
     }
@@ -188,14 +188,16 @@ class PlacementRulesTest {
     @Test
     void columnRulesAreToldPerCellAndTheOthersOnEvery() {
         World taken = new World((x, z) -> 10, (x, z) -> x == 30 && z == 10, (x, z) -> true, List.of(OWN));
-        Verdict v = PlacementRules.check(taken, HOUSE, Footprint.of(HOUSE, 30, 10, 0), 0, HOUSE_PARAMS);
+        Verdict v = PlacementRules.check(
+                PlacementRule.DEFAULT, taken, HOUSE, Footprint.of(HOUSE, 30, 10, 0), 0, HOUSE_PARAMS);
         assertThat(v.cells()).hasSize(25);
         for (int k = 0; k < v.cells().size(); k++) {
             int cell = v.cells().get(k);
             boolean corner = cell == ((30 << 16) | 10);
             assertThat(v.perCell().get(k)).as("cell %d", k).isEqualTo(corner ? Rule.FREE : null);
         }
-        Verdict far = PlacementRules.check(flat(OWN), HOUSE, Footprint.of(HOUSE, 70, 10, 0), 0, HOUSE_PARAMS);
+        Verdict far = PlacementRules.check(
+                PlacementRule.DEFAULT, flat(OWN), HOUSE, Footprint.of(HOUSE, 70, 10, 0), 0, HOUSE_PARAMS);
         assertThat(far.perCell()).containsOnly(Rule.TERRITORY);
     }
 
@@ -203,11 +205,23 @@ class PlacementRulesTest {
     void aTurnedFootprintIsCheckedWhereItLies() {
         Blueprint barracks = PlaceholderBlueprints.barracks(); // 9 x 7
         World eastTaken = new World((x, z) -> 10, (x, z) -> x == 37 && z == 10, (x, z) -> true, List.of(OWN));
-        assertThat(PlacementRules.check(eastTaken, barracks, Footprint.of(barracks, 30, 10, 0), 0, HOUSE_PARAMS)
+        assertThat(PlacementRules.check(
+                                PlacementRule.DEFAULT,
+                                eastTaken,
+                                barracks,
+                                Footprint.of(barracks, 30, 10, 0),
+                                0,
+                                HOUSE_PARAMS)
                         .failed())
                 .as("unturned, 9 along X: it reaches x 38")
                 .isEqualTo(Rule.FREE);
-        assertThat(PlacementRules.check(eastTaken, barracks, Footprint.of(barracks, 30, 10, 1), 0, HOUSE_PARAMS)
+        assertThat(PlacementRules.check(
+                                PlacementRule.DEFAULT,
+                                eastTaken,
+                                barracks,
+                                Footprint.of(barracks, 30, 10, 1),
+                                0,
+                                HOUSE_PARAMS)
                         .failed())
                 .as("turned, 7 along X: it stops at x 36")
                 .isNull();

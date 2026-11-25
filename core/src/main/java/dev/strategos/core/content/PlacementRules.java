@@ -113,8 +113,14 @@ public final class PlacementRules {
 
     private PlacementRules() {}
 
-    /** The verdict for blueprint {@code b} at {@code at} for {@code faction}, as {@code params} asks. */
-    public static Verdict check(World world, Blueprint b, Footprint at, int faction, Params params) {
+    /** The verdict of {@code rule}, a civilisation's placement rule (CIV-05), for blueprint {@code b} at {@code at}. */
+    public static Verdict check(
+            PlacementRule rule, World world, Blueprint b, Footprint at, int faction, Params params) {
+        return rule.check(world, b, at, faction, params);
+    }
+
+    /** Today's checks, the placement seam's default ({@link PlacementRule#DEFAULT}). */
+    public static Verdict standard(World world, Blueprint b, Footprint at, int faction, Params params) {
         if (at.anchorX() < 0 || at.anchorZ() < 0) {
             return new Verdict(Rule.INSIDE, List.of(), List.of()); // columns are packed unsigned: none to tell
         }

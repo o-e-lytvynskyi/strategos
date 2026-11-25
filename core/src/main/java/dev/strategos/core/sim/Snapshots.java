@@ -9,6 +9,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -150,12 +151,18 @@ final class Snapshots {
      * stays unpublished with its slice hash known, and a slice that does not hash to its reference throws.
      */
     static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log, SliceSource slices) {
+        return restore(snapshot, templates, RuleCatalogue.DEFAULT, log, slices);
+    }
+
+    /** As {@link #restore(MatchSnapshot, TemplateSet, MatchLog, SliceSource)}, the civilisations' rules made by {@code catalogue}. */
+    static MatchState restore(
+            MatchSnapshot snapshot, TemplateSet templates, RuleCatalogue catalogue, MatchLog log, SliceSource slices) {
         int[] alive = new int[snapshot.units().size()];
         for (int i = 0; i < alive.length; i++) {
             alive[i] = snapshot.units().get(i).handle();
         }
         EntityStore entities = EntityStore.restore(snapshot.slots(), alive);
-        MatchState state = new MatchState(snapshot.config(), templates, entities, log);
+        MatchState state = new MatchState(snapshot.config(), templates, catalogue, entities, log);
         state.setTick(snapshot.tick());
         state.setNextGroup(snapshot.nextGroup());
         state.progress().restore(snapshot.play().progress());

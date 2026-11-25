@@ -11,6 +11,8 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.shared.CivId;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.civ.CivRules;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
@@ -64,7 +66,9 @@ public final class StrategosClient {
     private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
     private static final BorderEcho BORDER_ECHO = new BorderEcho();
     private static volatile @Nullable MatchJoin match;
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(StrategosClient.class);
     private static volatile List<String> resources = List.of();
+    private static volatile @Nullable RulesCache rules;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
 
@@ -183,6 +187,28 @@ public final class StrategosClient {
     public static @Nullable CivDef viewerCiv() {
         FactionState f = MODEL.faction();
         return civ(f == null ? 0 : f.faction());
+    }
+
+    /**
+     * The viewer's civilisation's rule seams, made by the core's catalogue (CIV-05): the placement preview and the
+     * resource bar run the same rules as the server. Cached for the civilisation it was made from.
+     */
+    public static CivRules viewerRules() {
+        CivDef civ = viewerCiv();
+        RulesCache cached = rules;
+        if (cached == null || !java.util.Objects.equals(cached.civ(), civ)) {
+            cached = new RulesCache(civ, ViewerRules.resolve(RuleCatalogue.DEFAULT, civ, LOG::warn));
+            rules = cached;
+        }
+        return cached.rules();
+    }
+
+    private record RulesCache(@Nullable CivDef civ, CivRules rules) {}
+
+    /** The class token of faction {@code faction}'s centres, from its civilisation (CIV-01). */
+    public static String centreClass(int faction) {
+        CivDef civ = civ(faction);
+        return civ == null ? CivDef.DEFAULT_CENTRE_CLASS : civ.centreClass();
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */

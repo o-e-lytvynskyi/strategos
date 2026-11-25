@@ -1,5 +1,6 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.ClassFilter;
 import dev.strategos.core.content.FactionView;
 import dev.strategos.core.content.TechDef;
@@ -21,12 +22,22 @@ public final class ClientFactionView implements FactionView {
     private final TemplateSet templates;
     private final @Nullable FactionState faction;
     private final List<BuildingState.Entry> buildings;
+    private final boolean phaseByRule;
 
+    /**
+     * {@code civ} is the faction's civilisation, null when the set lacks it: a civilisation whose phase rule is not the
+     * default tells the phase through the replicated {@code faction.phase()}, as the server's rule does.
+     */
     public ClientFactionView(
-            TemplateSet templates, @Nullable FactionState faction, List<BuildingState.Entry> buildings) {
+            TemplateSet templates,
+            @Nullable FactionState faction,
+            List<BuildingState.Entry> buildings,
+            @Nullable CivDef civ) {
         this.templates = templates;
         this.faction = faction;
         this.buildings = List.copyOf(buildings);
+        CivDef.Rule rule = civ == null ? null : civ.rules().get("phase");
+        this.phaseByRule = rule != null && !"default".equals(rule.id());
     }
 
     @Override
@@ -41,7 +52,13 @@ public final class ClientFactionView implements FactionView {
             return true;
         }
         try {
-            return researched(new TechId("strategos:phase_" + phase));
+            TechId id = new TechId("strategos:phase_" + phase);
+            if (!phaseByRule) {
+                return researched(id); // the default rule: today's answer
+            }
+            TechDef def =
+                    templates.tech(id); // as PhaseRule's variant default: the phase reaches the named one's ordinal
+            return def != null && def.isPhase() && faction != null && faction.phase() >= def.ordinal();
         } catch (IllegalArgumentException e) {
             return false;
         }

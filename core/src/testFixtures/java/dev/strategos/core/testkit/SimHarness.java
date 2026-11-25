@@ -36,6 +36,7 @@ import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitStateChanged;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.core.sim.nav.DeliveryMode;
@@ -70,8 +71,11 @@ public final class SimHarness implements ScenarioContext {
     private List<String> violations = List.of();
     private int clientSeq;
 
-    private SimHarness(MatchCore core) {
+    private final RuleCatalogue catalogue;
+
+    private SimHarness(MatchCore core, RuleCatalogue catalogue) {
         this.core = core;
+        this.catalogue = catalogue;
         this.seed = core.queries().config().seed();
     }
 
@@ -89,7 +93,14 @@ public final class SimHarness implements ScenarioContext {
 
     /** As {@link #restore(MatchSnapshot, TemplateSet)}, the snapshot's terrain pages rebuilt from {@code slices}. */
     public static SimHarness restore(MatchSnapshot snapshot, TemplateSet templates, SliceSource slices) {
-        SimHarness h = new SimHarness(MatchCore.restore(snapshot, templates, CorePorts.of(new FixedClock(0)), slices));
+        return restore(snapshot, templates, RuleCatalogue.DEFAULT, slices);
+    }
+
+    /** As {@link #restore(MatchSnapshot, TemplateSet, SliceSource)}, the civilisations' rules drawn from {@code catalogue}. */
+    public static SimHarness restore(
+            MatchSnapshot snapshot, TemplateSet templates, RuleCatalogue catalogue, SliceSource slices) {
+        SimHarness h = new SimHarness(
+                MatchCore.restore(snapshot, templates, catalogue, CorePorts.of(new FixedClock(0)), slices), catalogue);
         for (UnitRecord unit : snapshot.units()) {
             h.bodies.place(unit.handle(), unit.x(), unit.y(), unit.z(), unit.yaw(), snapshot.tick());
         }
@@ -281,7 +292,7 @@ public final class SimHarness implements ScenarioContext {
 
     /** Replays this match's journal from its start snapshot. */
     public ReplayResult replay() {
-        return ReplayDriver.replay(core.journal(), core.queries().templates());
+        return ReplayDriver.replay(core.journal(), core.queries().templates(), catalogue, JobExecutor.inline());
     }
 
     /** What the last invariant check found broken; empty before the first step. */
@@ -319,6 +330,7 @@ public final class SimHarness implements ScenarioContext {
         private List<StartSlot> starts = List.of();
         private List<CivId> civs = List.of();
         private JournalSink journal = JournalSink.MEMORY;
+        private RuleCatalogue catalogue = RuleCatalogue.DEFAULT;
 
         private Builder() {}
 
@@ -396,9 +408,17 @@ public final class SimHarness implements ScenarioContext {
             return this;
         }
 
+        /** The rule variants the civilisations may select; a test's wider catalogue. Replay and restore reuse it. */
+        public Builder catalogue(RuleCatalogue catalogue) {
+            this.catalogue = catalogue;
+            return this;
+        }
+
         public SimHarness build() {
             MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules, starts, civs);
-            return new SimHarness(MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, journal)));
+            return new SimHarness(
+                    MatchCore.create(config, templates, catalogue, new CorePorts(metrics, clock, jobs, journal)),
+                    catalogue);
         }
     }
 }
