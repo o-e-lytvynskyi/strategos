@@ -6,7 +6,7 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 25 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 26 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
 - **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. UI-15 human two-client acceptance is T25. Tests, builds and client runs stay cloud-only; optional T24 stays in scope.
 
@@ -17,7 +17,7 @@
 - **T17 complete:** S11 cloud measurement 45062182584 verified all four 60-second scenes and four peers; the highest per-peer gameplay mean was 34,341.80 B/s under the 102,400 B/s limit. T18 confirms the native packet accounting and keeps tier 4 in reserve.
 - **T18 complete:** The dedicated server and two native clients measured all four S11 scenes. Eight peer means pass E, up to 62,639.93 B/s. Pan travelled 39.2 and 39.8 blocks/game-second. Tier 4 stays in reserve.
 - **T20 complete:** T20 adds the 24,000-tick four-faction measurement, 2× stress and existing path-latency checks. Diagnostics 45064656511 and 45068257346 exposed workload underfill. Exact-census PERF-10 45088024574 and paired JMH 45088571229 passed on bd23adc2. The AMD EPYC 7763 hosted runner passed the A–E, 2× stress, workload and path-latency checks. Host C p95 was 6.748 ms normal and 10.505 ms stress. The largest E mean was 6,771 B/s, with order latency p95 of three ticks. Client-profile Verify 45088028364 passes 3,096 cases on that commit. The owner accepted this run on 2026-11-25. See the [reference reports](../../perf/m7/README.md).
-- **T21 in progress:** T21 adds the recipient/reconnect inventory. Canonical lobby 45065058405 selects Roman on production transport with seven zero-diff frames and seven rejected controls. The actual Sodium co-op scenario 45064693729 passes with eight inspected frames. Server 45064683957 passes 3,095 cases, client 45065907954 passes 3,096, and full S 45064689520 passes 23 jobs, 249 cases, all 20 replayed AI seeds and 896,421 ticks.
+- **T21 complete:** T21 adds the recipient/reconnect inventory. Canonical lobby 45065058405 selects Roman on production transport with seven zero-diff frames and seven rejected controls. The actual Sodium co-op scenario 45064693729 passes with eight inspected frames. Server 45064683957 passes 3,095 cases, client 45065907954 passes 3,096, and full S 45064689520 passes 23 jobs, 249 cases, all 20 replayed AI seeds and 896,421 ticks. The integrated client-profile Verify [45632292032](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45632292032) passed 3,096 tests, including the 323-case GameTest batch, on `869f3884`. Ordinary Verify [45634199109](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45634199109) passed the same totals on the T20 evidence commit. Full S [45629092616](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45629092616) passed all 23 jobs, 249 nightly cases and all 20 exact-commit AI seeds across 896,421 ticks. The first three Verify dispatches stopped at dependency or formatter setup before tests. The same-branch checksum-approved formatter artifact 44417846067 restored the pinned formatter for the successful runs.
 - **T24 timing:** Keep the owner's optional QA-14 request in scope. The M6 playability verdict unblocks ART-03. The separate MVP acceptance still requires the QA-13 playtest record; T24 is due at the formal MVP exit or 2027-Q2 and proceeds on its own claim.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
@@ -44,6 +44,10 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-25 — Close T21 integration and compatibility
+
+Client-profile Verify 45632292032 on `869f3884` and ordinary Verify 45634199109 on `180bbec2` each passed 3,096 tests with no skips or failures. Both included 323 GameTests. Full S 45629092616 validated all 23 jobs, 249 nightly tests and exact-commit replay for all 20 seeds (896,421 ticks, 17 conquests and three game-limit runs). The T20 evidence commit changed only documentation and the performance reports. The separate T25 playtest remains open.
 
 ### 2026-11-25 — Accept the PERF-10 reference
 

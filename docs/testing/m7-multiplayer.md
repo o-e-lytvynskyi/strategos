@@ -6,9 +6,16 @@ Record the commit, Minecraft and mod profiles, server and client platforms,
 map, rules and seat plan. Use stable labels A and B in the report. Both testers
 must be able to distinguish their own result from the other tester's observation.
 
-Use the dedicated launch path in [Starting](playtest.md#starting), then open
-**Match lobby** from the multiplayer pause menu. Both players join and mark
-their seats ready. Start separate lobby rounds when changing the seat plan.
+Use the dedicated launch path in [Starting](playtest.md#starting) with a fresh
+server world. Set `level-type=strategos\:arena` in `server.properties` before the
+first boot. Grant the host operator permissions once that player has joined.
+For the LAN check, create a singleplayer world with the **Strategos Arena**
+world type before opening it to LAN.
+
+In the multiplayer pause menu, the host opens **Match lobby** and selects
+**Create lobby**. The second player opens **Match lobby** and selects **Join lobby**.
+Both select **Ready** below the seat table before the host selects **Start match**.
+Start separate lobby rounds when changing the seat plan.
 Use the same account for the reconnect check. Do the automation-negative
 controls through existing evidence, without sending malformed traffic during
 this playtest.
@@ -86,7 +93,21 @@ Each row uses the actual server adapter and recipient connections. The
 compatibility Verify jobs rerun this matrix, and the client scenarios
 exercise the lobby and RTS screens under a real client.
 
+## Live coverage gap
+
+The shipped lobby, map and scenario each support two faction slots. Step 3
+needs at least three factions. Keep it open until a production route supports
+two human allies and an opposing AI. The owner deferred the content expansion
+on 2026-11-25. The automated coalition and ping evidence remains recorded above.
+
 ## Acceptance record
+
+On 2026-11-25 both real clients reached the dedicated Strategos Arena match
+on the M7 candidate. The server recorded a 219-second disconnect-to-login
+interval for player B, within the default 300-second grace period. The seat,
+camera, group, continuing orders and private view require per-client observations
+to complete the reclaim check. LAN and the other unchecked observations remain
+part of the full acceptance record.
 
 Copy the following fields once per session. Add observations from both
 clients and a link to evidence for every failed or ambiguous row. Escalate P0

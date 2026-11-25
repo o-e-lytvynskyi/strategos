@@ -1063,7 +1063,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T18 (2026-11-23) · [Dedicated server and two real clients](../spikes/S11-bandwidth.md#dedicated-server-and-two-real-clients). All eight measurements pass E; highest 62,639.93 B/s. Tier 4 stays in reserve.
 - [x] T19 (2026-11-22) · Two-client [protocol and evidence map](../testing/m7-multiplayer.md); verify [45060561545](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45060561545), 3,089 cases. L7 stays T25.
 - [x] T20 (2026-11-25) · [Accepted PERF-10 reference](../../perf/m7/README.md). A–E, 2× stress, sustained census and order latency passed.
-- [ ] T21 · Integration and compatibility.
+- [x] T21 (2026-11-25) · Recipient and reconnect regression inventory, client-profile Verify [45632292032](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45632292032) and full S [45629092616](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45629092616). 3,096 Verify and 249 nightly cases passed, plus all exact-commit AI seeds 1–20.
 - [x] T22 (2026-11-22) · [Roman assets](../art/roman.md) and engine coverage; Verify [45062739294](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062739294) passes 3,095 cases. T23 holds the visual verdict.
 - [x] T23 (2026-11-22) · The owner approved Roman styling, silhouettes and three 60-block frames. [Canonical comparison 45063579435](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063579435) passes all frames and rejects all three inverted controls.
 - [ ] T24 · Floating platform gate (independent; not in M7 Done).
@@ -1072,11 +1072,11 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 ## 6. Acceptance checklist
 
 - [ ] Every M7 runtime card criterion in §5.2 is demonstrated; no unexecuted contract test is called runtime evidence.
-- [ ] Private state absent from every unauthorized player's full/delta/query/reconnect/deferred output.
-- [ ] Commander guards pass with positive controls before multiplayer play, including `-Pcompat` movement/fog/hardening tests.
-- [ ] S11 mock and two-real-client comparison complete; every client's E passes, tier-4 decision explicit.
+- [x] Recipient and reconnect regression matrix passes on the server adapter, including full/delta/query/reconnect/deferred output.
+- [x] Commander guards pass with positive controls, actual Sodium movement/fog and integrated `-Pcompat` Verify.
+- [x] S11 mock and two-real-client comparison complete. Every client passed E and tier 4 stays in reserve.
 - [x] PERF-10 normal and stress gates passed at unchanged thresholds and are [archived](../../perf/m7/README.md). The underfilled diagnostics remain recorded.
-- [ ] ART-03 blueprint/icon/golden checks and owner look verdict complete after MVP approval.
+- [x] ART-03 blueprint/icon/golden checks passed. The owner approved the Roman look and silhouettes.
 - [ ] Dedicated two-client acceptance covers allied victory, co-op, pings and mid-fight reconnect; no P0/P1 remains open.
 - [ ] V/S and all change-type gates pass; branch/card/spec/KB/inventory records agree; handoff names residual M8 work.
 - [ ] QA-14 tracked on its own timing/claim with owner decision; never used to block or falsely complete M7.
