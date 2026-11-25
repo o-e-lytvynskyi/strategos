@@ -103,7 +103,7 @@ final class QueriesImpl implements MatchQueries {
 
     /** Each faction's share of building {@code handle}'s capture points in 255ths; empty with no capture open. */
     private List<Integer> captureShares(int handle) {
-        long[] points = state.capture().points(handle);
+        long[] points = state.play().capture().points(handle);
         long total = CaptureSystem.total(state, handle);
         if (points == null || total <= 0) {
             return List.of();
@@ -573,7 +573,7 @@ final class QueriesImpl implements MatchQueries {
 
     @Override
     public int territoryOwner(int x, int z) {
-        var territory = state.territorySystem();
+        var territory = state.play().territorySystem();
         return territory == null || territory.recomputes() == 0
                 ? -1
                 : territory.grid().ownerAt(x, z);
@@ -602,7 +602,7 @@ final class QueriesImpl implements MatchQueries {
 
     @Override
     public long territoryRecomputes() {
-        var territory = state.territorySystem();
+        var territory = state.play().territorySystem();
         return territory == null ? 0 : territory.recomputes();
     }
 

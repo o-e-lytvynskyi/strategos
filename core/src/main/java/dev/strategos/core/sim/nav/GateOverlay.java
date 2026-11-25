@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The gates of the match (M9 spec §2.9, PATH-12): each a few columns with an owner faction. A gate's columns are
  * blocked in the base grid for everyone (the caller blocks them through the footprint mechanism, {@code
- * MatchState#addGate}), so the components split there; this overlay says who may cross, and {@link GateLinks}, kept
+ * PlayState#addGate}), so the components split there; this overlay says who may cross, and {@link GateLinks}, kept
  * per grid and per {@link #version()}, joins the surfaces on the gate's sides for an allied faction. Saved ({@code
  * Play.gates}) and hashed only while a gate exists, so matches without gates keep their hashes.
  *

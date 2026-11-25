@@ -110,7 +110,7 @@ view and the first Minecraft twist, day and night.
 
 | Card | Tasks | Acceptance → check |
 |---|---|---|
-| CIV-01 | T2, T3, T4, T9b | 1 `CivDefLoadTest`, `CivLintTest` (L2: `templatetests.civs_load`); 2 `CivRosterTest`; 3 `CivBonusBreakdownTest`; 4 `civtests.two_civilisations` (L3: the default against the probe, from the GameTest pack); 5 `DefaultCivCompatibilityTest` (old saves and journals load as the default, pinned hashes hold) |
+| CIV-01 | T2, T3, T4, T9b | 1 `CivDefLoadTest`, `CivLintTest`, the shipped files through the real loader (`ShippedCivsTest`, L2); 2 `CivRosterTest`; 3 `CivBonusBreakdownTest`; 4 `civtests.two_civilisations` (L3: the default against the probe, from the GameTest pack); 5 `DefaultCivCompatibilityTest` (old saves and journals load as the default, pinned hashes hold) |
 | CIV-05 | T5–T9b | 1 `SeamDefaultsTest` + the pinned soak hashes; 2 `PopulationFixedTest`, `DeliveryDirectTest`, `ConstructionSelfTest`; 3 `ProbeMatchesTest` (20 seeds, replays); 4 `CivBoundaryArchTest`; 5 `ProbeFixtureTest` (the probe lives in test fixtures only) |
 | UNIT-10 | T10, T11 | 1 `AbilityValidationTest`; 2 `AbilityEffectsTest`; 3 `AbilityCardTest`; 4 `abilitytests.charge` |
 | CMB-11 | T12, T30 | 1 `ExperienceTest`; 2 `RankModifiersTest`; 3 insignia golden at 40 blocks (consent) |
@@ -173,7 +173,7 @@ scene two or three times, never more (D-22).
   the default civilisation and TECH-05's technologies (T16).
 - **The default civilisation** (`civs/default.json`): `name` "Settlers" (a lang key); `phases` Village, Town, City;
   `roster` the wildcard `*` (every template and technology of the set, so later content tasks add nothing here);
-  `centreClass` `CivicCentre`; `roles` from today's content (`house`, `worker`, `infantry`, `ranged` archer, `cavalry`
+  `centreClass` `CivicCentre`; `roles` from today's content (`centre` civic_centre, `house`, `worker`, `infantry`, `ranged` archer, `cavalry`
   horseman, `siege` ram, `barracks`, `tower`, `farmstead`, `field`, `storehouse`, `wall` palisade, `gate`
   palisade_gate; T13 adds `temple` and `healer` with their templates); `start` today's first-skirmish civilisation
   entities; no bonuses; no rules (all defaults); `ai` the `skirmish` profile. The built-in fallback set gains the same definition, so a set without data
@@ -389,7 +389,7 @@ mixin entry for CAM-06. No new dependencies.
 - **L1:** the seams' defaults against pinned hashes; each variant; the probe matches; abilities, ranks, healing, loot,
   the City phase, the generated technology tests, formations, patrol and guard, hunting, hotkeys, night vision; the
   AI's City and probe runs; the balance matrix.
-- **L2:** civilisation loading and lint (`templatetests.civs_load`), the payload round trips.
+- **L2:** the shipped civilisation files through the real loader (`ShippedCivsTest`), the payload round trips.
 - **L3:** `civtests.two_civilisations`, `abilitytests.charge`, `healtests.healer_heals`, `loottests.kill_pays`,
   `phasetests.city_bonuses`, `techtests.<family>`, `formationtests.march`, `ordertests.patrol_and_guard`, the `aisoak`
   samples.
@@ -434,7 +434,7 @@ Size: 500.
 
 #### T2 · CIV-01 · Civilisations as content
 `RawCiv`, `CivDef`, `StartKit`, `CivRoles`; the `civs` folder, compile, lint, `$civs`, the client view; the default
-civilisation's data and its built-in copy; ADR-0028 Proposed, architecture §8.9. Verify: `verify`, `templatetests`,
+civilisation's data and its built-in copy; ADR-0028 Proposed, architecture §8.9. Verify: `verify`, `ShippedCivsTest`,
 the template set's pinned SHA unchanged without civilisation files. Size: 700.
 
 #### T3 · CIV-01 · Binding, roster and bonuses
@@ -555,7 +555,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 
 ### 7.3 Progress
 
-- [ ] T1
+- [x] T1 (2026-11-25)
 - [ ] T2
 - [ ] T3
 - [ ] T4

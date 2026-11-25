@@ -162,7 +162,7 @@ public final class Upgrades {
     }
 
     private static void scaleCapture(MatchState s, int handle, long oldTotal, long newTotal) {
-        long @Nullable [] points = s.capture().points(handle);
+        long @Nullable [] points = s.play().capture().points(handle);
         if (points == null || oldTotal <= 0) {
             return;
         }

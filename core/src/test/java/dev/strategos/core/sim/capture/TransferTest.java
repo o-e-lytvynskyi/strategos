@@ -64,7 +64,7 @@ class TransferTest {
         assertThat(s.population().housing(0)).isLessThan(housed0);
         assertThat(s.population().housing(1)).isEqualTo(housed0 - s.population().housing(0));
         h.runTicks(25);
-        assertThat(s.territorySystem().grid().ownerAt(45, 45))
+        assertThat(s.play().territorySystem().grid().ownerAt(45, 45))
                 .as("its land follows")
                 .isEqualTo(1);
     }

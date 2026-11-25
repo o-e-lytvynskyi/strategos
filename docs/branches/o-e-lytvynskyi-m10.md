@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 0 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 1 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** the M10 spec (2026-11-25).
-- **Next task:** T1 · Health check moves (M9 follow-ups).
+- **Last finished task:** M10 T1 (2026-11-25).
+- **Next task:** T2 · CIV-01 · Civilisations as content.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -28,6 +28,11 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-25 — M10 T1
+
+- **M10 T1 · Health check moves** — M9 §10.4 items 1 and 3. `MatchState` 815 → 761 lines: the capture, gate, breach and territory state moved by moves only into `PlayState` (78 lines), reached by `MatchState.play()`; 34 files, callers renamed. New `RestoreEqualsLiveTest`: all 200 seeds of `m0-200` restored at tick 1,000 through the save codec and stepped 500 ticks beside the live match, and the proving-ground soak scene restored at 600 of 1,200, hashes equal at every tick; 8 s, so in `verify`; no divergence. `verify verifySlow` green, 275 s.
+- **Next:** T2.
 
 ### 2026-11-25 — M10 spec
 
@@ -55,6 +60,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · The foundation is a closed catalogue of rule variants behind eight seams, chosen per civilisation in data (ADR-0028), not data-only civilisations and not branches on the civilisation in systems — the owner's goal is distinctive gameplay later without a core rewrite — undo: ADR-0028 rejected, CIV-05 dropped.
 - 2026-11-25 · The probe civilisation lives in the test fixtures only — it proves the seams without shipping content the owner has not designed — undo: move it into `src/main` data.
 - 2026-11-25 · Ranks replace each other, they do not compound (spec §2.8) — the card asks for an explicit choice; replacing keeps balance readable — undo: compound in `RankModifiers`.
+- 2026-11-25 · trial reviewer: pass — the spec review found twelve real points, each checked against the code before applying.
+- 2026-11-25 · trial implementer: pass — M10 T1's moves and the restore check, green on the first hand-back, diff read.
 - 2026-11-25 · `docs/design/roadmap-changes.md` is left as it is: its §1 records the draft-to-roadmap conversion of 2026-10-21 and its §8 holds scope-neutral refinements; M10's reshape is an owner-approved change, recorded under the ROADMAP's M10 table and in the spec's §1.5–1.6 — undo: add a dated block there.
 - 2026-11-25 · The milestone is named "Civilisations foundation and depth"; the card file keeps its path — links stay valid — undo: rename back.
 

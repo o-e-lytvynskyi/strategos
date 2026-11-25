@@ -140,14 +140,14 @@ public final class StateHasher {
         if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
             h = s.stances().mix(h);
         }
-        if (!s.gates().empty()) { // only while a gate stands (PATH-12)
-            h = s.gates().mix(h);
+        if (!s.play().gates().empty()) { // only while a gate stands (PATH-12)
+            h = s.play().gates().mix(h);
         }
-        if (!s.breaches().empty()) { // only once a unit breached a wall (BLD-13)
-            h = s.breaches().mix(h, s.entities()::isAlive);
+        if (!s.play().breaches().empty()) { // only once a unit breached a wall (BLD-13)
+            h = s.play().breaches().mix(h, s.entities()::isAlive);
         }
-        if (!s.capture().empty()) { // only while a building is being captured (CMB-10)
-            h = s.capture().mix(h);
+        if (!s.play().capture().empty()) { // only while a building is being captured (CMB-10)
+            h = s.play().capture().mix(h);
         }
         if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
             h = s.garrison().mix(h);

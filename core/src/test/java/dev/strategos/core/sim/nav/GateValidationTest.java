@@ -24,45 +24,46 @@ class GateValidationTest {
     void aNonPlayerOwnerIsRefusedAndNothingIsBlocked() {
         MatchState s = state();
         for (int owner : new int[] {-1, 2, 7}) { // 2 is Gaia
-            assertThatThrownBy(() -> s.addGate(owner, new int[] {col(40, 40)}))
+            assertThatThrownBy(() -> s.play().addGate(owner, new int[] {col(40, 40)}))
                     .isInstanceOf(IllegalArgumentException.class);
         }
         assertThat(s.footprintAt(40, 40)).isFalse();
-        assertThat(s.gates().empty()).isTrue();
+        assertThat(s.play().gates().empty()).isTrue();
     }
 
     @Test
     void aColumnOutsideTheMatchIsRefusedAndNothingIsBlocked() {
         MatchState s = state();
-        assertThatThrownBy(() -> s.addGate(0, new int[] {col(40, 40), col(96, 3)}))
+        assertThatThrownBy(() -> s.play().addGate(0, new int[] {col(40, 40), col(96, 3)}))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> s.addGate(0, new int[] {col(40, 40), col(3, 96)}))
+        assertThatThrownBy(() -> s.play().addGate(0, new int[] {col(40, 40), col(3, 96)}))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(s.footprintAt(40, 40)).isFalse();
-        assertThat(s.gates().empty()).isTrue();
+        assertThat(s.play().gates().empty()).isTrue();
     }
 
     @Test
     void aRepeatedColumnIsRefusedInOneGateAndAcrossGates() {
         MatchState s = state();
-        assertThatThrownBy(() -> s.addGate(0, new int[] {col(40, 40), col(40, 40)}))
+        assertThatThrownBy(() -> s.play().addGate(0, new int[] {col(40, 40), col(40, 40)}))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(s.footprintAt(40, 40)).isFalse();
-        s.addGate(0, new int[] {col(40, 40)});
-        assertThatThrownBy(() -> s.addGate(1, new int[] {col(41, 40), col(40, 40)}))
+        s.play().addGate(0, new int[] {col(40, 40)});
+        assertThatThrownBy(() -> s.play().addGate(1, new int[] {col(41, 40), col(40, 40)}))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(s.footprintAt(41, 40)).isFalse();
-        assertThat(s.gates().count()).isEqualTo(1);
+        assertThat(s.play().gates().count()).isEqualTo(1);
     }
 
     @Test
     void aSixtyFifthGateIsRefused() {
         MatchState s = state();
         for (int k = 0; k < GateOverlay.MAX_GATES; k++) {
-            s.addGate(0, new int[] {col(k, 10)});
+            s.play().addGate(0, new int[] {col(k, 10)});
         }
-        assertThatThrownBy(() -> s.addGate(0, new int[] {col(0, 20)})).isInstanceOf(IllegalArgumentException.class);
-        assertThat(s.gates().count()).isEqualTo(64);
+        assertThatThrownBy(() -> s.play().addGate(0, new int[] {col(0, 20)}))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(s.play().gates().count()).isEqualTo(64);
         assertThat(s.footprintAt(0, 20)).isFalse();
     }
 

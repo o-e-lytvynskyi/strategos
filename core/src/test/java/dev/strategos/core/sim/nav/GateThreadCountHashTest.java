@@ -40,7 +40,7 @@ class GateThreadCountHashTest {
         SimHarness h = SimHarness.builder().size(96, 96).factions(2).jobs(jobs).build();
         h.publishAll(w);
         h.step();
-        KernelAccess.state(h.core()).addGate(0, columns);
+        KernelAccess.state(h.core()).play().addGate(0, columns);
         int[] units = h.spawn(new FactionSlot(0), new Vec2d(30, 48), 4, 2);
         h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), new Vec2d(60.5, 48.5)));
         long[] hashes = new long[TICKS];

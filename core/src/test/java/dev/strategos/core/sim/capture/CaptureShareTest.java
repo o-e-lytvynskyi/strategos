@@ -31,7 +31,7 @@ class CaptureShareTest {
         assertThat(entry(h, barracks).captureShares()).as("no capture open").isEmpty();
 
         for (int t = 0; t < 5 * CaptureSystem.SECOND; t++) {
-            s.capture().contribute(barracks, 0, 30_000); // 30 a second against the 10 regenerated: 20 a second
+            s.play().capture().contribute(barracks, 0, 30_000); // 30 a second against the 10 regenerated: 20 a second
             h.step();
         }
         BuildingState.Entry e = entry(h, barracks);

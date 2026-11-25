@@ -82,8 +82,8 @@ final class Breaching {
         if (from < 0) {
             return false;
         }
-        java.util.BitSet reach =
-                Reach.reachableFrom(grid, s.gates(), s.allies(), s.identity().faction(i), grid.component(from));
+        java.util.BitSet reach = Reach.reachableFrom(
+                grid, s.play().gates(), s.allies(), s.identity().faction(i), grid.component(from));
         for (int layer = 0; layer < grid.count(gx, gz); layer++) {
             if (Surface.passable(grid.surface(gx, gz, layer)) && reach.get(grid.component(grid.node(gx, gz, layer)))) {
                 return true;
@@ -104,7 +104,7 @@ final class Breaching {
         }
         if (goalReachable(s, i)) {
             // a breach has opened the way since this walk's path was made: it goes the new way, once
-            if (s.breaches().take(ctx.handle())) {
+            if (s.play().breaches().take(ctx.handle())) {
                 s.paths().setRepath(i, true);
                 return true;
             }
@@ -127,7 +127,7 @@ final class Breaching {
             if (!classes.contains(WALL) || !Siege.canStrike(s, i, handle)) {
                 continue;
             }
-            if (s.breaches().resting(ctx.handle(), handle, s.tick())) {
+            if (s.play().breaches().resting(ctx.handle(), handle, s.tick())) {
                 continue; // it tried this one a moment ago
             }
             Footprint at = s.footprintOf(handle);
@@ -159,7 +159,7 @@ final class Breaching {
                         best)) {
             return false;
         }
-        s.breaches().put(ctx.handle(), best, s.tick() + COOLDOWN);
+        s.play().breaches().put(ctx.handle(), best, s.tick() + COOLDOWN);
         s.bus().publish(new OrderReceived(ctx.handle()));
         return true;
     }

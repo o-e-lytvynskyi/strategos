@@ -2,6 +2,7 @@ package dev.strategos.core.sim.build;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.PlayState;
 import dev.strategos.core.sim.nav.GateDoors;
 import dev.strategos.core.sim.nav.GateOverlay;
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.List;
 /**
  * The gates of finished palisade gates (BLD-13, M9 spec §2.10): a building whose template has {@code Wall/gate} stands
  * as a gate of its owner's over its middle two columns once finished, in {@link GateOverlay}
- * as {@link MatchState#addGate} keeps it, and is gone from it when the building falls or changes hands. The overlay
+ * as {@link PlayState#addGate} keeps it, and is gone from it when the building falls or changes hands. The overlay
  * is saved with the match on its own, so the building and its gate are tied only by their columns.
  */
 public final class WallGates {
@@ -47,8 +48,8 @@ public final class WallGates {
 
     /** The id of the gate over {@code columns} (ascending), or -1. */
     public static int find(MatchState s, int[] columns) {
-        for (int id : s.gates().ids()) {
-            int[] have = s.gates().columns(id);
+        for (int id : s.play().gates().ids()) {
+            int[] have = s.play().gates().columns(id);
             Arrays.sort(have);
             if (Arrays.equals(have, columns)) {
                 return id;
@@ -63,25 +64,25 @@ public final class WallGates {
             return;
         }
         int[] columns = columns(s, handle);
-        if (find(s, columns) < 0 && s.gates().count() < GateOverlay.MAX_GATES) {
-            s.addGate(s.buildings().faction(handle), columns);
+        if (find(s, columns) < 0 && s.play().gates().count() < GateOverlay.MAX_GATES) {
+            s.play().addGate(s.buildings().faction(handle), columns);
         }
     }
 
     /** Building {@code handle} falls or changes hands: its gate goes. */
     public static void lost(MatchState s, int handle) {
-        if (!isGate(s, handle) || s.gates().empty()) {
+        if (!isGate(s, handle) || s.play().gates().empty()) {
             return;
         }
         int id = find(s, columns(s, handle));
         if (id >= 0) {
-            s.removeGate(id);
+            s.play().removeGate(id);
         }
     }
 
     /** The finished gates and whether their doors stand open now, in handle order; none while no gate stands. */
     public static List<GateDoor> doors(MatchState s) {
-        if (s.gates().empty()) {
+        if (s.play().gates().empty()) {
             return List.of();
         }
         List<GateDoor> out = new ArrayList<>();

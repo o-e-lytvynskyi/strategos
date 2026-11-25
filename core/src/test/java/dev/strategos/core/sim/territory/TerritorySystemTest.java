@@ -44,7 +44,7 @@ class TerritorySystemTest {
     void aRecomputeStartsAtMostOncePerTwentyTicksAndDeliversOnTheNext() {
         SimHarness h = scene(JobExecutor.inline());
         MatchState s = KernelAccess.state(h.core());
-        TerritorySystem t = Objects.requireNonNull(s.territorySystem());
+        TerritorySystem t = Objects.requireNonNull(s.play().territorySystem());
         h.step(); // the centres land; the first grid is computed at once
         assertThat(t.recomputes()).isEqualTo(1);
         assertThat(t.grid().ownerAt(40, 40)).isZero();
@@ -111,7 +111,7 @@ class TerritorySystemTest {
     }
 
     private static TerritoryGrid grid(SimHarness h) {
-        return Objects.requireNonNull(KernelAccess.state(h.core()).territorySystem())
+        return Objects.requireNonNull(KernelAccess.state(h.core()).play().territorySystem())
                 .grid();
     }
 

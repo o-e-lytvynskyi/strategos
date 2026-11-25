@@ -121,7 +121,7 @@ class CaptureOrderTest {
         assertThat(taken).as("taken within a minute").isTrue();
         double seconds = ((int) s.tick() - start) / (double) CaptureSystem.SECOND;
         assertThat(seconds).as("seconds: 20 of capture and the walk").isBetween(17.0, 32.0);
-        assertThat(s.capture().points(barracks))
+        assertThat(s.play().capture().points(barracks))
                 .as("the new owner holds every point")
                 .isNull();
         h.runTicks(10);

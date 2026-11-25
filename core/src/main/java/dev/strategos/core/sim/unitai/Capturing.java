@@ -133,7 +133,7 @@ final class Capturing {
         } else if (!inReach(s, i, target)) {
             ctx.go(UnitAi.CAPTURE);
         } else {
-            s.capture().contribute(target, s.identity().faction(i), CaptureSystem.strength(s, i));
+            s.play().capture().contribute(target, s.identity().faction(i), CaptureSystem.strength(s, i));
         }
     }
 

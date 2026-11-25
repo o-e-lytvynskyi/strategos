@@ -219,7 +219,7 @@ class PlaceWallTest {
     void aGateSegmentPastTheGateLimitIsRefusedNotLaidAsAPlainWall() {
         fund(5_000);
         for (int k = 0; k < GateOverlay.MAX_GATES - 1; k++) {
-            s.addGate(0, new int[] {200 << 16 | 2 * k, 200 << 16 | 2 * k + 1}); // 63 gates stand elsewhere
+            s.play().addGate(0, new int[] {200 << 16 | 2 * k, 200 << 16 | 2 * k + 1}); // 63 gates stand elsewhere
         }
         CommandResult result = wall(PALISADE, 60, 90, 75, 90, List.of(1, 3), UnitSet.of());
         assertThat(result.outcome()).isEqualTo(CommandOutcome.PARTIAL);

@@ -7,7 +7,6 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.capture.CaptureStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -23,7 +22,6 @@ import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.garrison.GarrisonStore;
-import dev.strategos.core.sim.nav.GateOverlay;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
@@ -35,7 +33,6 @@ import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
-import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayDeque;
@@ -55,8 +52,7 @@ public final class MatchState {
     private long tick;
     private MatchConfig config;
     private Allies allies;
-    private final CaptureStore capture;
-    private final GateOverlay gates;
+    private final PlayState play;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -80,10 +76,8 @@ public final class MatchState {
     private final Population population;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
-    private final BreachLog breaches = new BreachLog(); // saved and hashed (Play.breaches)
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
-    private @Nullable TerritorySystem territorySystem;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
     private final SpatialQueries spatial;
 
@@ -113,9 +107,7 @@ public final class MatchState {
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
         this.allies = Allies.sameFaction(config.factions());
-        this.capture = new CaptureStore(config.factions());
-        this.gates = new GateOverlay(
-                config.factions(), config.bounds().sizeX(), config.bounds().sizeZ());
+        this.play = new PlayState(this, config);
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -496,46 +488,9 @@ public final class MatchState {
         return config.factions();
     }
 
-    /** What the units have breached lately (BLD-13). */
-    public BreachLog breaches() {
-        return breaches;
-    }
-
-    /** The gates of palisades and walls (PATH-12). */
-    public GateOverlay gates() {
-        return gates;
-    }
-
-    /** Adds a gate of {@code owner} over {@code columns} ({@code x << 16 | z}), blocking them for everyone; its id. */
-    public int addGate(int owner, int[] columns) {
-        int id = gates.add(owner, columns); // validates first: nothing is blocked for a bad gate
-        for (int c : columns) {
-            blockColumn(c >>> 16, c & 0xFFFF);
-        }
-        return id;
-    }
-
-    /** Removes gate {@code id} and releases its columns. */
-    public void removeGate(int id) {
-        for (int c : gates.columns(id)) {
-            releaseColumn(c >>> 16, c & 0xFFFF);
-        }
-        gates.remove(id);
-    }
-
-    /** A snapshot's gates, their columns blocked again, before the pages are published. */
-    void restoreGates(List<Long> saved) {
-        gates.restore(saved);
-        for (int id : gates.ids()) {
-            for (int c : gates.columns(id)) {
-                restoreColumn(c >>> 16, c & 0xFFFF);
-            }
-        }
-    }
-
-    /** The buildings being captured (CMB-10). */
-    public CaptureStore capture() {
-        return capture;
+    /** The territory, capture, gate and breach state of the match. */
+    public PlayState play() {
+        return play;
     }
 
     /** Who is a friend (M9 spec §2.1). AFTER-M7: MATCH-06's diplomacy answers instead of the same faction. */
@@ -685,15 +640,6 @@ public final class MatchState {
 
     void setVisionSystem(VisionSystem vision) {
         this.visionSystem = vision;
-    }
-
-    /** Territory (TERR-01), once the core has made it. */
-    public @Nullable TerritorySystem territorySystem() {
-        return territorySystem;
-    }
-
-    void setTerritorySystem(TerritorySystem territory) {
-        this.territorySystem = territory;
     }
 
     /** The map's start slots for the AI (AI-18), the config's; empty for a match on no map. */

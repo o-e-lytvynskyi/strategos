@@ -137,7 +137,7 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
 
     // The gates in the overlay plus the gate buildings still to be finished, which will join it.
     private static int standingAndQueuedGates(MatchState state) {
-        int n = state.gates().count();
+        int n = state.play().gates().count();
         BuildingStore b = state.buildings();
         for (int handle : b.handles()) {
             if (b.state(handle) != BuildingStore.COMPLETE && WallGates.isGate(state, handle)) {

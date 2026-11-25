@@ -130,9 +130,9 @@ final class MotionMoves {
 
     /** What unit {@code i} may walk through of the gates of its allies (PATH-12), null while there are none. */
     static GateLinks.@Nullable Pass gates(MatchState s, int i) {
-        return s.gates().empty()
+        return s.play().gates().empty()
                 ? null
-                : s.gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
+                : s.play().gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
     }
 
     /**

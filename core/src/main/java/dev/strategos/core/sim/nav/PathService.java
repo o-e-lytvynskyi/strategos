@@ -672,7 +672,7 @@ public final class PathService {
                                 standing,
                                 rules.joinCap(),
                                 joins,
-                                s.gates().passFor(grid, s.identity().faction(members.getInt(0)), s.allies())))));
+                                s.play().gates().passFor(grid, s.identity().faction(members.getInt(0)), s.allies())))));
     }
 
     private void submit(MatchState s, int i, PathStore.Waiting w) {
@@ -683,7 +683,8 @@ public final class PathService {
         double x = motion.x(i);
         double z = motion.z(i);
         int from = startNode(grid, x, motion.y(i), z, s.config().bounds().minY());
-        GateLinks.Pass gates = s.gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
+        GateLinks.Pass gates =
+                s.play().gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
         if (from < 0) {
             if (gates != null && gates.gate((int) Math.floor(x), (int) Math.floor(z))) {
                 busy(s, i); // in a gate's columns: it keeps its path across and asks again on the far side

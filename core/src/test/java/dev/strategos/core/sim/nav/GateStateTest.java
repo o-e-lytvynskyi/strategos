@@ -29,7 +29,7 @@ class GateStateTest {
         MatchState s = KernelAccess.state(h.core());
         long bare = h.stateHash();
 
-        int id = s.addGate(0, GATE);
+        int id = s.play().addGate(0, GATE);
         h.runTicks(5);
         assertThat(s.footprintAt(40, 40)).isTrue();
         assertThat(s.surfaces().count(40, 40)).as("no surface in a gate column").isZero();
@@ -38,27 +38,27 @@ class GateStateTest {
         MatchState restored = KernelAccess.state(twin.core());
 
         assertThat(withGate).isNotEqualTo(bare);
-        assertThat(restored.gates().ids()).containsExactly(id);
-        assertThat(restored.gates().owner(id)).isZero();
-        assertThat(restored.gates().columns(id)).containsExactly(GATE);
+        assertThat(restored.play().gates().ids()).containsExactly(id);
+        assertThat(restored.play().gates().owner(id)).isZero();
+        assertThat(restored.play().gates().columns(id)).containsExactly(GATE);
         assertThat(restored.footprintAt(40, 41)).isTrue();
         assertThat(twin.stateHash())
                 .as("the restored state hashes as the saved one")
                 .isEqualTo(withGate);
 
-        s.removeGate(id);
+        s.play().removeGate(id);
         h.runTicks(5);
         assertThat(s.footprintAt(40, 40)).isFalse();
-        assertThat(s.gates().empty()).isTrue();
+        assertThat(s.play().gates().empty()).isTrue();
         assertThat(s.surfaces().count(40, 40)).isEqualTo(1);
-        assertThat(s.gates().add(1, GATE)).as("the lowest free id again").isZero();
+        assertThat(s.play().gates().add(1, GATE)).as("the lowest free id again").isZero();
     }
 
     @Test
     void aGateIsOpenWhileAnAlliedUnitIsWithinThreeBlocksAndNeverForAnEnemy() {
         SimHarness h = match();
         MatchState s = KernelAccess.state(h.core());
-        int id = s.addGate(0, GATE);
+        int id = s.play().addGate(0, GATE);
         h.runTicks(3);
         assertThat(GateDoors.open(s, id)).as("nobody near").isFalse();
 

@@ -204,12 +204,12 @@ class UpgradeTest {
         t.town();
         int tower = t.building(SENTRY, 0, 40, 30);
         // owner 0 holds half of the sentry tower's 400 points, faction 1 the other half
-        t.s.capture().restore(List.of((long) tower, 0L, 200_000L, 200_000L, 0L));
+        t.s.play().capture().restore(List.of((long) tower, 0L, 200_000L, 200_000L, 0L));
         // the upgrade's end itself, not a wait the owner's regeneration would win
         Upgrades.apply(
                 t.s, tower, Objects.requireNonNull(t.s.templates().byId(TOWER)).netIndex());
         assertThat(t.templateOf(tower)).isEqualTo(TOWER.value());
-        long[] points = Objects.requireNonNull(t.s.capture().points(tower));
+        long[] points = Objects.requireNonNull(t.s.play().capture().points(tower));
         assertThat(points[0] + points[1]).as("the defence tower's 800 points").isEqualTo(800_000L);
         assertThat(points[0]).isEqualTo(points[1]);
     }

@@ -60,7 +60,7 @@ final class MatchCoreImpl implements MatchCore {
                 state.config().bounds().sizeZ(),
                 state.config().factions(),
                 ports.jobs());
-        state.setTerritorySystem(territory);
+        state.play().setTerritorySystem(territory);
         territory.restore(savedTerritory);
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
@@ -179,13 +179,13 @@ final class MatchCoreImpl implements MatchCore {
 
     @Override
     public @Nullable TerritoryGrid territory() {
-        TerritorySystem t = state.territorySystem();
+        TerritorySystem t = state.play().territorySystem();
         return t == null || t.recomputes() == 0 ? null : t.grid();
     }
 
     @Override
     public long territoryVersion() {
-        TerritorySystem t = state.territorySystem();
+        TerritorySystem t = state.play().territorySystem();
         return t == null ? 0 : t.recomputes();
     }
 

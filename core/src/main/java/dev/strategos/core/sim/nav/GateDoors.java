@@ -16,7 +16,7 @@ public final class GateDoors {
 
     /** Whether gate {@code id} is open now (the spatial grid as of the last MOVEMENT). */
     public static boolean open(MatchState s, int id) {
-        int owner = s.gates().owner(id);
+        int owner = s.play().gates().owner(id);
         Allies allies = s.allies();
         int mask = 0;
         for (int f = 0; f < s.gaia(); f++) {
@@ -28,7 +28,7 @@ public final class GateDoors {
             return false;
         }
         UnitFilter filter = new UnitFilter(mask, 0);
-        for (int c : s.gates().columns(id)) {
+        for (int c : s.play().gates().columns(id)) {
             if (s.spatial().countWithin((c >>> 16) + 0.5, (c & 0xFFFF) + 0.5, RANGE, filter) > 0) {
                 return true;
             }

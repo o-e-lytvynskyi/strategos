@@ -81,7 +81,7 @@ class PlacementParityTest {
 
                     @Override
                     public int territory(int x, int z) { // the grid the client was sent (TERR-01)
-                        return Objects.requireNonNull(s.territorySystem())
+                        return Objects.requireNonNull(s.play().territorySystem())
                                 .grid()
                                 .ownerAt(x, z);
                     }

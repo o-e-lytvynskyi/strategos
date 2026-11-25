@@ -57,9 +57,9 @@ class CaptureRegenTest {
         long perSecond = 20 * 2_500; // twenty infantry
         int took = -1;
         for (int t = 0; t < 120 * CaptureSystem.SECOND && took < 0; t++) {
-            s.capture().contribute(centre, 1, perSecond);
+            s.play().capture().contribute(centre, 1, perSecond);
             h.step();
-            long[] p = s.capture().points(centre);
+            long[] p = s.play().capture().points(centre);
             if (s.buildings().faction(centre) == 1) {
                 took = t;
             } else if (p != null) {
@@ -67,7 +67,7 @@ class CaptureRegenTest {
             }
         }
         assertThat(took / CaptureSystem.SECOND).as("seconds").isBetween(97, 101);
-        assertThat(s.capture().points(centre))
+        assertThat(s.play().capture().points(centre))
                 .as("the new owner holds every point")
                 .isNull();
     }

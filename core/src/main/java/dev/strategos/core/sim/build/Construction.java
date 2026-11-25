@@ -163,11 +163,11 @@ public final class Construction {
 
     /** Whether column (cx, cz) is one of a gate that unit {@code i} may walk through (PATH-12): it is no obstruction. */
     private static boolean passingGate(MatchState s, int i, int cx, int cz) {
-        if (s.gates().empty()) {
+        if (s.play().gates().empty()) {
             return false;
         }
         dev.strategos.core.sim.nav.GateLinks.Pass pass =
-                s.gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
+                s.play().gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
         return pass != null && pass.gate(cx, cz);
     }
 

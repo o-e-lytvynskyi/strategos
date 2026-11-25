@@ -39,7 +39,7 @@ faction modifier.
   - `name` and the phase display names (by phase ordinal);
   - `roster`: the templates and technologies its factions may own. Production, placement and research refuse
     anything outside it; the command card hides it;
-  - `roles`: a map from engine roles (`house`, `worker`, `infantry`, `barracks`, `tower`, …) to its templates,
+  - `roles`: a map from engine roles (`centre`, `house`, `worker`, `infantry`, `barracks`, `tower`, …) to its templates,
     and `centreClass`, the class token whose buildings count as its centres (default `CivicCentre`). Code that
     needs "a house of this faction" asks the role, never a template id;
   - `start`: the start kit — entities by role or template, relative to the slot, and the starting resources;

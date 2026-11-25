@@ -87,10 +87,12 @@ final class Snapshots {
                         s.shots().save(),
                         s.stances().save(),
                         s.garrison().save(),
-                        s.territorySystem() != null ? s.territorySystem().save() : List.of(),
-                        s.capture().save(),
-                        s.gates().save(),
-                        s.breaches().save(entities::isAlive)),
+                        s.play().territorySystem() != null
+                                ? s.play().territorySystem().save()
+                                : List.of(),
+                        s.play().capture().save(),
+                        s.play().gates().save(),
+                        s.play().breaches().save(entities::isAlive)),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -209,7 +211,7 @@ final class Snapshots {
             state.restoreBuildings(SavedTemplates.buildings(
                     snapshot, templates)); // before the pages, so their footprints are laid over them
         }
-        state.restoreGates(snapshot.play().gates()); // before the pages too (PATH-12)
+        state.play().restoreGates(snapshot.play().gates()); // before the pages too (PATH-12)
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)
@@ -217,8 +219,8 @@ final class Snapshots {
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);
         Garrisons.restore(state, snapshot.play().garrisons());
-        state.capture().restore(snapshot.play().capture());
-        state.breaches().restore(snapshot.play().breaches());
+        state.play().capture().restore(snapshot.play().capture());
+        state.play().breaches().restore(snapshot.play().breaches());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

@@ -51,22 +51,22 @@ class WallGateTest {
     @Test
     void aFinishedGateStandsOverItsMiddleTwoColumnsAsItsOwners() {
         int building = gate(1, 40, 50);
-        assertThat(s.gates().count()).isEqualTo(1);
-        int id = s.gates().ids()[0];
-        assertThat(s.gates().owner(id)).isEqualTo(1);
-        assertThat(s.gates().columns(id)).containsExactly(41 << 16 | 50, 42 << 16 | 50);
+        assertThat(s.play().gates().count()).isEqualTo(1);
+        int id = s.play().gates().ids()[0];
+        assertThat(s.play().gates().owner(id)).isEqualTo(1);
+        assertThat(s.play().gates().columns(id)).containsExactly(41 << 16 | 50, 42 << 16 | 50);
         assertThat(WallGates.columns(s, building)).containsExactly(41 << 16 | 50, 42 << 16 | 50);
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(PALISADE, new FactionSlot(1), 40, 60, 0));
         h.step();
-        assertThat(s.gates().count()).as("a palisade segment is no gate").isEqualTo(1);
+        assertThat(s.play().gates().count()).as("a palisade segment is no gate").isEqualTo(1);
     }
 
     @Test
     void aGateTurnedAlongZTakesItsMiddleInZ() {
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(GATE, new FactionSlot(0), 40, 50, 1));
         h.step();
-        int id = s.gates().ids()[0];
-        assertThat(s.gates().columns(id)).containsExactly(40 << 16 | 51, 40 << 16 | 52);
+        int id = s.play().gates().ids()[0];
+        assertThat(s.play().gates().columns(id)).containsExactly(40 << 16 | 51, 40 << 16 | 52);
     }
 
     @Test
@@ -75,7 +75,7 @@ class WallGateTest {
         assertThat(s.footprintAt(41, 50)).isTrue();
         h.submit(new PlayerSlot(0), new Demolish(building));
         h.step();
-        assertThat(s.gates().empty()).isTrue();
+        assertThat(s.play().gates().empty()).isTrue();
         assertThat(s.footprintAt(41, 50))
                 .as("neither the building's footprint nor the gate's holds")
                 .isFalse();
@@ -87,15 +87,15 @@ class WallGateTest {
         int building = gate(0, 40, 50);
         s.buildings().setDamage(building, s.buildingMaxHp(building) + 1);
         s.destroyBuilding(building);
-        assertThat(s.gates().empty()).isTrue();
+        assertThat(s.play().gates().empty()).isTrue();
     }
 
     @Test
     void aGateChangingHandsChangesOwnerWithIt() {
         int building = gate(0, 40, 50);
         dev.strategos.core.sim.build.BuildingLife.transfer(s, building, 1);
-        assertThat(s.gates().count()).isEqualTo(1);
-        assertThat(s.gates().owner(s.gates().ids()[0])).isEqualTo(1);
+        assertThat(s.play().gates().count()).isEqualTo(1);
+        assertThat(s.play().gates().owner(s.play().gates().ids()[0])).isEqualTo(1);
     }
 
     @Test
@@ -111,11 +111,11 @@ class WallGateTest {
                 .toArray();
         h.submit(new PlayerSlot(0), new PlaceWall(PALISADE, 60, 90, 67, 90, List.of(1), UnitSet.of(workers)));
         h.step();
-        assertThat(s.gates().empty()).as("a foundation is no gate").isTrue();
-        assertThat(h.runUntil(() -> s.gates().count() == 1, 1_200))
+        assertThat(s.play().gates().empty()).as("a foundation is no gate").isTrue();
+        assertThat(h.runUntil(() -> s.play().gates().count() == 1, 1_200))
                 .as("the gate segment is finished")
                 .isTrue();
-        assertThat(s.gates().columns(s.gates().ids()[0])).containsExactly(65 << 16 | 90, 66 << 16 | 90);
+        assertThat(s.play().gates().columns(s.play().gates().ids()[0])).containsExactly(65 << 16 | 90, 66 << 16 | 90);
     }
 
     @Test
@@ -126,14 +126,15 @@ class WallGateTest {
         SimHarness twin = SimHarness.restore(h.core().snapshot(), TemplateSet.builtin());
         MatchState restored = KernelAccess.state(twin.core());
         assertThat(restored.buildings().alive(building)).isTrue();
-        assertThat(restored.gates().count()).isEqualTo(1);
-        assertThat(restored.gates().columns(restored.gates().ids()[0])).containsExactly(41 << 16 | 50, 42 << 16 | 50);
+        assertThat(restored.play().gates().count()).isEqualTo(1);
+        assertThat(restored.play().gates().columns(restored.play().gates().ids()[0]))
+                .containsExactly(41 << 16 | 50, 42 << 16 | 50);
         assertThat(twin.stateHash()).isEqualTo(saved);
         assertThat(WallGates.find(restored, WallGates.columns(restored, building)))
                 .isNotNegative();
         twin.submit(new PlayerSlot(0), new Demolish(building));
         twin.step();
-        assertThat(restored.gates().empty())
+        assertThat(restored.play().gates().empty())
                 .as("the restored gate goes with the restored building")
                 .isTrue();
     }

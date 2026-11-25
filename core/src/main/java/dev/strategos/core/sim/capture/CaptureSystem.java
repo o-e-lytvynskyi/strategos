@@ -49,7 +49,7 @@ public final class CaptureSystem implements MatchSystem {
     }
 
     private void step(MatchState s) {
-        CaptureStore store = s.capture();
+        CaptureStore store = s.play().capture();
         if (store.empty()) {
             return;
         }

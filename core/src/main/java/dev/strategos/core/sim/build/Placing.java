@@ -70,7 +70,7 @@ public final class Placing {
         }
         SurfaceGrid grid = s.surfaces();
         List<PlacementRules.Centre> civic = List.copyOf(centres);
-        TerritorySystem territorySystem = s.territorySystem();
+        TerritorySystem territorySystem = s.play().territorySystem();
         TerritoryGrid land =
                 territorySystem == null || territorySystem.recomputes() == 0 ? null : territorySystem.grid();
         return new PlacementRules.World() {

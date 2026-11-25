@@ -36,16 +36,16 @@ class FootprintOverlayTest {
                 KernelAccess.state(SimHarness.builder().size(96, 96).build().core());
         int[] gate = {40 << 16 | 40, 40 << 16 | 41};
         s.blockColumn(40, 40); // the palisade's footprint
-        int id = s.addGate(0, gate);
+        int id = s.play().addGate(0, gate);
 
-        s.removeGate(id);
+        s.play().removeGate(id);
         assertThat(s.footprintAt(40, 40)).as("the footprint still stands").isTrue();
         assertThat(s.footprintAt(40, 41)).as("a gate column outside it is free").isFalse();
 
-        id = s.addGate(0, gate);
+        id = s.play().addGate(0, gate);
         s.releaseColumn(40, 40); // the footprint is destroyed
         assertThat(s.footprintAt(40, 40)).as("the gate still stands").isTrue();
-        s.removeGate(id);
+        s.play().removeGate(id);
         assertThat(s.footprintAt(40, 40)).isFalse();
         assertThat(s.hasFootprints()).isFalse();
     }
