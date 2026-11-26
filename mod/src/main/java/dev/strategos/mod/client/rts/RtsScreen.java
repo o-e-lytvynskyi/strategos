@@ -9,6 +9,7 @@ import dev.strategos.core.client.input.ScreenKeys;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.client.select.UnitRole;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.MatchControl;
@@ -263,7 +264,17 @@ public final class RtsScreen extends Screen {
                         CARD_13,
                         CARD_14,
                         CARD_15 -> StrategosClient.hud().pressCard(e.action().cardSlot());
-                case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
+                case NEXT_IDLE_WORKER -> mode.hotkeys().nextIdle(UnitRole.WORKER);
+                case NEXT_IDLE_SOLDIER -> mode.hotkeys().nextIdle(UnitRole.SOLDIER);
+                case SELECT_ALL_SOLDIERS -> mode.hotkeys().selectAll(UnitRole.SOLDIER);
+                case SELECT_ALL_WORKERS -> mode.hotkeys().selectAll(UnitRole.WORKER);
+                case BACK_TO_WORK -> mode.hotkeys().backToWork();
+                case GARRISON -> mode.hotkeys().garrison();
+                case DELETE_SELECTED -> mode.hotkeys().delete();
+                case SET_BOOKMARK_1, SET_BOOKMARK_2, SET_BOOKMARK_3, SET_BOOKMARK_4 ->
+                    mode.hotkeys().setBookmark(e.action().setsBookmark());
+                case JUMP_BOOKMARK_1, JUMP_BOOKMARK_2, JUMP_BOOKMARK_3, JUMP_BOOKMARK_4 ->
+                    mode.hotkeys().jumpToBookmark(e.action().jumpsToBookmark());
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
                 case CONTROLS -> StrategosClient.hud().toggleControls();
                 case TECH_TREE -> StrategosClient.hud().openTechTree();

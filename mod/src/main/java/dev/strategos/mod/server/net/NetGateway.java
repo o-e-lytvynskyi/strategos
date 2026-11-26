@@ -11,6 +11,7 @@ import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
+import dev.strategos.core.protocol.DeleteUnits;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
@@ -388,6 +389,7 @@ public final class NetGateway {
             case FormationMove formation -> formation.units().size();
             case Patrol patrol -> patrol.units().size();
             case Guard guard -> guard.units().size();
+            case DeleteUnits delete -> delete.units().size();
             case PlaceWall wall -> wall.builders().size();
             case Ungarrison ungarrison ->
                 ungarrison.units().size() == 0

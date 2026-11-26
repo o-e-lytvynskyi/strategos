@@ -1,7 +1,7 @@
 package dev.strategos.core.client.input;
 
 /**
- * The actions of the RTS controls (04 §13.3); the full hotkey set comes with UI-17. Held actions are polled each tick;
+ * The actions of the RTS controls (04 §13.3); the full hotkey set is UI-17's. Held actions are polled each tick;
  * the others are events.
  */
 public enum Action {
@@ -50,6 +50,28 @@ public enum Action {
     ROTATE(false),
     /** The next idle worker, in a stable order: selected, the camera on it (UI-10). */
     NEXT_IDLE_WORKER(false),
+    /** The next idle soldier, as the idle worker's key does: selected, the camera on it (UI-17). */
+    NEXT_IDLE_SOLDIER(false),
+    /** Every own soldier selected (UI-17). */
+    SELECT_ALL_SOLDIERS(false),
+    /** Every own worker selected (UI-17). */
+    SELECT_ALL_WORKERS(false),
+    /** The all clear: the bell's workers go back to work, at the selected building or at every holder (UI-17). */
+    BACK_TO_WORK(false),
+    /** The selected units into the nearest own building that takes them (UI-17). */
+    GARRISON(false),
+    /** Delete the selected units, or demolish the selected building; asks for a second press (UI-17). */
+    DELETE_SELECTED(false),
+    /** The camera's place kept in bookmark 1 to 4 (UI-17); the session's, not saved. */
+    SET_BOOKMARK_1(false),
+    SET_BOOKMARK_2(false),
+    SET_BOOKMARK_3(false),
+    SET_BOOKMARK_4(false),
+    /** The camera to bookmark 1 to 4 (UI-17). */
+    JUMP_BOOKMARK_1(false),
+    JUMP_BOOKMARK_2(false),
+    JUMP_BOOKMARK_3(false),
+    JUMP_BOOKMARK_4(false),
     /** The camera to the latest under-attack alert (UI-12). */
     JUMP_TO_ALERT(false),
     /** The controls overlay (UI-14): the mod's keys on their current keys, rebinds included. */
@@ -103,6 +125,28 @@ public enum Action {
             case CARD_13 -> 12;
             case CARD_14 -> 13;
             case CARD_15 -> 14;
+            default -> -1;
+        };
+    }
+
+    /** The bookmark (0 to 3) this action sets, or -1 for any other action. */
+    public int setsBookmark() {
+        return switch (this) {
+            case SET_BOOKMARK_1 -> 0;
+            case SET_BOOKMARK_2 -> 1;
+            case SET_BOOKMARK_3 -> 2;
+            case SET_BOOKMARK_4 -> 3;
+            default -> -1;
+        };
+    }
+
+    /** The bookmark (0 to 3) this action jumps to, or -1 for any other action. */
+    public int jumpsToBookmark() {
+        return switch (this) {
+            case JUMP_BOOKMARK_1 -> 0;
+            case JUMP_BOOKMARK_2 -> 1;
+            case JUMP_BOOKMARK_3 -> 2;
+            case JUMP_BOOKMARK_4 -> 3;
             default -> -1;
         };
     }

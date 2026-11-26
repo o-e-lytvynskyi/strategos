@@ -255,7 +255,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The key reference matches the bindings (L1).
   3. Idle-soldier and idle-worker cycling work on screen (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-08 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress (criteria 1–2 pass: `HotkeyCoverageTest`, `KeyReferenceTest`; criterion 3, idle cycling on screen, is in the consent batch)
 
 #### CAM-06 · Orthographic view (optional)
 - **Value:** The classic flat RTS look for players who prefer it.

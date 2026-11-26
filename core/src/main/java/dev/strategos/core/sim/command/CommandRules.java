@@ -53,7 +53,8 @@ public final class CommandRules {
                 .register(new UseAbilityRule())
                 .register(new StandingRules.PatrolRule())
                 .register(new StandingRules.GuardRule())
-                .register(new FormationMoveRule());
+                .register(new FormationMoveRule())
+                .register(new DeleteUnitsRule());
     }
 
     /** A second rule for a kind throws. */

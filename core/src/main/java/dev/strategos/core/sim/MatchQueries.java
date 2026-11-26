@@ -95,6 +95,11 @@ public interface MatchQueries {
         return 0;
     }
 
+    /** Whether a live unit's current order is a patrol or a guard (ORD-07, UI-17): a guard whose charge died holds none. */
+    default boolean holdsStandingOrder(int handle) {
+        return false;
+    }
+
     /**
      * How far a live unit stands from its place in its formation, in blocks (ORD-06); NaN for a unit in none, which
      * tests and the debug overlay read.

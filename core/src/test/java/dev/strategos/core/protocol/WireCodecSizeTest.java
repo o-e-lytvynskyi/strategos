@@ -137,7 +137,7 @@ class WireCodecSizeTest {
                 .hasMessageContaining("target kind");
     }
 
-    /** ORD-06: the formation command is wire id 38 (after 36 Patrol and 37 Guard), as small as its fields, and refuses a bad shape. */
+    /** ORD-06: the formation command is wire id 38 (after 36 Patrol and 37 Guard, before 39 DeleteUnits), as small as its fields, and refuses a bad shape. */
     @Test
     void formationMoveIsWireId38WithTheSizesOfItsFields() {
         FormationMove box = FormationMove.replace(UnitSet.of(5), new Vec2d(1, 2), FormationShape.BOX);
@@ -145,7 +145,7 @@ class WireCodecSizeTest {
                 new FormationMove(UnitSet.of(5, 6), new Vec2d(-1.5, 2), FormationShape.LINE, QueueMode.QUEUE);
         assertThat(CommandKinds.DEFAULT.of(box).wireId()).isEqualTo(38);
         assertThat(CommandKinds.DEFAULT.of(box).adminOnly()).isFalse();
-        assertThat(CommandKinds.DEFAULT.byWireId(39)).isNull();
+        assertThat(CommandKinds.DEFAULT.byWireId(40)).isNull();
         assertThat(size(FormationMove.WIRE, box))
                 .as("count and handle 2, point 16, shape 1, mode 1")
                 .isEqualTo(20);
@@ -211,6 +211,27 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> WireCodec.decode(COMMANDS, tooMany)).isInstanceOf(WireException.class);
     }
 
+    /** UI-17: delete is wire id 39, as small as its unit set, and never admin only. */
+    @Test
+    void deleteUnitsIsWireId39WithTheSizeOfItsUnitSet() {
+        DeleteUnits one = new DeleteUnits(UnitSet.of(5));
+        DeleteUnits two = new DeleteUnits(UnitSet.of(5, 6));
+        assertThat(CommandKinds.DEFAULT.of(one).wireId()).isEqualTo(39);
+        assertThat(CommandKinds.DEFAULT.of(one).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.byWireId(39)).isSameAs(CommandKinds.DELETE_UNITS);
+        assertThat(size(DeleteUnits.WIRE, one)).as("count and handle, 2 bytes").isEqualTo(2);
+        assertThat(size(DeleteUnits.WIRE, two)).as("one more handle, 1 byte").isEqualTo(3);
+        for (DeleteUnits delete : List.of(one, two)) {
+            assertThat(roundTrip(COMMANDS, delete)).isEqualTo(delete);
+            assertThat(size(COMMANDS, delete)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        DeleteUnits widest = new DeleteUnits(UnitSet.of(many));
+        assertThat(size(DeleteUnits.WIRE, widest)).isLessThanOrEqualTo(DeleteUnits.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+    }
+
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
@@ -218,7 +239,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:patrol=36,strategos:guard=37,strategos:formation_move=38");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:patrol=36,strategos:guard=37,strategos:formation_move=38,strategos:delete_units=39");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();

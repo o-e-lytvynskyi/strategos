@@ -127,9 +127,12 @@ final class HudOverlays {
             return m == null ? null : m.getTranslatedKeyMessage().getString();
         });
         int line = font.lineHeight + 1;
-        int rows = (keys.size() + 1) / 2;
-        int colW = 170;
-        int w = 2 * colW + 3 * theme.padding();
+        int guiW = mc.getWindow().getGuiScaledWidth();
+        int fit = Math.max(1, (mc.getWindow().getGuiScaledHeight() - 2 * theme.padding()) / line - 3);
+        int cols = Math.max(2, (keys.size() + fit - 1) / fit); // as many columns as the screen's height needs
+        int rows = (keys.size() + cols - 1) / cols;
+        int colW = Math.min(170, (guiW - (cols + 1) * theme.padding()) / cols);
+        int w = cols * colW + (cols + 1) * theme.padding();
         int h = (rows + 2) * line + 2 * theme.padding();
         int x = (mc.getWindow().getGuiScaledWidth() - w) / 2;
         int y = Math.max(4, (mc.getWindow().getGuiScaledHeight() - h) / 2);

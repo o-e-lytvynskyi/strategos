@@ -40,6 +40,9 @@ class CommandHandlesTest {
                         dev.strategos.core.protocol.FormationShape.BOX,
                         QueueMode.REPLACE)))
                 .isEqualTo(3);
+        assertThat(NetGateway.handles(new dev.strategos.core.protocol.DeleteUnits(three)))
+                .as("UI-17")
+                .isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, three))).isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, UnitSet.of())))
                 .as("everyone inside counts as a full centre")

@@ -4,7 +4,6 @@ import dev.strategos.core.client.camera.CameraInput;
 import dev.strategos.core.client.camera.CameraLimits;
 import dev.strategos.core.client.camera.CameraPose;
 import dev.strategos.core.client.camera.CameraRig;
-import dev.strategos.core.client.hud.IdleWorkers;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.model.ClientResume;
@@ -13,6 +12,7 @@ import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.client.select.UnitRole;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
@@ -77,11 +77,7 @@ public final class RtsMode {
     private final RallyMarker rally = new RallyMarker(this);
     private final NodeMarker nodeMarker = new NodeMarker(this);
     private final FocusMarker focusMarker = new FocusMarker(this);
-    private final IdleWorkers idle = new IdleWorkers();
-    /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
-    private int pendingIdle = -1;
-
-    private int pendingIdleTicks;
+    private final RtsHotkeys hotkeys = new RtsHotkeys(this);
     private Selection selection = new Selection(-1);
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
@@ -194,43 +190,14 @@ public final class RtsMode {
         return orders.send(command);
     }
 
-    /**
-     * The idle-worker key (UI-10): the next idle worker, in index order, is selected and the camera goes to it; a far
-     * one is selected when its body arrives after the jump.
-     */
+    /** The idle-worker key and the resource bar's idle count (UI-10): the next idle worker is selected, the camera on it. */
     public void nextIdleWorker() {
-        MatchJoin join = StrategosClient.match();
-        if (join == null || rig == null) {
-            return;
-        }
-        UnitSummary.Entry e =
-                idle.next(StrategosClient.model().units(), join.slot().value(), StrategosClient.templates());
-        if (e == null) {
-            return;
-        }
-        centreOn(join.originX() + e.qx() / 8.0, join.originZ() + e.qz() / 8.0);
-        pendingIdle = e.index();
-        pendingIdleTicks = 100;
-        selectPendingIdle();
+        hotkeys.nextIdle(UnitRole.WORKER);
     }
 
-    private void selectPendingIdle() {
-        Minecraft mc = Minecraft.getInstance();
-        if (pendingIdle < 0 || mc.level == null) {
-            return;
-        }
-        for (Entity e : mc.level.entitiesForRendering()) {
-            if (e instanceof UnitEntity body
-                    && body.spawnData() != null
-                    && Handle.index(body.spawnData().handle()) == pendingIdle) {
-                selection().set(List.of(body.spawnData().handle()));
-                pendingIdle = -1;
-                return;
-            }
-        }
-        if (--pendingIdleTicks <= 0) {
-            pendingIdle = -1;
-        }
+    /** The hotkeys that act on the selection or the camera (UI-17). */
+    RtsHotkeys hotkeys() {
+        return hotkeys;
     }
 
     /** The selected deposit's marker this frame (ART-02): its band's pieces, match-local; empty if none. */
@@ -474,6 +441,7 @@ public final class RtsMode {
         if (join != null && join.matchId() != groupsMatch) {
             groups.restore(saved == null ? java.util.List.of() : saved.groups());
             groupsMatch = join.matchId();
+            hotkeys.clearBookmarks(); // a bookmark is a place in its match
         }
         input = new InputState(keys.current());
         mc.setScreen(new RtsScreen(this));
@@ -556,7 +524,7 @@ public final class RtsMode {
             return;
         }
         ticks++;
-        selectPendingIdle();
+        hotkeys.tick();
         outlines(mc);
         orders.showPreview(mc, ticks);
         orders.showMarkers(mc, ticks);

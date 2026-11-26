@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 22 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 23 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T21 (2026-11-26).
-- **Next task:** T22 · UI-17 · Hotkeys.
+- **Last finished task:** M10 T22 (2026-11-26).
+- **Next task:** T23 · CAM-06 · The orthographic view.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-26 — M10 T16–T21
+### 2026-11-26 — M10 T16–T22
 
+- **M10 T22 · Hotkeys** — UI-17 in progress (idle cycling on screen is the consent batch's). Fourteen new actions with default bindings (spec §1.6 row 26), modified bindings resolved before plain keys; `DeleteUnits` (wire 39) behind a two-press confirmation; garrison into the nearest admitting holder; back to work through the all clear; idle soldiers and workers skip units holding a standing order, which the server flags per own unit in `unit_summary` (a second trailing field; frames without one unchanged) — a guard whose charge died becomes idle again; camera bookmarks; the key reference generated from the bindings, its columns fitted to the screen. Tests: `HotkeyCoverageTest`, `KeyReferenceTest`, `IdleSoldiersTest`, `UnitRoleTest`, `CameraBookmarksTest`, `DeleteConfirmTest`, `HotkeyOrdersTest`, `DeleteUnitsTest`, `StandingReplicationTest`, the payload and wire pins. No state hash, golden or replay changed. `verify verifySlow` green, 4 min 49 s.
 - **M10 T21 · Wild herds and hunting** — ECO-10 in progress (the L6 budget is T27's). The wild boar (Gaia, 150 meat, flees 16 blocks when hurt, never breeds); horsemen hunt (`Hunter`, 5 food/s, carry 20), workers gather a carcass slowly; a kill leaves a carcass node where the boar fell and sends its hunters to gather it; herds from an optional `MapManifest.herds`, four on `first_skirmish` (spec §1.6 row 25). The pre-TECH-01 reconstruction leaves the boar and the hunting additions out, so that historical pin holds; the content version re-pinned (303c703b… → 409a9f8e…). Tests: `HuntTest` 3, `FleeStanceTest` 2, `HerdTest` 4; count and index pins grown. No state hash, golden, replay, map test or opening balance moved with the herds on the map (the AI soak on that map runs at the close). `verify verifySlow :core:soak` green, 5 min; `:core:test` after the re-pin, 140 s.
 - **M10 T20 · Patrol and guard** — ORD-07 **done**. `Patrol` (wire 36) loops its points with attack-move on every leg and resumes after a fight; `Guard` (wire 37) follows a friendly unit or building, engages what threatens it within its stance radius, leashes back and ends with its charge; per-order anchors saved and hashed only when present; card buttons and hotkeys O and G, a patrol and a guard targeting mode, Enter as a fixed confirm (spec §1.6 row 24). The rate limiter counts both (and FormationMove, uncovered before). Tests: `PatrolTest` 8, `GuardTest` 6, `GuardTransitionRows`, `StandingCardTest`, the wire pins, `ordertests.patrol_and_guard`; the inventory lists the two keys. No state hash, golden or replay changed. `verify verifySlow :core:soak` green from scratch, 317 s; `jmhCompare` red only on the known `volley60` row (6.653 µs/op).
 - **M10 T19 · Formations in the game** — ORD-06 **done**. Card buttons (box, line) for two or more movable units and hotkeys M and U (F/L and X/C collided with vanilla keys; `DefaultKeysTest` caught both) arm a formation march; the next ground click sends `FormationMove` (REPLACE). Each of the viewer's own units carries its formation id in `unit_summary` (a trailing optional field, written only when some unit is formed), so Alt+click selects a member's whole visible formation and a plain click only the member. Tests: `FormationSelectTest` 7, `FormationCardTest` 6, `FormationReplicationTest`, the payload pins, `formationtests.march` (spearmen and archers through a wall gap, all arrive within a block of their slots, ranged behind). The engine-surface inventory lists the two new key mappings. No state hash, golden or replay changed. `verify verifySlow` green, 4 min 59 s.
@@ -89,6 +90,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-26 · trial implementer: pass — M10 T22 over two rounds; the first inferred standing orders on the client from sent commands, replaced by the server's flag.
+- 2026-11-26 · Delete confirms with a second press on the same selection within 3 s, client-side — undo: a confirmation screen.
 - 2026-11-26 · trial implementer: pass — M10 T21 over two rounds (pins reported, not edited; the herds trialled on the map with nothing moving).
 - 2026-11-26 · trial implementer: pass — M10 T20; its one red test was a doc it was not allowed to edit, which the orchestrator fixed.
 - 2026-11-26 · A standing guard reports IDLE, so a guarding worker counts for the next-idle-worker key — T22's idle cycling should skip units with an order — undo: n/a.

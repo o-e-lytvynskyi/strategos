@@ -54,7 +54,8 @@ class CommandKindsTest {
                         "strategos:use_ability",
                         "strategos:patrol",
                         "strategos:guard",
-                        "strategos:formation_move");
+                        "strategos:formation_move",
+                        "strategos:delete_units");
     }
 
     @Test

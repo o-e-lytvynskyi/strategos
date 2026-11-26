@@ -365,6 +365,15 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean holdsStandingOrder(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return false;
+        }
+        int kind = state.orders().kind(Handle.index(handle));
+        return kind == OrderKind.PATROL || kind == OrderKind.GUARD;
+    }
+
+    @Override
     public double formationSlotError(int handle) {
         int id = formationOf(handle);
         FormationController c = id == 0 ? null : state.play().formations().byId(id);

@@ -44,4 +44,5 @@ public sealed interface Command extends Hashable
                 UseAbility,
                 Patrol,
                 Guard,
-                FormationMove {}
+                FormationMove,
+                DeleteUnits {}

@@ -126,6 +126,7 @@ class PayloadRoundTripTest {
                 List.of(
                         UnitSummary.Entry.at(3, 0, 2, 1, 10.5, 20.25, 12),
                         UnitSummary.Entry.at(4, 0, 2, 0, 11, 20, 12),
+                        UnitSummary.Entry.at(9, 0, 2, 0, 12, 20, 0, true),
                         UnitSummary.Entry.at(7, 0, 5, 0, 40, 41, 0),
                         UnitSummary.Entry.at(2, 1, 2, 0, 90, 41, 0)));
         roundTrip(UnitSummaryPayload.STREAM_CODEC, new UnitSummaryPayload(summary), UnitSummaryPayload.SPEC.cap());

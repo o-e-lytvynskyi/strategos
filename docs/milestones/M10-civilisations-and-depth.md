@@ -165,6 +165,7 @@ view and the first Minecraft twist, day and night.
 | 23 | Formations (T18) | One route per formation, searched by the path kernel (`PathJob`, gates passed like `PathService`) at command time on the most confined member's grid, re-searched from a partial route's end, instead of a PATH-09 group request; members steer to a place pushed ahead along it and plan individually only when it is out of line of walk. `FormationMove` is REPLACE only in M10 (a formation is a standing thing); one unit becomes a plain Move. The anchor waits up to 100 ticks for stragglers (assembled within 0.6 block; the place runs 0.9 block ahead). `MatchSnapshot.Play` reached DFU's 16-field limit: abilities, experience and formations nest in `Play.Depth`, still written as flat optional fields |
 | 24 | Patrol and guard (T20) | Patrol rides WALKING_AND_FIGHTING, its points saved as the order's anchors (on the order, not in `MatchSnapshot.Play`); one point patrols from the unit's place; a queued order after a patrol is accepted and never runs until a REPLACE. Guard has two leaves (GUARDING, GUARD_STANDING), stands 3 blocks off its charge, engages within its stance radius of the charge, leashes back, ends when the charge dies or leaves the alliance. Hotkeys O and G (P is vanilla's); a plain click patrols to one point, Shift-click adds points, right-click or Enter sends |
 | 25 | Hunting (T21) | The wild animal is the wild boar on the pig model (150 meat, 30 HP, flees 16 blocks through `Behaviour/flee` — no separate `Fauna/flee`); a new `Hunter` class (horsemen hunt at 5 food/s, carry 20; workers only gather a carcass, at 1/s) keeps horsemen out of the AI's worker logic; a food subtype `hunt`; herds through an optional `MapManifest.herds`, four point-mirrored herds on `first_skirmish` |
+| 26 | Hotkeys (T22) | Back to work T, garrison ;, delete Backspace pressed twice within 3 s (a new `DeleteUnits`, wire 39: own units die, no loot), next idle soldier Shift+I, select all soldiers Ctrl+A and workers Ctrl+W, camera bookmarks F4/F5/F7/F8 (set with Ctrl, x and z only, per match); queueing stays Shift on any order. The vanilla keys left no free letters. Units holding a standing order (patrol, guard) are flagged in `unit_summary` by the server and skipped by idle cycling |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -605,7 +606,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T19 (2026-11-26)
 - [x] T20 (2026-11-26)
 - [x] T21 (2026-11-26)
-- [ ] T22
+- [x] T22 (2026-11-26)
 - [ ] T23
 - [ ] T24
 - [ ] T25
