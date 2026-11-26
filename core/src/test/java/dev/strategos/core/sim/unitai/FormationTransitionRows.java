@@ -75,6 +75,13 @@ final class FormationTransitionRows {
         return null;
     }
 
+    /** An arrival while the order keeps a place its formation no longer has (it shrank, the unit was inside a house). */
+    private static BusMessage arrivedOnAStalePlace(Unit u) {
+        FormationController c = form(u);
+        u.state.orders().retarget(u.index(), c.id(), c.size() + 4);
+        return new Arrived(u.handle);
+    }
+
     /** The unit is pushed three blocks off its place. */
     private static BusMessage pushed(Unit u) {
         u.place(u.handle, u.state.motion().x(u.index()) + 3, u.state.motion().z(u.index()));
@@ -131,6 +138,12 @@ final class FormationTransitionRows {
                 u -> new Arrived(u.handle),
                 marching,
                 FormationTransitionRows::formationKept));
+        out.add(workerRow(
+                "an arrival on a place the formation no longer has ends the order",
+                marching,
+                FormationTransitionRows::arrivedOnAStalePlace,
+                UnitAi.IDLE,
+                UnitTreeTransitionsTest.orderFinished(false)));
         out.add(workerRow(
                 "a formation that stands has its member on its place stand (a tick)",
                 marching,

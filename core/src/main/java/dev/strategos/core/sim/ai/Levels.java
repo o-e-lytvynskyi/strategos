@@ -15,7 +15,7 @@ import java.util.List;
  * with a {@code levels} object, each level's knobs by its lower-case name. {@link #resolve} turns the script and a level
  * into the plain script {@code SetAi} carries, so a journal replays it: the level's pace goes into the script's
  * {@code level} field (think period, reaction, commands per think, the open handicap), the wave size multiplies each
- * attack's {@code min}, and the tactics (counters, focus, retreat: the {@code battle} block) are dropped when the level
+ * attack's {@code min}, and the tactics (counters, focus, retreat: the {@code battle} block, and the {@code depth} block of the late game) are dropped when the level
  * has them off. Only the top level, {@link #TOP}, may carry a bonus (R6), shown in setup; the lower ones only a handicap.
  */
 @CoreApi
@@ -91,6 +91,7 @@ public final class Levels {
         }
         if (!k.tactics()) {
             script.remove("battle");
+            script.remove("depth"); // the tree, the healers, charges, marches and spared veterans are tactics (AI-09)
         }
         scale(script.get("attack"), k.wave());
         JsonElement openings = script.get("openings");

@@ -125,7 +125,7 @@ view and the first Minecraft twist, day and night.
 | UI-17 | T22, T30 | 1 `HotkeyCoverageTest`; 2 `KeyReferenceTest`; 3 idle cycling on screen (consent) |
 | CAM-06 | T23, T30 | 1 `OrthoPickingTest`; 2 `EngineSurfaceInventoryTest`; 3, 4 switching and Sodium/Iris (consent) |
 | MATCH-16 | T24, T30 | 1 `NightVisionTest`; 2 `LightSourceTest`; 3 `NightReplayTest`; 4 night goldens (consent) |
-| AI-09 | T9a, T9b, T25 | 1 `AiCityTest`; 2 `AiProbeTest`; 3 `aisoak` sample hash |
+| AI-09 | T9a, T9b, T25a, T25b | 1 `AiCityTest`; 2 `AiProbeTest`; 3 `aisoak` sample hash |
 | QA-16 | T26 | 1 `:core:balanceMatrix`; 2 `BalanceMatrixReportTest`; 3 `BalanceMatrixReproTest`; 4 the L3 samples in `verifySoak` |
 | PERF-17 | T27, T29 | 1 `perf_m10` A–E; 2 `perf_m10_stress` C p95 ≤ 50 ms; 3 the report's `formation`, `fauna` and `ability` costs |
 
@@ -168,6 +168,7 @@ view and the first Minecraft twist, day and night.
 | 26 | Hotkeys (T22) | Back to work T, garrison ;, delete Backspace pressed twice within 3 s (a new `DeleteUnits`, wire 39: own units die, no loot), next idle soldier Shift+I, select all soldiers Ctrl+A and workers Ctrl+W, camera bookmarks F4/F5/F7/F8 (set with Ctrl, x and z only, per match); queueing stays Shift on any order. The vanilla keys left no free letters. Units holding a standing order (patrol, guard) are flagged in `unit_summary` by the server and skipped by idle cycling |
 | 27 | The orthographic view (T23) | Verified: `GameRenderer#getProjectionMatrix(double)` (GameRenderer.java:980) and `Frustum#offsetToFullyIncludeCameraCube(int)` (Frustum.java:33). The client mixins sit in `mod.client.mixin` under a second, client-only config (`strategos.client.mixins.json`), as ArchUnit's B5/B10 require. The picture's half height is `height / sin(pitch) · tan(FOV/2)`, the perspective view's height at the focus; picking needed no change (it unprojects both planes). Off by default; Ctrl+O while the RTS screen is open or the config toggles it; with Sodium or Iris loaded it stays off unless `orthographicWithRenderMods`; a fault turns it off for the session |
 | 28 | Day and night (T24) | A 24,000-tick day; match tick 0 is noon; night 13,000–23,000 in time-of-day (the first night at match tick 7,000), dusk and dawn 1,000 each. At night `Vision/range` ×`Vision/night` (0.6, on the unit and building bases) through `NightFactor`, refreshed only when the night begins or ends; `Vision/light` (civic centre 12, house 8, tower 24, sentry tower 20) holds at night. One match in a level drives the level's time (`setDayTime` every 20 ticks, vanilla's sync); more than one gets a client tint instead (`MatchStateMsg.tint`). `PlayRules.dayNight` is a boolean (no forced-tint mode); the cycle length is a constant (`DayClock.CYCLE`). `AFTER-M8` in NightFactor: FOW-02's shared vision reads the stamped radius |
+| 29 | The AI on the new content (T25) | Split into T25a and T25b. The first runs had City out of reach and the opening balance red; a diagnosis of 100 matches found the cause in the late game, not in City: in the 35 matches unfinished at 45 minutes the stronger side sat on unspent food and stone (1,158 and 754 at the limit) with 20 population free, as the tree's and the ram's reserves held soldiers back and gatherers kept a fixed ratio; the mop-up searched only round the enemy start, re-tasked only idle soldiers and skipped foundations; and a centre that fell late left too many buildings to burn. City now costs 600 food, 700 wood, 350 stone and 250 iron (was 800/900/600/400; the map gives each start one 1,000-stone quarry, and the AI spends about 1,050 stone before City), the temple 150 wood and 100 stone (was 100/200), the small quarry 2,000 stone (was 1,000; the pre-tech reconstruction keeps 1,000). The L3 sample plays in its own slow batch (`ai_sample`): the soak's batch must hold one test (QA-04.5). The shipped script's build order gains a tower and a temple at population 24, after Town, so the AI uses the new content with or without the `depth` block. Two rules came from the matches: no node farther than 128 blocks from an own civic centre is gathered (`EconomyManager.FAR_NODE`, the economy's reach beside `BuildManager.REMOTE_REACH`; a stone worker was sent 340 blocks across the map while its near slot stayed claimed, and Town came late), and a standing formation's member that gets no nearer its place for 200 ticks leaves the formation |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -444,7 +445,7 @@ mixin entry for CAM-06. No new dependencies.
 ### 7.1 Order
 
 T1 → T2 → T3 → T4 → T5 → T6 → T7 → T8 → T9a → T9b → (T10 → T11 → T12 → T13 → T14) ∥ (T15 → T16 → T17) ∥
-(T18 → T19 → T20) ∥ (T21) ∥ (T23) ∥ (T24) → T22 → T25 → T26 → T27 → T28 → T29 → T30 → T31. T22 (hotkeys) follows
+(T18 → T19 → T20) ∥ (T21) ∥ (T23) ∥ (T24) → T22 → T25a → T25b → T26 → T27 → T28 → T29 → T30 → T31. T22 (hotkeys) follows
 T11, T19 and T20, which add command-card buttons. T13 needs T10 (the heal ability) and T15
 (the temple is a Town building, the healer's data names City upgrades).
 
@@ -559,7 +560,22 @@ Verify: `verify verifySlow`. Size: 700.
 
 #### T25 · AI-09 · The AI on the new content
 City, the tree, healers, rank-aware retreats, `charge`, formation marches; `AiCityTest`. Verify: `verify verifySlow`,
-`:core:openingBalance`. Size: 700.
+`:core:openingBalance`. Size: 700. Split on 2026-11-26 (it passed 1,500 lines, and its runs showed the late game, not
+the new content, holding City back — §1.6 row 29):
+
+- **T25a · The machinery and what its runs found.** The script's `depth` block (the tree with its holds, healers kept
+  behind the army, veterans retreating first, `charge` on the approach, formation marches, workers growing with the
+  phase), each manager with its L1 test; the retuned City, temple and small quarry; the L3 sample that reaches Town and
+  replays its journal (AI-09.3). Five defects the AI's matches exposed, each with a test that failed first: a storehouse
+  placed on a gatherer's work slot, a formation slot left stale when the layout shrank, a capture walking on to a
+  fallen building, a standing formation's member that never reaches its place, and a boxed-in unit whose stuck count
+  was zeroed on every re-request. The shipped script leaves the `depth` block out, so every earlier gate holds.
+  Verify: `verify verifySlow`, `:core:openingBalance`, `:core:jmh :core:jmhCompare`. Size: 1,200.
+- **T25b · A late game that finishes.** Spending follows the stock: gatherers go where the reserves and the queues are
+  short, and a reserve holds back only the resources it lacks; the mop-up searches the whole map and the last-seen
+  positions, re-tasks walking soldiers, counts foundations, and burns in smaller squads. Then the shipped script turns
+  the `depth` block on and `AiCityTest` joins `verifySlow` (AI-09.1). Verify: `verify verifySlow`,
+  `:core:openingBalance`. Size: 600.
 
 #### T26 · QA-16 · The balance matrix
 `:core:balanceMatrix`, the report and its flags, the sheet diff, the L3 samples in `verifySoak`. Verify: the matrix
@@ -611,7 +627,8 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T22 (2026-11-26)
 - [x] T23 (2026-11-26)
 - [x] T24 (2026-11-26)
-- [ ] T25
+- [x] T25a (2026-11-26)
+- [ ] T25b
 - [ ] T26
 - [ ] T27
 - [ ] T28

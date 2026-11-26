@@ -155,6 +155,10 @@ approved roadmap; ideas go to "For the owner" as proposals.
      red `jmhCompare` is recorded the same day: the cause, and a proposed baseline
      (`perf/baseline-<machine>.proposed.json`) when the growth is the features' own cost — a
      "Decisions taken" line if you recommend it;
+   - `./gradlew :core:openingBalance` (about 10 minutes, alone) after any change that can move an AI
+     match's outcome — combat, economy, a template number, a technology, the AI itself — not only
+     after AI code: M10 changed combat and economy for fifteen tasks before it was run again, and
+     the red it had turned meanwhile took a whole task to untangle;
    - `./gradlew :core:balanceSheet` after changing a template number, a relationship or a
      provenance note: `BalanceSheetTest` fails while `docs/balance/` is stale. A new number needs
      its provenance note in `strategos/balance/provenance.json` in the same change;

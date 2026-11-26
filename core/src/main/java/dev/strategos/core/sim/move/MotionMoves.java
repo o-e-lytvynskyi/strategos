@@ -22,6 +22,15 @@ final class MotionMoves {
     }
 
     /**
+     * Unit {@code i} passed the last waypoint of a route that goes no further (a truncated one at its own feet, as a
+     * boxed-in unit is given again and again): the next tick measures from scratch, but the count of ticks without
+     * progress stays, as a route that moved the unit nowhere nearer is no progress.
+     */
+    static void passedLast(MotionStore motion, int i) {
+        motion.setProgress(i, motion.aimX(i), motion.aimZ(i), Double.POSITIVE_INFINITY, motion.stuck(i));
+    }
+
+    /**
      * Makes sure the unit's floor is a surface of its column: the same floor where it still exists, else the highest
      * passable surface at most a quarter block above the floor (or the unit's feet, for a unit that never stood on one),
      * else the lowest passable surface; false when the column has none.
@@ -187,7 +196,9 @@ final class MotionMoves {
         MotionStore motion = s.motion();
         double d = DetMath.length(tx - motion.x(i), tz - motion.z(i));
         if (motion.best(i) == Double.POSITIVE_INFINITY) {
-            motion.setProgress(i, tx, tz, d, 0); // the first tick of a walk, or after a waypoint
+            // The first tick of a walk, or after a waypoint: passed() has zeroed the count where progress was made,
+            // passedLast() kept it where a route ended at the unit's feet.
+            motion.setProgress(i, tx, tz, d, motion.stuck(i));
         } else if (tx != motion.aimX(i) || tz != motion.aimZ(i)) {
             motion.setProgress(i, tx, tz, d, motion.stuck(i) + 1); // a new route
         } else if (d < motion.best(i) - MotionSystem.PROGRESS) {

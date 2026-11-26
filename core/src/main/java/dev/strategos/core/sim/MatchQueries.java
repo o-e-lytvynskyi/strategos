@@ -261,6 +261,28 @@ public interface MatchQueries {
         return 0;
     }
 
+    /**
+     * Whether the research command's rule would take {@code tech} at {@code building} but for the price and the queue's
+     * room: the building's effective list, the roster, what is researched, queued, superseded or excluded, and the
+     * requirements (AI-09).
+     */
+    default boolean researchable(int building, dev.strategos.core.content.TechDef tech) {
+        return false;
+    }
+
+    /**
+     * Resource node {@code node}'s work slots, the cells round its base where gatherers stand, each packed as
+     * {@code x << 16 | z} in match-local columns; none for an unknown node (AI-02's sites keep them free).
+     */
+    default int[] nodeSlotCells(int node) {
+        return new int[0];
+    }
+
+    /** The live units inside building {@code building}, as handles; none for a dead building (AI-09's healing). */
+    default int[] garrisonOccupants(int building) {
+        return new int[0];
+    }
+
     /** The faction owning the territory tile of match-local column ({@code x}, {@code z}), -1 for neutral or no grid (AI-08). */
     default int territoryOwner(int x, int z) {
         return -1;

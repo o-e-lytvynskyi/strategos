@@ -79,5 +79,11 @@ final class Slots {
     /** One more than the tick of the last garrisoning ordered in defence (AI-08); 0 before. */
     static final int GARRISONED = 33;
 
+    /**
+     * The technology the priority list waits to pay for (AI-09): one more than the tick it first came due, shifted left
+     * 16 bits, with the technology's net index plus one in the low bits; 0 while none is waited for.
+     */
+    static final int TECH_DUE = 34;
+
     private Slots() {}
 }

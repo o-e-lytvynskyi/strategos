@@ -154,6 +154,31 @@ class FormationLeaveTest {
         assertThat(f.s.orders().kind(Handle.index(units[0]))).isEqualTo(OrderKind.MOVE);
     }
 
+    /**
+     * A member of a standing formation that cannot get nearer its place (here it is put back three blocks off it every
+     * tick, as a crowd or a wall would) leaves the formation after a while; the rest keep their shape and stand.
+     */
+    @Test
+    void aMemberThatCannotReachItsPlaceInAStandingFormationLeaves() {
+        FormationFixtures f = FormationFixtures.flat(false);
+        int[] units = f.block(TemplateSet.INFANTRY, 6, 3, 1.5, 20, 40);
+        FormationController c = f.march(units, 60, 50, FormationShape.BOX);
+        for (int t = 0; t < 3_000 && !c.holding(); t++) {
+            f.h.step();
+        }
+        assertThat(c.holding()).as("the formation stands").isTrue();
+        f.h.runTicks(60);
+        int stuck = c.member(2);
+        int i = Handle.index(stuck);
+        for (int t = 0; t < 400 && f.s.orders().kind(i) == OrderKind.FORMATION; t++) {
+            f.s.motion().set(i, c.slotX(2) + 3, f.s.motion().y(i), c.slotZ(2), 0);
+            f.h.step();
+        }
+        assertThat(f.s.orders().kind(i)).as("it left").isNotEqualTo(OrderKind.FORMATION);
+        f.h.step();
+        assertReslotted(f, c, without(units, stuck));
+    }
+
     private static int[] without(int[] units, int handle) {
         List<Integer> out = new ArrayList<>();
         for (int u : units) {

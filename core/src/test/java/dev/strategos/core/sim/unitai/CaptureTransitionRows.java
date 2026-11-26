@@ -113,6 +113,15 @@ final class CaptureTransitionRows {
                 toHouse,
                 CaptureTransitionRows::captureOrderKept));
         out.add(workerRow(
+                "arriving at a house that fell on the way ends the order",
+                toHouse,
+                u -> {
+                    u.state.destroyBuilding(u.enemyHouse);
+                    return new Arrived(u.handle);
+                },
+                idle,
+                UnitTreeTransitionsTest.orderFinished(false)));
+        out.add(workerRow(
                 "a house the capturer cannot reach fails the order",
                 toHouse,
                 u -> new Stuck(u.handle, Stuck.GIVE_UP),

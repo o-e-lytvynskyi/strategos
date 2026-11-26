@@ -3,7 +3,7 @@
   "icon": "minecraft:beacon",
   "classes": ["Phase"],
   "ordinal": 2,
-  "cost": { "food": 800, "wood": 900, "stone": 600, "iron": 400 },
+  "cost": { "food": 600, "wood": 700, "stone": 350, "iron": 250 },
   "time": 90,
   "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
   "effects": [

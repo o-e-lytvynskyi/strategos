@@ -298,6 +298,12 @@ public final class StrategosGameTests {
         afterBatch(level, "aisoak");
     }
 
+    @AfterBatch(batch = "ai_sample")
+    public static void afterAiSample(ServerLevel level) {
+        level.getServer().tickRateManager().stopSprinting(); // a failed check must not leave the server sprinting
+        afterBatch(level, "ai_sample");
+    }
+
     @AfterBatch(batch = "ai_starts")
     public static void afterAiStarts(ServerLevel level) {
         afterBatch(level, "ai_starts");

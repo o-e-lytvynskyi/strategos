@@ -3,5 +3,5 @@
   "Identity": { "name": "strategos.building.quarry", "icon": "minecraft:stone", "classes": "+Deposit" },
   "Building": { "blueprint": "strategos:quarry" },
   "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
-  "Deposit": { "resource": "stone", "subtype": "rock", "amount": 1000, "slots": 3, "depleted": "minecraft:gravel" }
+  "Deposit": { "resource": "stone", "subtype": "rock", "amount": 2000, "slots": 3, "depleted": "minecraft:gravel" }
 }

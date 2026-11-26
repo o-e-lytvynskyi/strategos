@@ -7,6 +7,6 @@
   "Health": { "max": 1200 },
   "GarrisonHolder": { "capacity": 10, "classes": "Worker Infantry Healer", "heal": 3 },
   "Loot": { "resources": { "wood": 20, "stone": 40 } },
-  "Cost": { "resources": { "wood": 100, "stone": 200 }, "time": 80 },
+  "Cost": { "resources": { "wood": 150, "stone": 100 }, "time": 80 },
   "Trainer": { "units": "strategos:unit/healer", "batchExponent": 0.8 }
 }

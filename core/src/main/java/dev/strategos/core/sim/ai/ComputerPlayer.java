@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A computer player (AI-01, 04 §14): its faction, its profile and strategy, its memory, and its modules, which think
- * in order (economy, production, building, military) within one budget. It counts the commands it sends and the tick
+ * in order (economy, production, building, research, military) within one budget. It counts the commands it sends and the tick
  * of the last, which the headless runner's watchdog reads.
  */
 public final class ComputerPlayer {
@@ -46,7 +46,9 @@ public final class ComputerPlayer {
                     new EconomyManager(s, memory),
                     new ProductionManager(s, memory),
                     new BuildManager(s, memory),
+                    new TechManager(s, memory),
                     new MilitaryManager(s, memory),
+                    new HealerManager(s),
                     new RebuildManager(memory));
             modules = m;
         }

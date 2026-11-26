@@ -163,11 +163,25 @@ final class BuildManager implements AiModule {
     /** How long the stock is kept for a due building before soldiers may have it again: a minute (AI-02). */
     static final long RESERVE_TICKS = 1_200;
 
+    /** Whether a research step (Town) comes before step {@code step} of the build order: its building is a later one. */
+    private static boolean researchBefore(StrategyScript script, int step) {
+        for (int k = 0; k < step; k++) {
+            if (script.build().get(k).researches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** As {@link #RESERVE_TICKS} for a due tech, whose cost is several buildings' (AI-05): five minutes. */
     static final long RESEARCH_RESERVE_TICKS = 6_000;
 
-    /** What the stock is kept for: a building, or a tech. */
-    record Due(TemplateId building, @Nullable TechDef tech) {
+    /** What the stock is kept for: a building, or a tech; {@code tree}: one the priority list saves for (AI-09). */
+    record Due(TemplateId building, @Nullable TechDef tech, boolean tree) {
+        Due(TemplateId building, @Nullable TechDef tech) {
+            this(building, tech, false);
+        }
+
         /** Its cost in {@code resource}, thousandths. */
         long cost(AiView view, String resource) {
             return tech == null ? view.cost(building, resource) : view.cost(tech, resource);
@@ -176,14 +190,16 @@ final class BuildManager implements AiModule {
 
     /**
      * What the stock is kept for (AI-02's {@code reserve}; null without it or with nothing due): a dropsite by a far
-     * node the stock did not cover, until it is placed, or else the build order's next step ({@link #stepDue}).
+     * node the stock did not cover, until it is placed, or else the build order's next step ({@link #stepDue}), or else
+     * the technology the priority list saves for ({@link TechManager#due}).
      */
     static @Nullable Due due(AiView view, StrategyScript script, AiMemory memory) {
         if (script.reserve() && memory.get(Slots.EXPAND_SINCE) != 0) {
             return new Due(
                     new TemplateId(script.dropsite()), null); // with its resource running out, nothing else pays more
         }
-        return stepDue(view, script, memory);
+        Due step = stepDue(view, script, memory);
+        return step != null ? step : TechManager.due(view, script, memory); // AI-09: then the tree's first
     }
 
     /**
@@ -191,6 +207,14 @@ final class BuildManager implements AiModule {
      * #RESERVE_TICKS} ticks, a research for {@value #RESEARCH_RESERVE_TICKS}.
      */
     static @Nullable Due stepDue(AiView view, StrategyScript script, AiMemory memory) {
+        return stepDue(view, script, memory, true);
+    }
+
+    /**
+     * As {@link #stepDue(AiView, StrategyScript, AiMemory)}; with {@code expire} off the step stays due for as long as it
+     * is not done (the tree's research never takes what a due building waits for, AI-09).
+     */
+    static @Nullable Due stepDue(AiView view, StrategyScript script, AiMemory memory, boolean expire) {
         int step = (int) memory.get(Slots.STEP);
         long since = memory.get(Slots.DUE_SINCE);
         if (!script.reserve() || step >= script.build().size() || since == 0) {
@@ -199,11 +223,15 @@ final class BuildManager implements AiModule {
         StrategyScript.Step s = script.build().get(step);
         if (s.researches()) {
             TechDef tech = view.templates().tech(new TechId(s.research()));
-            return tech == null || view.tick() - (since - 1) > RESEARCH_RESERVE_TICKS
+            return tech == null || (expire && view.tick() - (since - 1) > RESEARCH_RESERVE_TICKS)
                     ? null
                     : new Due(s.building(), tech);
         }
-        return view.tick() - (since - 1) > RESERVE_TICKS ? null : new Due(s.building(), null);
+        boolean late = view.tick() >= 20L * script.depth().techs().from(); // the late game's holds come with its minute
+        long hold = late && script.depth().hold() > 0 && researchBefore(script, step)
+                ? script.depth().hold()
+                : RESERVE_TICKS;
+        return expire && view.tick() - (since - 1) > hold ? null : new Due(s.building(), null);
     }
 
     /**

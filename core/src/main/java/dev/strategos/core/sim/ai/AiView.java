@@ -6,6 +6,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
@@ -230,6 +231,13 @@ public final class AiView {
         return nodes;
     }
 
+    /** Node {@code id}'s work slots as packed cells ({@code x << 16 | z}): where its gatherers stand. */
+    public int[] nodeSlotCells(int id) {
+        int[] cells = q.nodeSlotCells(id);
+        budget.spend(cells.length);
+        return cells;
+    }
+
     /** Why a building of {@code id} at corner ({@code x}, {@code z}) breaks a rule of the ground, or null (AI-02). */
     public @Nullable String placementRefusal(TemplateId id, int x, int z) {
         UnitTemplate t = q.templates().byId(id);
@@ -288,6 +296,16 @@ public final class AiView {
             }
         }
         return true;
+    }
+
+    /** Whether the faction has researched the technology {@code id}. */
+    public boolean researched(String id) {
+        for (TechId t : q.researched(new FactionSlot(faction))) {
+            if (t.value().equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Whether the faction has researched {@code tech}, or an own building holds it in its queue. */
@@ -463,5 +481,49 @@ public final class AiView {
     public int buildingLimit(TemplateId id) {
         UnitTemplate t = q.templates().byId(id);
         return t == null ? 0 : q.buildingLimit(t.netIndex(), faction);
+    }
+
+    /** Whether the research command's rule would take {@code tech} at own finished building {@code b} but for price and queue room (AI-09). */
+    public boolean canResearch(BuildingView b, TechDef tech) {
+        return q.researchable(b.handle(), tech);
+    }
+
+    /** Unit {@code u}'s rank (CMB-11): 0 for none. */
+    public int rank(UnitView u) {
+        return q.rank(u.handle());
+    }
+
+    /** The formation unit {@code u} keeps a place in (ORD-06), 0 for none. */
+    public int formation(UnitView u) {
+        return q.formationOf(u.handle());
+    }
+
+    /** Whether unit {@code u} has ability {@code ability} and it is off cooldown (UNIT-10). */
+    public boolean abilityReady(UnitView u, String ability) {
+        for (dev.strategos.core.content.AbilityDef def : q.templates().abilitiesOf(u.templateIndex())) {
+            if (def.id().equals(ability)) {
+                return q.abilityCooldown(u.handle(), ability) == 0;
+            }
+        }
+        return false;
+    }
+
+    /** Whether unit {@code u}'s current order is to go into a building (BLD-16). */
+    public boolean garrisoning(UnitView u) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty() && orders.get(0).kind() == OrderKind.GARRISON;
+    }
+
+    /** The own units inside building {@code building}, as the faction sees them (AI-09's healing). */
+    public List<UnitView> occupants(int building) {
+        List<UnitView> out = new ArrayList<>();
+        for (int h : q.garrisonOccupants(building)) {
+            UnitView u = q.unit(h);
+            if (u != null && u.faction().value() == faction) {
+                out.add(u);
+            }
+        }
+        budget.spend(out.size());
+        return out;
     }
 }

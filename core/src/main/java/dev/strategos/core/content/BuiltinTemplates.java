@@ -397,7 +397,7 @@ final class BuiltinTemplates {
               "Health": { "max": 1200 },
               "GarrisonHolder": { "capacity": 10, "classes": "Worker Infantry Healer", "heal": 3 },
               "Loot": { "resources": { "wood": 20, "stone": 40 } },
-              "Cost": { "resources": { "wood": 100, "stone": 200 }, "time": 80 },
+              "Cost": { "resources": { "wood": 150, "stone": 100 }, "time": 80 },
               "Trainer": { "units": "strategos:unit/healer", "batchExponent": 0.8 }
             }
             """;
@@ -925,7 +925,7 @@ final class BuiltinTemplates {
               "icon": "minecraft:beacon",
               "classes": ["Phase"],
               "ordinal": 2,
-              "cost": { "food": 800, "wood": 900, "stone": 600, "iron": 400 },
+              "cost": { "food": 600, "wood": 700, "stone": 350, "iron": 250 },
               "time": 90,
               "requires": { "all": [{ "phase": "town" }, { "buildings": { "filter": "Town", "count": 3 } }] },
               "effects": [
@@ -961,7 +961,7 @@ final class BuiltinTemplates {
               "Identity": { "name": "strategos.building.quarry", "icon": "minecraft:stone", "classes": "+Deposit" },
               "Building": { "blueprint": "strategos:quarry" },
               "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
-              "Deposit": { "resource": "stone", "subtype": "rock", "amount": 1000, "slots": 3, "depleted": "minecraft:gravel" }
+              "Deposit": { "resource": "stone", "subtype": "rock", "amount": 2000, "slots": 3, "depleted": "minecraft:gravel" }
             }
             """;
 
@@ -1164,7 +1164,7 @@ final class BuiltinTemplates {
                 raw("strategos:building/barracks", BARRACKS, withTechs),
                 raw("strategos:building/storehouse", STOREHOUSE, withTechs),
                 raw("strategos:building/farmstead", FARMSTEAD, withTechs),
-                raw("strategos:building/quarry", QUARRY),
+                raw("strategos:building/quarry", QUARRY, withTechs),
                 raw("strategos:building/quarry_large", QUARRY_LARGE),
                 raw("strategos:building/iron_mine", IRON_MINE),
                 raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)));
@@ -1260,6 +1260,9 @@ final class BuiltinTemplates {
                 if (vision.size() == 0) {
                     object.remove("Vision");
                 }
+            }
+            if (id.equals("strategos:building/quarry")) { // AI-09's deeper small quarry: the pin keeps its 1000
+                object.getAsJsonObject("Deposit").addProperty("amount", 1000);
             }
             if (object.has("Builder")) {
                 object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)

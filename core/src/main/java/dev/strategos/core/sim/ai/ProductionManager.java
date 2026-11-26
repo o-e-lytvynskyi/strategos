@@ -13,7 +13,7 @@ import java.util.List;
  * Keeps the queues full within the stock (04 §14's ProductionManager): its civic centre trains workers until the
  * script's number, counting those queued; every building that trains its soldiers keeps a few queued, and under AI-02's
  * {@code reserve} only while the stock also covers the building the build order waits on; a field reaped empty is
- * sown again.
+ * sown again. A temple trains the script's few healers ({@code depth.healers}, AI-09).
  */
 final class ProductionManager implements AiModule {
     /** What a field's reseed costs in M3, in thousandths; the server's refusal stands if it costs more. */
@@ -33,6 +33,9 @@ final class ProductionManager implements AiModule {
         TemplateId soldier =
                 script.soldier().isEmpty() ? view.civRole(CivRoles.INFANTRY) : new TemplateId(script.soldier());
         TemplateId ram = view.civRole(CivRoles.SIEGE); // the siege unit (QA-12); none: no rams are wanted
+        TemplateId healer = view.civRole(HealerManager.HEALER); // AI-09: a temple trains a few, none without the role
+        int healersWanted = script.depth().healers();
+        int healers = 0;
         StrategyScript.Battle battle = script.battle();
         boolean compose = battle.replan() > 0;
         int[] have = new int[4]; // own soldiers by role, queued ones too (AI-03)
@@ -45,8 +48,13 @@ final class ProductionManager implements AiModule {
             if (u.template().equals(ram)) {
                 rams++;
             }
+            if (u.template().equals(healer)) {
+                healers++;
+            }
             have[view.role(u)]++;
         }
+        int workerCap =
+                script.maxWorkers() + script.depth().extraWorkers(view::researched); // AI-09: grows with the phase
         if (compose) {
             Composition.replan(view, battle, memory);
         }
@@ -60,6 +68,9 @@ final class ProductionManager implements AiModule {
                 }
                 if (view.templates().has(t) && view.templates().byIndex(t).id().equals(ram)) {
                     rams++;
+                }
+                if (view.templates().has(t) && view.templates().byIndex(t).id().equals(healer)) {
+                    healers++;
                 }
                 have[view.roleOf(t)]++;
             }
@@ -102,10 +113,18 @@ final class ProductionManager implements AiModule {
             if (capped) {
                 continue; // the cap is refused whatever is queued: back off until a unit dies
             }
+            if (healer != null && healers < healersWanted && view.trains(b.template(), healer)) {
+                if (b.queue().isEmpty() && view.affords(healer) && (due == null || affordsBoth(view, healer, due))) {
+                    budget.spend(10);
+                    healers++;
+                    sink.send(new Train(b.handle(), healer)); // a temple's healers, a few, once it stands (AI-09)
+                }
+                continue;
+            }
             if (worker != null
                     && view.trains(b.template(), worker)
                     && b.queue().isEmpty()
-                    && workers < script.maxWorkers()
+                    && workers < workerCap
                     && view.affords(worker)) {
                 budget.spend(10);
                 workers++;
@@ -117,7 +136,9 @@ final class ProductionManager implements AiModule {
                         && view.affords(unit)
                         && (due == null
                                 || affordsBoth(view, unit, due) // AI-02: the build order first
-                                || early(script.early(), have))
+                                || early(script.early(), have)
+                                || (TechManager.saving(due)
+                                        && early(script.depth().techs().keep(), have)))
                         && (!ramWanted
                                 || ram == null
                                 || affordsBoth(view, unit, ram))) { // QA-12: the rams' price is kept

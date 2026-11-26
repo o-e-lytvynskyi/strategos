@@ -307,7 +307,11 @@ public final class MotionSystem implements MatchSystem {
             }
             paths.advance(i);
             cursor++;
-            MotionMoves.passed(motion, i);
+            if (cursor < path.count()) {
+                MotionMoves.passed(motion, i);
+            } else {
+                MotionMoves.passedLast(motion, i); // the route ends here: no way nearer is no progress
+            }
         }
         boolean following = cursor < path.count();
         double tx;

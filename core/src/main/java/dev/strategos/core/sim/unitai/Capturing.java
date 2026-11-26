@@ -104,6 +104,10 @@ final class Capturing {
     static void arrived(Context<MatchState> ctx, Arrived m) {
         MatchState s = ctx.host();
         int i = ctx.unit();
+        if (!capturable(s, i, s.orders().target(i))) {
+            UnitAi.finishOrder(ctx, false); // the building fell, or changed hands, while the unit walked
+            return;
+        }
         if (inReach(s, i, s.orders().target(i))) {
             ctx.go(UnitAi.CAPTURING);
             return;

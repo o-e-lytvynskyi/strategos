@@ -678,6 +678,30 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean researchable(int building, dev.strategos.core.content.TechDef tech) {
+        return state.buildings().alive(building)
+                && dev.strategos.core.sim.prod.Techs.refusal(state, building, tech) == null;
+    }
+
+    @Override
+    public int[] nodeSlotCells(int node) {
+        dev.strategos.core.sim.econ.NodeStore n = state.nodes();
+        if (node < 1 || node > n.count()) {
+            return new int[0];
+        }
+        int[] out = new int[n.slotCount(node)];
+        for (int s = 0; s < out.length; s++) {
+            out[s] = n.slot(node, s);
+        }
+        return out;
+    }
+
+    @Override
+    public int[] garrisonOccupants(int building) {
+        return state.buildings().alive(building) ? state.garrison().occupants(building) : new int[0];
+    }
+
+    @Override
     public int buildingLimit(int template, int faction) {
         return dev.strategos.core.sim.build.Placing.limit(state, template, faction);
     }

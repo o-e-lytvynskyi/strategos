@@ -1,16 +1,13 @@
 package dev.strategos.core.sim.command;
 
-import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.shared.QueueEntry;
-import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
-import dev.strategos.core.sim.MatchFactionView;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.prod.Techs;
@@ -45,36 +42,11 @@ final class ResearchRules {
             if (tech == null) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNKNOWN_TEMPLATE);
             }
-            if (tech.isPhase() && tech.ordinal() == 0) { // Village is the phase of a faction with none (row 19)
-                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
-            }
-            if (b.state(research.building()) != BuildingStore.COMPLETE
-                    || !Techs.researches(state, research.building(), tech)) {
-                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            RejectReason refusal = Techs.refusal(state, research.building(), tech);
+            if (refusal != null) {
+                return Tally.rejectAll(envelope, kind(), 1, refusal);
             }
             int faction = b.faction(research.building());
-            if (!state.civs().hasTech(faction, tech.netIndex())) { // outside the owner's civilisation's roster (CIV-01)
-                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
-            }
-            if (state.progress().researched(faction, tech.id()) || Techs.pending(state, faction, tech)) {
-                return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
-            }
-            for (TechDef later : state.templates().techs()) { // a tech a researched or pending one supersedes is moot
-                if (tech.id().equals(later.supersedes())
-                        && (state.progress().researched(faction, later.id()) || Techs.pending(state, faction, later))) {
-                    return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
-                }
-            }
-            for (TechId other : tech.excludes()) { // its pair is taken: researched, or queued anywhere (TECH-05)
-                TechDef pair = state.templates().tech(other);
-                if (state.progress().researched(faction, other)
-                        || (pair != null && Techs.pending(state, faction, pair))) {
-                    return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
-                }
-            }
-            if (!Requirements.evaluate(tech.requires(), new MatchFactionView(state, faction))) {
-                return Tally.rejectAll(envelope, kind(), 1, RejectReason.REQUIREMENTS);
-            }
             if (b.queues().queueSize(research.building()) >= BuildingStore.QUEUE_MAX) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.QUEUE_FULL);
             }

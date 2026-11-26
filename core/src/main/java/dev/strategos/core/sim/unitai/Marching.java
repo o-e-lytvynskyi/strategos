@@ -35,6 +35,12 @@ final class Marching {
     /** How far a standing member may be pushed off its place before it walks back, in blocks. */
     static final double REWALK = 0.4;
 
+    /** How far nearer its place a unit must come, in sixteenths of a block, to count as progress while it stands. */
+    static final int PROGRESS = 4;
+
+    /** How many ticks a member may stay off its standing formation's place without getting nearer it. */
+    static final int STALL = 200;
+
     /** Enemies are looked for this often by a member of a formation that stands, in ticks. */
     static final int WATCH = 10;
 
@@ -108,13 +114,34 @@ final class Marching {
         follow(ctx, c);
         if (c.holding() && onPlace(ctx, c)) {
             ctx.go(UnitAi.FORMATION_HOLDING);
+        } else if (c.holding()) {
+            keepTrying(ctx, c);
+        } else if (ctx.data0() != 0) {
+            ctx.setData(0, 0); // it walks again: no stall to count
+        }
+    }
+
+    /**
+     * A formation stands and the unit is not on its place: it gets nearer, or after {@value #STALL} ticks of none (a
+     * place it cannot reach, crowded or walled) it leaves the formation, as a unit with an order of its own does. The
+     * words are the tick of the last progress, plus one, and the least distance reached, in sixteenths of a block.
+     */
+    private static void keepTrying(Context<MatchState> ctx, FormationController c) {
+        MatchState s = ctx.host();
+        int i = ctx.unit();
+        int k = s.orders().slot(i);
+        double away = DetMath.length(s.motion().x(i) - c.placeX(k), s.motion().z(i) - c.placeZ(k));
+        int best = (int) Math.min(Integer.MAX_VALUE, away * 16);
+        if (ctx.data0() == 0 || best < ctx.data1() - PROGRESS) {
+            ctx.setData((int) s.tick() + 1, best);
+        } else if (s.tick() - (ctx.data0() - 1) > STALL) {
+            UnitAi.finishOrder(ctx, false);
         }
     }
 
     /** FORMATION_MARCHING's Arrived: the unit landed on its place; it stands only if the formation does. */
     static void arrived(Context<MatchState> ctx) {
-        FormationController c =
-                ctx.host().play().formations().byId(ctx.host().orders().target(ctx.unit()));
+        FormationController c = formation(ctx); // a place the formation no longer has (it shrank) ends the order
         if (c != null && c.holding() && onPlace(ctx, c)) {
             ctx.go(UnitAi.FORMATION_HOLDING);
         }

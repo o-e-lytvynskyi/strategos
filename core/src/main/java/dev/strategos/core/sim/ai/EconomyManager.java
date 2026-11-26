@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SetAutoReseed;
@@ -29,6 +30,14 @@ final class EconomyManager implements AiModule {
     /** How far from its centre a field is its own. */
     static final double OWN_FIELD = 32;
 
+    /**
+     * Farther than this from its centre no node is gathered at: a load carried that far home is minutes of walking, and
+     * the gatherer's slot at a near node stays claimed meanwhile (QA-12, a fourth stone worker sent 300 blocks across the
+     * map). It is the economy's reach: a remote dropsite goes up at most {@link BuildManager#REMOTE_REACH} from the
+     * centre, and a node a few blocks beyond it.
+     */
+    static final double FAR_NODE = 128;
+
     /** A stock under this is low, over that piled up, in thousandths. */
     static final long LOW = 100_000;
 
@@ -40,6 +49,7 @@ final class EconomyManager implements AiModule {
     private final StrategyScript script;
     private final AiMemory memory;
     private final Map<String, Long> stocks = new TreeMap<>(); // this think's, by resource
+    private double[] centres = new double[0]; // this think's finished own centres, (x, z) pairs
 
     EconomyManager(StrategyScript script, AiMemory memory) {
         this.script = script;
@@ -49,6 +59,7 @@ final class EconomyManager implements AiModule {
     @Override
     public void think(AiView view, AiBudget budget, CommandSink sink) {
         Base base = Base.of(view);
+        centres = ownCentres(view);
         List<String> resources = view.resources();
         stocks.clear();
         for (String r : resources) {
@@ -382,10 +393,41 @@ final class EconomyManager implements AiModule {
                 || n.freeSlots() + free.getOrDefault(n.id(), 0) <= 0) {
             return false;
         }
+        if (centres.length > 0 && farFromEveryCentre(n.anchorX(), n.anchorZ())) { // AI-08: a second centre reaches too
+            return false;
+        }
         if (n.kind() == MaterialKind.CROP
                 && (base == null || DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z()) > OWN_FIELD)) {
             return false;
         }
         return !(script.balance() && base != null && base.enemyHome(n.anchorX(), n.anchorZ())); // AI-02 leaves it
+    }
+
+    private static double[] ownCentres(AiView view) {
+        int count = 0;
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == 2 && view.isCentre(b)) {
+                count++;
+            }
+        }
+        double[] out = new double[count * 2];
+        int i = 0;
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == 2 && view.isCentre(b)) {
+                Footprint f = b.footprint();
+                out[i++] = f.anchorX() + f.spanX() / 2.0;
+                out[i++] = f.anchorZ() + f.spanZ() / 2.0;
+            }
+        }
+        return out;
+    }
+
+    private boolean farFromEveryCentre(double x, double z) {
+        for (int i = 0; i < centres.length; i += 2) {
+            if (DetMath.length(x - centres[i], z - centres[i + 1]) <= FAR_NODE) {
+                return false;
+            }
+        }
+        return true;
     }
 }

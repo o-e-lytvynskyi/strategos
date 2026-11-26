@@ -329,8 +329,8 @@
     "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Loot/resources/stone": "40 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Twelve hundred: as a barracks, a stone hall: worth a raid but not the first thing a raid breaks, so the army's wounded have somewhere to rest (CMB-12)",
-    "Cost/resources/wood": "A hundred wood: the roof beams and the benches, half an arsenal's (CMB-12)",
-    "Cost/resources/stone": "Two hundred stone: the dearest stone bill of the Town buildings, a hall of quartz, so healing is bought from the quarry as the tower and the arsenal are (CMB-12, D-12)",
+    "Cost/resources/wood": "A hundred and fifty wood: the roof beams and the benches, a little under an arsenal's, with the stone halved (M10 T25) so the wood carries more of the price (CMB-12)",
+    "Cost/resources/stone": "A hundred stone: the cheapest stone bill of the Town buildings (the tower and the arsenal cost 150), a hall of timber on a stone floor, so healing is bought from the quarry as they are but a start's stone can carry City after the three of them (M10 T25, CMB-12, D-12); was two hundred",
     "Cost/time": "Eighty seconds for one builder: between the tower's seventy-five and the arsenal's ninety, the army's rest is raised after its barracks, not before (CMB-12)",
     "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
@@ -362,7 +362,7 @@
     "Abilities/heal/effects": "Five hit points a pulse, two and a half a second: 0 A.D.'s healer restores 5 HP every 2 s (research mechanics, healing), so a healer tops a squad up between fights and does not undo a fight in progress; the temple's garrison heal (3 a second a unit) is the faster cure, which asks the unit to leave the field (CMB-12)"
   },
   "strategos:building/quarry": {
-    "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
+    "Deposit/amount": "Two thousand stone: a small quarry pays a civic centre five times over and lasts a match; the first skirmish map gives each start one, and Town (300), two barracks and three storehouses (350), the tower, the arsenal and the temple (400) and City (300) together ask for about 1,350 before the soldiers' own stone, which a thousand could not carry, so the City phase was out of every start's reach (M10 T25, AI-09)",
     "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twelve blocks, a low weight: a quarry claims only its own pit, never land away from a centre (TERR-01)",
@@ -474,10 +474,10 @@
     "effects/5/value": "Half a point more garrison regeneration a unit in Town, 0 A.D.'s phase bonus (BLD-10)"
   },
   "strategos:phase_city": {
-    "cost/food": "800 food: a step above Town's 500 as Town is above Village; the classic City asks for stone and metal alone (docs/research/mechanics.md §1.7), ours also keeps a farm in the bill; our own starting value, to tune against QA-12",
-    "cost/wood": "900 wood: three hundred above Town's 600, the same step the food takes; our own starting value, to tune against QA-12",
-    "cost/stone": "600 stone: double Town's 300; the classic City costs 750 stone (docs/research/mechanics.md §1.7), a little less here as the food and wood are dearer; our own starting value, to tune against QA-12",
-    "cost/iron": "400 iron: double Town's 200; the classic City costs 750 metal (docs/research/mechanics.md §1.7), iron is the scarcest resource here, so less of it; our own starting value, to tune against QA-12",
+    "cost/food": "600 food: a hundred above Town's 500, the step Town takes over Village's farms; the classic City asks for stone and metal alone (docs/research/mechanics.md §1.7), so the food is a small part of ours; lowered from 800 in M10 T25, when the AI-versus-AI matches showed a start's farms feeding the army and the phase together never reached 800",
+    "cost/wood": "700 wood: a hundred above Town's 600; lowered from 900 in M10 T25, when the matches showed a start's woodcutters, after the buildings of Town and the army, never gathering 900 in a stock",
+    "cost/stone": "350 stone: fifty above Town's 300 (the phase after costs more); the classic City costs 750 stone (docs/research/mechanics.md §1.7), but a start of the first skirmish map holds two thousand stone in all and Town, the barracks, the storehouses and the three Town buildings spend about 1,050 of it, so 600 left no computer player a way to City (M10 T25, AI-09); the food and wood carry the rest of the price",
+    "cost/iron": "250 iron: a quarter above Town's 200; the classic City costs 750 metal (docs/research/mechanics.md §1.7), iron is the scarcest resource here (a start's mine holds a thousand, and Town, the weapons and the horsemen draw on it), so little of it; lowered from 400 in M10 T25 so a start can reach City",
     "time": "Ninety seconds: half as long again as Town's 60, as the classic City's 60 s is twice its Town's 30 s (docs/research/mechanics.md §1.7); our own starting value, to tune against QA-12",
     "requires/all/1/buildings/count": "Three Town buildings: the classic City phase requires three Town-class structures (docs/research/mechanics.md §1.7); ours are the tower, the arsenal and the temple, which Town unlocks",
     "effects/0/value": "A third more territory around a civic centre: the classics' phases give a quarter each (docs/research/mechanics.md §1.7), ours is a single step at City; ours is a little larger as it is the only one",

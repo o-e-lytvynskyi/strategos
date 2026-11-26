@@ -386,6 +386,41 @@ class StuckLadderTest {
         assertThat(stuck).extracting(Stuck::rung).containsExactly(Stuck.GIVE_UP);
     }
 
+    /**
+     * A boxed-in unit whose every new route is a truncated one-waypoint path at its own feet (the search reached no
+     * nearer cell) passes that waypoint at once; passing it must not wipe the count of ticks without progress, or the
+     * ladder never reaches its last rung (rush-boom seed 49: WALKING without progress for thousands of ticks).
+     */
+    @Test
+    void aTruncatedRouteAtTheUnitsFeetDoesNotRestartTheCount() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        List<Stuck> stuck = new ArrayList<>();
+        state(h).bus().subscribe(Stuck.class, stuck::add);
+        int top = 0;
+        for (int t = 0; t < 700 && unit(h, unit).state() == UnitState.WALKING; t++) {
+            if (t % 20 == 0) {
+                state(h).paths()
+                        .follow(
+                                i,
+                                new dev.strategos.core.sim.nav.PathStore.Waypoints(
+                                        new double[] {state(h).motion().x(i) + 0.2},
+                                        new double[] {state(h).motion().z(i)},
+                                        new int[] {state(h).motion().floor(i)},
+                                        true),
+                                dev.strategos.core.sim.nav.PathStatus.OK);
+                state(h).paths().decided(i, h.tick());
+            }
+            h.step();
+            top = Math.max(top, state(h).motion().stuck(i));
+        }
+        assertThat(top).as("the count climbed").isGreaterThanOrEqualTo(StuckLadder.REPATH);
+        assertThat(stuck).extracting(Stuck::rung).contains(Stuck.GIVE_UP);
+    }
+
     /** Holds unit {@code handle} still: its walk speed 0, as boxed in as a unit can be. */
     private static void hold(SimHarness h, int handle) {
         state(h).stats().addPersonal(handle, Modifier.replace(CorePaths.WALK_SPEED, 0, ROCK));

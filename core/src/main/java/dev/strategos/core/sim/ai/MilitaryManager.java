@@ -47,10 +47,13 @@ final class MilitaryManager implements AiModule {
         StrategyScript.Battle battle = script.battle();
         List<Integer> army = new ArrayList<>();
         List<UnitView> soldiers = new ArrayList<>();
+        Depth.Veterans veterans = script.depth().veterans();
         for (UnitView u : view.units()) {
-            // those inside cannot muster; with battle tactics on, the horsemen march too (AI-03)
+            // those inside cannot muster; with battle tactics on, the horsemen march too (AI-03); a veteran healing
+            // stays out (AI-09)
             if (u.state() != UnitState.GARRISONED
-                    && (battle.enabled() ? view.role(u) != AiView.ROLE_NONE : view.is(u.template(), "Infantry"))) {
+                    && (battle.enabled() ? view.role(u) != AiView.ROLE_NONE : view.is(u.template(), "Infantry"))
+                    && !(veterans.on() && HealerManager.resting(view, u, veterans))) {
                 army.add(u.handle());
                 soldiers.add(u);
             }
@@ -121,10 +124,11 @@ final class MilitaryManager implements AiModule {
         if (tick - (mustered - 1) >= 20L * a.announce() && handles.length > 0) {
             budget.spend(10);
             if (base.enemy() == null) {
-                // AI-18: no enemy building in sight — attack-move short of the enemy start (not onto its footprint)
-                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+                // AI-18: no enemy building in sight — attack-move short of the enemy start (not onto its footprint); a
+                // long way goes as one formation (AI-09)
+                sink.send(March.order(script, soldiers, handles, Tactics.front(base)));
             } else if (battle.fights()) { // AI-03: attack-move, so every kind engages the units on the way
-                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+                sink.send(March.order(script, soldiers, handles, Tactics.front(base)));
             } else {
                 sink.send(strike(view, memory, handles, java.util.Objects.requireNonNull(base.enemy())));
             }
