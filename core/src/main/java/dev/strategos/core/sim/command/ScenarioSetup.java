@@ -3,6 +3,7 @@ package dev.strategos.core.sim.command;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartKit;
 import dev.strategos.core.content.StartSlot;
@@ -151,6 +152,25 @@ public final class ScenarioSetup {
                             e.spread()));
                 }
             }
+        }
+        return out;
+    }
+
+    /**
+     * The commands that spawn a map's wild {@code herds} (ECO-10), in order, as Gaia's (the slot after the scenario's):
+     * each at its own place, scattered by the same seeded rolls every run. A template that is not in {@code templates}
+     * or is not an animal throws.
+     */
+    public static List<Command> herds(Scenario scenario, List<Herd> herds, TemplateSet templates) {
+        FactionSlot gaia = new FactionSlot(scenario.slots().size());
+        List<Command> out = new ArrayList<>();
+        for (Herd h : herds) {
+            UnitTemplate t = templates.byId(h.template());
+            if (t == null || t.isBuilding() || !Livestock.isFauna(templates, t.netIndex())) {
+                throw new IllegalArgumentException(
+                        "a herd names " + h.template().value() + ", which is not an animal");
+            }
+            out.add(new SpawnUnits(h.template(), gaia, new Vec2d(h.x(), h.z()), h.count(), h.spread()));
         }
         return out;
     }

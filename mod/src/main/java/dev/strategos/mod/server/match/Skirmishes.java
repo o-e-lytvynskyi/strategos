@@ -1,6 +1,7 @@
 package dev.strategos.mod.server.match;
 
 import dev.strategos.core.content.CivDef;
+import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.RuleChange;
@@ -252,15 +253,18 @@ public final class Skirmishes {
             Function<String, @Nullable String> scripts,
             UnaryOperator<Map<String, Long>> scale) {
         ResourceLocation map = rt.map();
+        MapManifest manifest =
+                map == null ? null : MapPackageLoader.load(server.server(), map).manifest();
         Scenarios.apply(
                 rt,
                 scenario,
-                map == null
-                        ? List.of()
-                        : MapPackageLoader.load(server.server(), map).manifest().startSlots(),
+                manifest == null ? List.of() : manifest.startSlots(),
                 core.queries().templates(),
                 scripts,
                 scale);
+        if (manifest != null) {
+            Scenarios.herds(rt, scenario, manifest.herds(), core.queries().templates());
+        }
     }
 
     private static void seat(StrategosServer server, MatchRuntime rt, UUID player, PlayerSlot slot) {

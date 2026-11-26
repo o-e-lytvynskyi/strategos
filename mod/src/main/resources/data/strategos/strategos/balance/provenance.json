@@ -85,6 +85,8 @@
     "Loot/resources/food": "Thirteen food: five food plus a tenth of its eighty (research mechanics 1.21, CMB-13)",
     "Loot/resources/wood": "Four wood: a tenth of its forty (research mechanics 1.21, CMB-13)",
     "Loot/resources/iron": "Three iron: a tenth of its thirty (research mechanics 1.21, CMB-13)",
+    "ResourceGatherer/rates/food/hunt": "Five food a second: 0 A.D.'s citizen cavalry butchers at 5 meat a second and gathers nothing else (research mechanics, gather rates), so a boar's 150 food is carried home in half a minute and horsemen are the hunters (ECO-10)",
+    "ResourceGatherer/capacities/food": "Twenty food: 0 A.D.'s cavalry carries 20 of food (research mechanics, gather rates), twice a worker's ten",
     "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Health/max": "Two hundred hit points, tuned up from a hundred and twenty (duel matrix, M5 UNIT-07): twice a spearman, the price of being hard to catch, enough to live through the archers' fire to the melee",
@@ -138,6 +140,7 @@
     "Cost/time": "Ten seconds: a civic centre with a full queue adds a worker every ten seconds, the pace the first house's timing target (1:30) assumes",
     "Builder/rate": "One builder's worth: a building's time is what one worker takes, and more builders add with diminishing returns (BLD-03)",
     "ResourceGatherer/rates/food/fruit": "A berry a second: a bush's sixty food in a minute, so the first worker pays back its own cost quickly",
+    "ResourceGatherer/rates/food/hunt": "A carcass a second, as 0 A.D.'s civilian takes meat (1.0 a second, research mechanics, gather rates): a fifth of a horseman's, so a worker clears a kill the riders left but never hunts (ECO-10)",
     "ResourceGatherer/rates/food/grain": "Half a berry picker's: a field's farmers are its steady food, five of them about two a second together (ECO-09)",
     "ResourceGatherer/rates/wood/tree": "Slower than picking: a log's twenty wood in about half a minute, so an oak keeps a worker busy for a few minutes",
     "ResourceGatherer/rates/stone/rock": "Slower than chopping: a block's five stone in about twelve seconds, so a rock outcrop is a lasting job and stone stays dearer than wood (ECO-07)",
@@ -390,6 +393,18 @@
     "Body/width": "Vanilla's sheep, 0.9 blocks wide, so its model fits",
     "Body/height": "Vanilla's sheep, 1.3 blocks tall",
     "Body/radius": "Half its width: it keeps others off its body"
+  },
+  "strategos:unit/wild_boar": {
+    "Health/max": "Three horseman strokes (ten hack each): a boar is brought down in the time it takes to ride it down, and a worker cannot fell it (ECO-10)",
+    "Fauna/meat": "A hundred and fifty, 0 A.D.'s boar (research mechanics, nodes: deer 100, boar 150): the richest wild kill of the opening",
+    "Fauna/slots": "Three gatherers round a carcass, as round a sheep",
+    "Fauna/wild": "A marker, 1: game, which leaves its meat node where it falls rather than at its spawn, and cannot be slaughtered alive",
+    "Behaviour/flee": "Sixteen blocks from whatever hurts it, a little more than the twelve a passive unit runs by default: a hunter must ride it down, not stroll up",
+    "Behaviour/stance": "Passive: it notices nobody and runs only from a blow (CMB-05)",
+    "UnitMotion/walkSpeed": "0.25 blocks a tick, over twice a livestock animal's amble and below a horseman's 0.34: a rider catches it, a worker on foot never would",
+    "Body/width": "Vanilla's pig, 0.9 blocks wide, whose model it wears",
+    "Body/height": "Vanilla's pig, 0.9 blocks tall",
+    "Body/radius": "Half its width"
   },
   "strategos:unit/pig": {
     "Health/max": "Five blows: the bigger animal takes a moment longer",

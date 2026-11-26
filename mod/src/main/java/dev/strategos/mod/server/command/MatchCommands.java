@@ -12,6 +12,7 @@ import static dev.strategos.mod.server.command.StrategosCommands.withMatchAtSour
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
@@ -198,9 +199,13 @@ final class MatchCommands {
         }
         Scenario scenario;
         List<StartSlot> starts;
+        List<Herd> herds;
         try {
             scenario = Scenarios.load(source.getServer(), id);
-            starts = MapPackageLoader.load(source.getServer(), map).manifest().startSlots();
+            MapManifest manifest =
+                    MapPackageLoader.load(source.getServer(), map).manifest();
+            starts = manifest.startSlots();
+            herds = manifest.herds();
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
@@ -214,6 +219,7 @@ final class MatchCommands {
         int sent = Scenarios.apply(
                         source.getServer(), rt, scenario, starts, core.queries().templates())
                 .size();
+        sent += Scenarios.herds(rt, scenario, herds, core.queries().templates()).size();
         return rt.id() + " set up as " + id + ": " + sent + " commands";
     }
 

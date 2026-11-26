@@ -1,10 +1,11 @@
 {
   "parent": "strategos:template/unit_soldier",
-  "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+  "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic +Hunter" },
   "Promotion": { "value": 150 },
   "Loot": { "resources": { "food": 13, "wood": 4, "iron": 3 } },
   "Capture": { "strength": 1.75 },
   "Health": { "max": 200 },
+  "ResourceGatherer": { "rates": { "food": { "hunt": 5 } }, "capacities": { "food": 20 } },
   "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
   "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
   "Abilities": {

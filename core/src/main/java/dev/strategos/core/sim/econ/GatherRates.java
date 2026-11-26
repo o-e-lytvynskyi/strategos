@@ -51,8 +51,10 @@ public final class GatherRates {
         return path < 0 ? 0 : Math.max(0, Amount.of(stats.read(i, path)));
     }
 
-    /** Whether unit {@code i} gathers {@code resource}'s {@code subtype} at all: a rate and a capacity above 0. */
+    /** Whether unit {@code i} gathers {@code resource}'s {@code subtype} at all: a rate and a capacity above 0; a worker, or a hunter, which has rates for the hunt alone. */
     public boolean gathers(StatService stats, int i, int resource, int subtype) {
-        return stats.canGather(i) && rate(stats, i, resource, subtype) > 0 && capacity(stats, i, resource) > 0;
+        return (stats.canGather(i) || stats.canHunt(i))
+                && rate(stats, i, resource, subtype) > 0
+                && capacity(stats, i, resource) > 0;
     }
 }

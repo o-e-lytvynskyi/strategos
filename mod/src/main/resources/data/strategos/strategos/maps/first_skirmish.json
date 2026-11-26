@@ -267,5 +267,35 @@
   "baseBlock": "minecraft:stone",
   "id": "strategos:first_skirmish",
   "sizeX": 384,
-  "sizeZ": 384
+  "sizeZ": 384,
+  "herds": [
+    {
+      "template": "strategos:unit/wild_boar",
+      "x": 80.5,
+      "z": 110.5,
+      "count": 3,
+      "spread": 3.0
+    },
+    {
+      "template": "strategos:unit/wild_boar",
+      "x": 95.5,
+      "z": 170.5,
+      "count": 2,
+      "spread": 2.0
+    },
+    {
+      "template": "strategos:unit/wild_boar",
+      "x": 302.5,
+      "z": 272.5,
+      "count": 3,
+      "spread": 3.0
+    },
+    {
+      "template": "strategos:unit/wild_boar",
+      "x": 287.5,
+      "z": 212.5,
+      "count": 2,
+      "spread": 2.0
+    }
+  ]
 }

@@ -124,11 +124,12 @@ final class BuiltinTemplates {
     static final String HORSEMAN = """
             {
               "parent": "strategos:template/unit_soldier",
-              "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+              "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic +Hunter" },
               "Promotion": { "value": 150 },
               "Loot": { "resources": { "food": 13, "wood": 4, "iron": 3 } },
               "Capture": { "strength": 1.75 },
               "Health": { "max": 200 },
+              "ResourceGatherer": { "rates": { "food": { "hunt": 5 } }, "capacities": { "food": 20 } },
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
               "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
               "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
@@ -166,7 +167,7 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field strategos:building/sentry_tower strategos:building/palisade strategos:building/palisade_gate" },
               "ResourceGatherer": {
-                "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
+                "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1, "hunt": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
                 "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
                 "slaughter": 2
               },
@@ -208,6 +209,18 @@ final class BuiltinTemplates {
               "Health": { "max": 4 },
               "Fauna": { "meat": 40, "slots": 2 },
               "Body": { "model": "chicken", "width": 0.4, "height": 0.7, "radius": 0.25 }
+            }
+            """;
+
+    static final String WILD_BOAR = """
+            {
+              "parent": "strategos:template/unit_fauna",
+              "Identity": { "name": "strategos.unit.wild_boar", "icon": "minecraft:porkchop" },
+              "Health": { "max": 30 },
+              "Fauna": { "meat": 150, "slots": 3, "wild": 1 },
+              "Behaviour": { "flee": 16, "stance": "passive" },
+              "UnitMotion": { "walkSpeed": 0.25 },
+              "Body": { "model": "pig", "width": 0.9, "height": 0.9, "radius": 0.45 }
             }
             """;
 
@@ -1006,7 +1019,8 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/palisade"), // M9 T13
             new TemplateId("strategos:building/palisade_gate"),
             new TemplateId("strategos:building/temple"), // M10 T13
-            new TemplateId("strategos:unit/healer")));
+            new TemplateId("strategos:unit/healer"),
+            new TemplateId("strategos:unit/wild_boar"))); // M10 T21
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -1160,6 +1174,7 @@ final class BuiltinTemplates {
             templates.add(raw("strategos:building/palisade_gate", PALISADE_GATE));
             templates.add(raw("strategos:building/temple", TEMPLE)); // CMB-12
             templates.add(raw("strategos:unit/healer", HEALER));
+            templates.add(raw("strategos:unit/wild_boar", WILD_BOAR)); // ECO-10
         }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 templates,
@@ -1244,7 +1259,16 @@ final class BuiltinTemplates {
                         identity.get("classes")
                                 .getAsString()
                                 .replace(" +Village", "")
-                                .replace(" +Town", ""));
+                                .replace(" +Town", "")
+                                .replace(" +Hunter", "")); // ECO-10's
+            }
+            if (object.has("ResourceGatherer")) { // ECO-10's hunt rate, and the cavalry's whole gatherer block
+                JsonObject gatherer = object.getAsJsonObject("ResourceGatherer");
+                JsonObject food = gatherer.getAsJsonObject("rates").getAsJsonObject("food");
+                food.remove("hunt");
+                if (food.size() == 0) {
+                    object.remove("ResourceGatherer");
+                }
             }
         }
         String path = id.substring(id.indexOf(':') + 1);

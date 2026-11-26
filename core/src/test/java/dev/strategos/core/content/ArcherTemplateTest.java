@@ -61,7 +61,8 @@ class ArcherTemplateTest {
                         "strategos:building/palisade",
                         "strategos:building/palisade_gate",
                         "strategos:building/temple",
-                        "strategos:unit/healer");
+                        "strategos:unit/healer",
+                        "strategos:unit/wild_boar");
     }
 
     private static void assertValue(TemplateSet set, UnitTemplate template, String path, double expected) {

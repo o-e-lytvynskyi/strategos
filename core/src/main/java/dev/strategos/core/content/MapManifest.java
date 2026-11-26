@@ -15,7 +15,7 @@ import java.util.TreeMap;
  * in the vanilla structure format, each column storing its blocks from its lowest one that is not {@code baseBlock},
  * the importer filling base blocks below; the start slots and waypoints; the terrain hash: hex SHA-256 over the
  * {@code palette} index of every voxel ({@link TerrainHash}); and the terrain's jobs, which the map checker verifies
- * (MAP-02; none before it). The palette lists block states as Minecraft writes them, air included.
+ * (MAP-02; none before it), and the wild herds spawned at match start (ECO-10; none before it). The palette lists block states as Minecraft writes them, air included.
  */
 @CoreApi
 public record MapManifest(
@@ -31,7 +31,8 @@ public record MapManifest(
         Map<String, MapWaypoint> waypoints,
         int version,
         String terrainHash,
-        List<TerrainJob> terrainJobs) {
+        List<TerrainJob> terrainJobs,
+        List<Herd> herds) {
     public static final Codec<MapManifest> CODEC = RecordCodecBuilder.<MapManifest>create(i -> i.group(
                             Codec.STRING.fieldOf("id").forGetter(MapManifest::id),
                             Codec.intRange(1, 4_096).fieldOf("sizeX").forGetter(MapManifest::sizeX),
@@ -52,7 +53,11 @@ public record MapManifest(
                             TerrainJob.CODEC
                                     .listOf()
                                     .optionalFieldOf("terrainJobs", List.of())
-                                    .forGetter(MapManifest::terrainJobs))
+                                    .forGetter(MapManifest::terrainJobs),
+                            Herd.CODEC
+                                    .listOf()
+                                    .optionalFieldOf("herds", List.of())
+                                    .forGetter(MapManifest::herds))
                     .apply(i, MapManifest::new))
             .validate(MapManifest::check);
 
@@ -61,6 +66,39 @@ public record MapManifest(
         startSlots = List.copyOf(startSlots);
         waypoints = Collections.unmodifiableMap(new TreeMap<>(waypoints));
         terrainJobs = List.copyOf(terrainJobs);
+        herds = List.copyOf(herds);
+    }
+
+    /** A manifest without wild herds, as every map before ECO-10's has. */
+    public MapManifest(
+            String id,
+            int sizeX,
+            int sizeZ,
+            int minY,
+            int height,
+            String baseBlock,
+            int tileSize,
+            List<String> palette,
+            List<StartSlot> startSlots,
+            Map<String, MapWaypoint> waypoints,
+            int version,
+            String terrainHash,
+            List<TerrainJob> terrainJobs) {
+        this(
+                id,
+                sizeX,
+                sizeZ,
+                minY,
+                height,
+                baseBlock,
+                tileSize,
+                palette,
+                startSlots,
+                waypoints,
+                version,
+                terrainHash,
+                terrainJobs,
+                List.of());
     }
 
     /** A manifest without terrain jobs, as every map before MAP-02's has. */
@@ -90,6 +128,7 @@ public record MapManifest(
                 waypoints,
                 version,
                 terrainHash,
+                List.of(),
                 List.of());
     }
 
@@ -121,6 +160,11 @@ public record MapManifest(
         for (Map.Entry<String, MapWaypoint> e : m.waypoints.entrySet()) {
             if (!m.inside(e.getValue().x(), e.getValue().y(), e.getValue().z())) {
                 return DataResult.error(() -> m.id + ": waypoint " + e.getKey() + " lies outside the map");
+            }
+        }
+        for (Herd h : m.herds) {
+            if (!m.inside((int) Math.floor(h.x()), 0, (int) Math.floor(h.z()))) {
+                return DataResult.error(() -> m.id + ": a herd of " + h.template() + " lies outside the map");
             }
         }
         for (StartSlot s : m.startSlots) {

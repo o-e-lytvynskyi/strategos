@@ -10,6 +10,7 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.nav.MaterialKind;
+import dev.strategos.core.sim.order.OrderKind;
 import java.util.List;
 
 /**
@@ -18,12 +19,20 @@ import java.util.List;
  * Fauna/slots} work slots round it, linked to it. A gatherer sent to the node strikes the live animal with its {@code
  * ResourceGatherer/slaughter} once a second through core damage; once it is dead the node is gathered as any other, and
  * the body the mod keeps goes when it is empty.
+ *
+ * <p>A wild animal (ECO-10, {@code Fauna/wild} above 0) has no node while it lives, as it runs from a blow and a node
+ * stays where it was made: its death makes one of {@code hunt} meat where it fell, and every hunter (a unit that can
+ * gather {@code hunt} meat) that was attacking it is sent to gather it once its other orders are done.
  */
 public final class Livestock {
     public static final String MEAT = "Fauna/meat";
     public static final String SLOTS = "Fauna/slots";
     public static final String SLAUGHTER = "ResourceGatherer/slaughter";
     public static final String SUBTYPE = "meat";
+    /** A wild animal's marker (ECO-10): a value above 0 makes it game, which leaves its meat only when it is killed. */
+    public static final String WILD = "Fauna/wild";
+    /** The subtype of a wild kill's meat, gathered at a hunt rate. */
+    public static final String HUNT = "hunt";
 
     /** Ticks between a gatherer's blows. */
     static final int REPEAT = 20;
@@ -36,14 +45,30 @@ public final class Livestock {
         return templates.has(netIndex) && p != null && templates.value(netIndex, p.id()) > 0;
     }
 
-    /** Animal {@code handle}, just spawned, gets its meat node; its id. */
+    /** Whether template {@code netIndex} is a wild animal: an animal with a {@code Fauna/wild} above 0. */
+    public static boolean isWild(TemplateSet templates, int netIndex) {
+        return isFauna(templates, netIndex) && number(templates, netIndex, WILD, 0) > 0;
+    }
+
+    /** Animal {@code handle}, just spawned, gets its meat node; its id, or 0 for a wild one, which has none yet. */
     public static int spawn(MatchState s, int handle) {
+        int template = s.identity().templateIndex(Handle.index(handle));
+        if (isWild(s.templates(), template)) {
+            return 0;
+        }
+        int id = node(s, handle, SUBTYPE);
+        s.nodes().setUnit(id, handle);
+        return id;
+    }
+
+    /** The meat node of animal {@code handle} at where it stands, of subtype {@code subtype}; its id. */
+    private static int node(MatchState s, int handle, String subtype) {
         int i = Handle.index(handle);
         int template = s.identity().templateIndex(i);
         TemplateSet templates = s.templates();
         EconomyRules economy = s.config().rules().economy();
         int food = Math.max(0, economy.indexOf("food"));
-        int meat = Math.max(0, economy.resources().get(food).subtypes().indexOf(SUBTYPE));
+        int meat = Math.max(0, economy.resources().get(food).subtypes().indexOf(subtype));
         MotionStore m = s.motion();
         int x = (int) Math.floor(m.x(i));
         int y = (int) Math.floor(m.y(i));
@@ -67,7 +92,6 @@ public final class Livestock {
                 new long[] {NodeStore.pack(x, y, z)},
                 slots);
         s.nodes().setTemplate(id, template);
-        s.nodes().setUnit(id, handle);
         s.ledger().found(food, amount);
         return id;
     }
@@ -91,10 +115,31 @@ public final class Livestock {
 
     /** Animal {@code handle} died: its node is a carcass from now on, and the mod keeps its body. */
     public static void died(MatchState s, int handle) {
+        if (isWild(s.templates(), s.identity().templateIndex(Handle.index(handle)))) {
+            int made = node(s, handle, HUNT);
+            s.outputs().add(new CarcassLeft(handle, made));
+            sendHunters(s, handle, made);
+            return;
+        }
         int node = nodeOf(s, handle);
         if (node != 0) {
             s.nodes().setUnit(node, 0);
             s.outputs().add(new CarcassLeft(handle, node));
+        }
+    }
+
+    /** Every hunter that was attacking {@code animal} gets a gather order on its carcass {@code node}, queued. */
+    private static void sendHunters(MatchState s, int animal, int node) {
+        NodeStore nodes = s.nodes();
+        for (int i = 0; i < s.entities().highWater(); i++) {
+            if (!s.entities().aliveAt(i)
+                    || s.orders().size(i) == 0
+                    || s.orders().kind(i) != OrderKind.ATTACK
+                    || s.orders().target(i) != animal
+                    || !s.canGather(i, nodes.resource(node), nodes.subtype(node))) {
+                continue;
+            }
+            s.orders().queue(i, OrderKind.GATHER, nodes.anchorX(node), nodes.anchorZ(node), 0, 0, node);
         }
     }
 

@@ -2,6 +2,7 @@ package dev.strategos.mod.server.content;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
@@ -116,6 +117,18 @@ public final class Scenarios {
         MatchCore core = rt.core();
         List<CivId> civs = core == null ? List.of() : core.queries().config().civs();
         List<Command> commands = ScenarioSetup.commands(scenario, starts, templates, scripts, civs, scale);
+        for (Command c : commands) {
+            rt.submit(PlayerSlot.ADMIN, c);
+        }
+        return commands;
+    }
+
+    /**
+     * Spawns a map's wild {@code herds} (ECO-10) in {@code rt}, as Gaia's, after the scenario is set up; the commands it
+     * sent.
+     */
+    public static List<Command> herds(MatchRuntime rt, Scenario scenario, List<Herd> herds, TemplateSet templates) {
+        List<Command> commands = ScenarioSetup.herds(scenario, herds, templates);
         for (Command c : commands) {
             rt.submit(PlayerSlot.ADMIN, c);
         }

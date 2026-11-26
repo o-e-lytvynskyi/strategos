@@ -514,7 +514,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | CMB-13 | Loot | S | CMB-01, ECO-01 | done |
 | ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | done |
 | ORD-07 | Patrol and guard | M | ORD-04 | done |
-| ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | specified |
+| ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | in_progress |
 | UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | specified |
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | specified |
 | MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | specified |

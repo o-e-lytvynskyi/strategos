@@ -243,7 +243,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. Animals flee as their stance says (L1).
   3. Fauna fit the unit budgets (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** ECO-16, UNIT-06 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress (criteria 1–2 pass: `HuntTest`, `FleeStanceTest`; criterion 3, fauna in the unit budgets, is PERF-17's scene in T27)
 
 #### UI-17 · Full hotkeys and idle-unit cycling
 - **Value:** Experienced players can play at speed from the keyboard (P3).
