@@ -100,6 +100,7 @@ public final class RtsMode {
     /** Listens on the mod bus for the key mappings and on the game bus for the rest. */
     public void register(IEventBus modBus) {
         modBus.addListener(RegisterKeyMappingsEvent.class, keys::register);
+        OrthoView.register(this);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, e -> tick());
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Pre.class, this::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeCameraAngles.class, this::onAngles);

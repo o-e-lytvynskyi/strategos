@@ -19,6 +19,28 @@ public final class Mat4 {
         return out;
     }
 
+    /** OpenGL's symmetric orthographic projection: a box {@code halfWidth} and {@code halfHeight} out from the axis. */
+    public static double[] orthographic(double halfWidth, double halfHeight, double near, double far) {
+        return new double[] {
+            1 / halfWidth,
+            0,
+            0,
+            0,
+            0,
+            1 / halfHeight,
+            0,
+            0,
+            0,
+            0,
+            -2 / (far - near),
+            0,
+            0,
+            0,
+            -(far + near) / (far - near),
+            1
+        };
+    }
+
     /** {@code m × (x, y, z, w)}. */
     public static double[] transform(double[] m, double x, double y, double z, double w) {
         return new double[] {

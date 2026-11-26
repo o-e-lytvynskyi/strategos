@@ -6,7 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The client's options (CAM-02, 04 §15.4): {@code strategos-client.toml}, a {@code CLIENT} config: how fast the RTS
- * camera pans and turns, as multipliers of the rig's speeds, whether the cursor at the window's edge pans, and the
+ * camera pans and turns, as multipliers of the rig's speeds, whether the cursor at the window's edge pans, the optional orthographic view (CAM-06), and the
  * first-match hints already seen (UI-14).
  */
 public final class StrategosClientConfig {
@@ -25,6 +25,8 @@ public final class StrategosClientConfig {
     public final ModConfigSpec.DoubleValue panSpeed;
     public final ModConfigSpec.DoubleValue rotateSpeed;
     public final ModConfigSpec.BooleanValue edgePan;
+    public final ModConfigSpec.BooleanValue orthographic;
+    public final ModConfigSpec.BooleanValue orthographicWithRenderMods;
     public final ModConfigSpec.ConfigValue<List<? extends String>> seenHints;
 
     private StrategosClientConfig(ModConfigSpec.Builder b) {
@@ -35,6 +37,11 @@ public final class StrategosClientConfig {
                 .defineInRange("rotateSpeed", 1.0, 0.25, 4.0);
         edgePan = b.comment("Whether the cursor at the window's edge pans the RTS camera.")
                 .define("edgePan", true);
+        orthographic = b.comment("The orthographic RTS view (CAM-06); Ctrl + O in RTS mode switches it.")
+                .define("orthographic", false);
+        orthographicWithRenderMods = b.comment(
+                        "Try the orthographic view even with Sodium or Iris loaded (untested; it falls back on a fault).")
+                .define("orthographicWithRenderMods", false);
         seenHints = b.comment("The first-match hints already shown and dismissed; empty them to see the hints again.")
                 .defineListAllowEmpty("seenHints", List.of(), o -> o instanceof String);
     }

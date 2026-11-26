@@ -270,7 +270,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   3. Switching projection never freezes the game (L4, consent).
   4. Under Sodium and Iris it works or falls back cleanly (L4, consent).
 - **Tests:** L0, L1, L2, L4 (consent) · **Depends on:** CAM-02, D-09 · **Size:** M · **Tier:** T2
-- **Status:** specified
+- **Status:** in_progress (criteria 1–2 pass: `OrthoPickingTest`, `EngineSurfaceInventoryTest`; criteria 3–4, switching and Sodium/Iris, are in the consent batch)
 
 #### MATCH-16 · First Minecraft twist: day and night
 - **Value:** A signature mechanic only Minecraft can give: night shrinks what you see, and the
