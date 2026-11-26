@@ -92,4 +92,81 @@ class DemoScriptsTest {
         assertThat(st.q().gateDoors()).as("the gate is registered").hasSize(1);
         assertThat(st.blocks()).as("the gap's rocks").isPositive();
     }
+
+    @Test
+    void theCityChapterRefusesTheFarHouseUntilTheCityPhaseWidensTheBorder() {
+        FakeStage st = FakeStage.run(new CityChapter());
+        var refusals = st.harness().events(CommandResult.class).stream()
+                .filter(r -> r.outcome() == CommandOutcome.REJECTED)
+                .toList();
+        assertThat(refusals).hasSize(1);
+        assertThat(refusals.getFirst().firstReason()).isEqualTo(RejectReason.OUTSIDE_TERRITORY);
+        assertThat(st.q().phase(new dev.strategos.core.shared.FactionSlot(0))).isEqualTo(2);
+        assertThat(st.buildings(0, Ids.HOUSE)).hasSizeGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    void theTreeChapterTakesOneOfThePairAndRefusesTheOther() {
+        FakeStage st = FakeStage.run(new TreeChapter());
+        var researched = st.q().researched(new dev.strategos.core.shared.FactionSlot(0));
+        assertThat(researched).contains(Ids.PHALANX).doesNotContain(Ids.SKIRMISH_DRILL);
+        assertThat(st.harness().events(CommandResult.class)).anyMatch(r -> r.outcome() == CommandOutcome.REJECTED);
+    }
+
+    @Test
+    void theHealersChapterEndsWithTheTroopsWholeAndAHealerTrained() {
+        FakeStage st = FakeStage.run(new HealersChapter());
+        assertThat(Fights.hurt(st, 0, Ids.INFANTRY)).isZero();
+        assertThat(Fights.alive(st, 0, Ids.HEALER)).isPositive();
+        assertThat(Chapters.garrisoned(st, 0)).isPositive();
+    }
+
+    @Test
+    void theVeteransChapterEndsWithARankedSurvivor() {
+        FakeStage st = FakeStage.run(new VeteransChapter());
+        assertThat(java.util.Arrays.stream(st.handles(0, Ids.HORSEMAN))
+                        .anyMatch(h -> st.q().rank(h) > 0))
+                .as("a survivor with a rank")
+                .isTrue();
+        assertThat(Fights.alive(st, 1, Ids.ARCHER)).isZero();
+    }
+
+    @Test
+    void theFormationsChapterLeavesOneMemberOutAndTheRestInLine() {
+        FakeStage st = FakeStage.run(new FormationsChapter());
+        int[] army = st.handles(0, Ids.INFANTRY);
+        assertThat(army).hasSize(FormationsChapter.ARMY);
+        assertThat(java.util.Arrays.stream(army).filter(h -> st.q().formationOf(h) != 0))
+                .hasSize(FormationsChapter.ARMY - 1);
+    }
+
+    @Test
+    void thePatrolChapterKillsTheIntruderAndTheRaiderAndKeepsThePatrolAndItsGuards() {
+        FakeStage st = FakeStage.run(new PatrolChapter());
+        assertThat(Fights.alive(st, 1, Ids.INFANTRY)).isZero();
+        assertThat(Fights.alive(st, 0, Ids.INFANTRY)).isEqualTo(1 + PatrolChapter.GUARDS);
+        assertThat(Fights.alive(st, 0, Ids.WORKER)).isEqualTo(1);
+    }
+
+    @Test
+    void theHuntChapterBringsMeatHomeAndPaysLootForTheKill() {
+        FakeStage st = FakeStage.run(new HuntChapter());
+        assertThat(st.gathered(0, "food")).isGreaterThanOrEqualTo(20);
+        assertThat(Chapters.looted(st, 0, "wood")).isPositive();
+    }
+
+    @Test
+    void theChargeChapterPutsTheAbilityOnCooldownAndWinsTheFight() {
+        FakeStage st = FakeStage.run(new ChargeChapter());
+        assertThat(Fights.alive(st, 1, Ids.INFANTRY)).isZero();
+        assertThat(st.q().abilityCooldown(st.handles(0, Ids.HORSEMAN)[0], "charge"))
+                .isPositive();
+    }
+
+    @Test
+    void theNightChapterRunsTheClockToNight() {
+        FakeStage st = FakeStage.run(new NightChapter());
+        assertThat(dev.strategos.core.sim.DayClock.night(st.q().tick())).isTrue();
+        assertThat(st.commands()).contains("tick sprint stop");
+    }
 }

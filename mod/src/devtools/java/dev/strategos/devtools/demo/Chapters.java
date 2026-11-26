@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -48,6 +49,44 @@ final class Chapters {
             }
         }
         return null;
+    }
+
+    /** Faction 0's civic centre researches {@code tech}. */
+    static void researchAtCentre(Stage st, TechId tech) {
+        BuildingView c = finished(st, 0, Ids.CIVIC_CENTRE);
+        if (c == null) {
+            throw new IllegalStateException("no finished civic centre to research " + tech + " in");
+        }
+        st.order(0, new Research(c.handle(), tech));
+    }
+
+    /** How much of {@code resource} faction {@code faction} holds, whole units. */
+    static long stock(Stage st, int faction, String resource) {
+        return st.q().treasury(new FactionSlot(faction)).stock().get(index(st, resource)) / 1000;
+    }
+
+    /** How much of {@code resource} faction {@code faction} has looted from kills so far, whole units. */
+    static long looted(Stage st, int faction, String resource) {
+        return st.q().treasury(new FactionSlot(faction)).looted().get(index(st, resource)) / 1000;
+    }
+
+    private static int index(Stage st, String resource) {
+        List<String> ids = new java.util.ArrayList<>();
+        st.q().config().rules().economy().resources().forEach(r -> ids.add(r.id()));
+        int k = ids.indexOf(resource);
+        if (k < 0) {
+            throw new IllegalStateException("no resource " + resource);
+        }
+        return k;
+    }
+
+    /** The sum of the live {@code template} units' hit points of faction {@code faction}. */
+    static double hitPoints(Stage st, int faction, TemplateId template) {
+        double sum = 0;
+        for (int h : st.handles(faction, template)) {
+            sum += st.q().hitPoints(h);
+        }
+        return sum;
     }
 
     /** Faction 0's civic centre researches Town. */
