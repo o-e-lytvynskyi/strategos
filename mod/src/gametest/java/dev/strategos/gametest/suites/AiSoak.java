@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * QA-12.4, the AI-versus-AI soak (spec §2.21): {@value #SEEDS} seeds of the skirmish script at Normal against itself on
- * the first skirmish map, in the real skirmish's rules (Conquest under Fog), all under {@code /tick sprint}, which is
+ * QA-12.4 and QA-16.4, the AI-versus-AI soak (spec §2.21): {@value #SEEDS} seeds of the skirmish script against itself,
+ * the levels in rotation (easy, normal, hard: the mirrors of {@code :core:balanceMatrix}), on the first skirmish map, in the real skirmish's rules (Conquest under Fog), all under {@code /tick sprint}, which is
  * {@code runGameTestSoak}'s alone ({@code verifySoak}). It asserts no win rate, and no ending: a match runs to its
  * conquest or to the 45-minute limit, and each journal replays to its hash with no match faulted. The wall time is the
  * run's, in the report line {@code L3 wall time}; the matches' outcomes are in the log lines {@code aisoak seed}.
@@ -57,26 +57,28 @@ public final class AiSoak {
 
     private static final class Game {
         final long seed;
+        final String level;
         final MatchRuntime rt;
         final MapManifest manifest;
         boolean started;
         boolean done;
 
-        Game(long seed, MatchRuntime rt, MapManifest manifest) {
+        Game(long seed, String level, MatchRuntime rt, MapManifest manifest) {
             this.seed = seed;
+            this.level = level;
             this.rt = rt;
             this.manifest = manifest;
         }
     }
 
     @StrategosTest(batch = BATCH, solo = true, timeoutTicks = 2_000_000)
-    public static void twentySeedsOfNormalAgainstNormal(GameTestHelper h) {
+    public static void twentySeedsOfTheMirrorsAcrossTheLevels(GameTestHelper h) {
         StrategosServer server = StrategosServer.get();
         MapManifest manifest = MapPackageLoader.load(h.getLevel().getServer(), MapTests.FIRST_SKIRMISH)
                 .manifest();
         String shipped = Objects.requireNonNull(
                 Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json");
-        String normal = Levels.resolve(shipped, "normal");
+        List<String> levels = Levels.names();
         Scenario scenario = Scenarios.load(h.getLevel().getServer(), Ids.id("first_skirmish"));
         List<Scenario.Slot> slots = new ArrayList<>();
         for (Scenario.Slot s : scenario.slots()) {
@@ -107,7 +109,7 @@ public final class AiSoak {
                             .withMap(
                                     MapTests.FIRST_SKIRMISH,
                                     origin.getY() + manifest.startSlots().get(0).y()));
-            Game g = new Game(seed, rt, manifest);
+            Game g = new Game(seed, levels.get(k % levels.size()), rt, manifest);
             games[k] = g;
         };
         server.server().tickRateManager().requestGameToSprint(Integer.MAX_VALUE); // /tick sprint
@@ -147,7 +149,7 @@ public final class AiSoak {
                             computers,
                             g.manifest.startSlots(),
                             core.queries().templates(),
-                            profile -> normal);
+                            profile -> Levels.resolve(shipped, g.level));
                     open++;
                     continue;
                 }
@@ -179,9 +181,10 @@ public final class AiSoak {
                     }
                 }
                 LOG.info(
-                        "aisoak seed {}: {} at tick {} ({} min), civic centres {}/{}, buildings {}/{}, phases {}/{}"
+                        "aisoak seed {} ({} mirror): {} at tick {} ({} min), civic centres {}/{}, buildings {}/{}, phases {}/{}"
                                 + " (2 is City); the journal replays to its hash",
                         g.seed,
+                        g.level,
                         ended ? "conquered" : "no conquest by the limit",
                         tick,
                         String.format("%.1f", tick / 1200.0),

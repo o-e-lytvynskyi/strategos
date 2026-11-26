@@ -316,7 +316,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. The L3 samples complete and replay to the same hash (L3).
 - **Tests:** L1, L3 · **Fixtures:** balance seed sets · **Depends on:** QA-12, CIV-01 ·
   **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress (criteria 1–3 pass: `:core:balanceMatrix`, `BalanceMatrixTest`; criterion 4, the aisoak samples across the levels, passed at 3 seeds and runs at 20 in the close's `verifySoak`, T29)
 
 #### PERF-17 · M10 perf gate
 - **Value:** More content never costs tick rate.

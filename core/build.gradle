@@ -93,6 +93,25 @@ tasks.register('openingBalance', JavaExec) {
     outputs.upToDateWhen { false }
 }
 
+// [M10 T26] QA-16: the balance matrix, whole AI-versus-AI matches for every ordered civilisation pair at easy, normal and
+// hard (-Pseeds=<n per pairing, 200>, -Pthreads=<n>, -Plimit=<game minutes, 90>); the report, with the balance sheet's
+// changes since the previous run, is in build/reports/balance-matrix; exits 1 when a pairing is outside 80-120 of 200.
+tasks.register('balanceMatrix', JavaExec) {
+    group = 'verification'
+    description = 'QA-16: the balance matrix over civilisation pairs and levels; fails when a pairing is flagged.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.strategos.core.sim.ai.BalanceMatrix'
+    workingDir = projectDir
+    maxHeapSize = '8g'
+    args(layout.buildDirectory.dir('reports/balance-matrix').get().asFile.absolutePath,
+            providers.gradleProperty('seeds').getOrElse('200'),
+            providers.gradleProperty('threads').getOrElse(Runtime.runtime.availableProcessors().toString()),
+            providers.gradleProperty('limit').getOrElse('90'),
+            rootProject.file('docs/balance/sheet.csv').absolutePath)
+    inputs.files(rootProject.fileTree('mod/src/main/resources/data')).withPropertyName('modData')
+    outputs.upToDateWhen { false }
+}
+
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.
 tasks.register('soak', Test) {
     group = 'verification'

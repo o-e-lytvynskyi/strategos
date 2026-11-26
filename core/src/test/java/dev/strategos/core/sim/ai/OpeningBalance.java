@@ -4,6 +4,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.testkit.JournalFiles;
@@ -13,10 +15,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * QA-12's AI-versus-AI opening and level balance (M6 spec §2.21), run by {@code :core:openingBalance}: five pairings of
@@ -37,6 +41,7 @@ public final class OpeningBalance {
 
     private static final long MINUTE = 1_200;
     private static final String PHASE_TOWN = "strategos:phase_town";
+    private static final String PHASE_CITY = "strategos:phase_city";
 
     /** One pairing: A against B, each a level and an opening ("" draws by the script's weights). */
     record Pairing(String name, String a, String aLevel, String aOpening, String b, String bLevel, String bOpening) {
@@ -104,12 +109,37 @@ public final class OpeningBalance {
             String skirmish,
             Path dir,
             long limit) {
+        return playOn(p, seed, ground, scenario, skirmish, dir, limit, TemplateSet.builtin(), null, null)
+                .row();
+    }
+
+    /** A played match: its row and the tick each slot's City phase was reached (-1 never), which the row lacks. */
+    record Played(Row row, List<Long> cityAt) {}
+
+    /**
+     * As {@link #play}, over {@code set} with {@code aCiv} the civilisation of A and {@code bCiv} that of B (both null:
+     * the default for every faction, as QA-12 plays). QA-16's matrix plays through here.
+     */
+    static Played playOn(
+            Pairing p,
+            long seed,
+            HeadlessMatch.Ground ground,
+            Scenario scenario,
+            String skirmish,
+            Path dir,
+            long limit,
+            TemplateSet set,
+            @Nullable CivId aCiv,
+            @Nullable CivId bCiv) {
         String a = Levels.resolve(skirmish, p.aLevel(), p.aOpening());
         String b = Levels.resolve(skirmish, p.bLevel(), p.bOpening());
         int aSlot = seed % 2 == 0 ? 0 : 1;
         List<String> scripts = aSlot == 0 ? List.of(a, b) : List.of(b, a);
         String[] opening = {"", ""};
         long[] town = {-1, -1};
+        long[] city = {-1, -1};
+        List<CivId> civs =
+                aCiv == null || bCiv == null ? List.of() : aSlot == 0 ? List.of(aCiv, bCiv) : List.of(bCiv, aCiv);
         int[] centres = {0, 0};
         int[] soldiers = {0, 0};
         long[] mop = {-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -174,15 +204,20 @@ public final class OpeningBalance {
                         if (e instanceof TechResearched t && t.tech().value().equals(PHASE_TOWN)) {
                             town[t.faction().value()] = out.tick();
                         }
+                        if (e instanceof TechResearched t && t.tech().value().equals(PHASE_CITY)) {
+                            city[t.faction().value()] = out.tick();
+                        }
                     }
                 },
                 false, // unfinished is no failure: QA-12.1 counts it (row 65)
-                HeadlessMatch.FOGGED);
+                HeadlessMatch.FOGGED,
+                set,
+                civs);
         HeadlessMatch.Summary s = r.summary();
         if (s.failed()) {
             JournalFiles.write(dir.resolve(p.name() + "-seed-" + seed + JournalFiles.EXTENSION), r.journal());
         }
-        return new Row(
+        Row row = new Row(
                 p.name(),
                 seed,
                 aSlot,
@@ -201,6 +236,7 @@ public final class OpeningBalance {
                 java.util.Arrays.stream(mop).boxed().toList(),
                 (System.nanoTime() - started) / 1_000_000,
                 s.failure());
+        return new Played(row, List.of(city[0], city[1]));
     }
 
     static Scenario firstSkirmish() {
@@ -215,29 +251,38 @@ public final class OpeningBalance {
         String skirmish = HeadlessMatch.read("ai/skirmish.json");
         HeadlessMatch.Ground ground = HeadlessMatch.Ground.firstSkirmish();
         Scenario scenario = firstSkirmish();
+        List<Callable<Row>> jobs = new ArrayList<>();
+        for (Pairing p : pairings) {
+            for (long seed = 1; seed <= seeds; seed++) {
+                long s = seed;
+                jobs.add(() -> play(p, s, ground, scenario, skirmish, dir));
+            }
+        }
+        return inParallel(jobs, threads, "openingBalance");
+    }
+
+    /** Runs {@code jobs} on {@code threads} threads, printing {@code label}'s progress; the results in job order. */
+    static <T> List<T> inParallel(List<Callable<T>> jobs, int threads, String label) throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         try {
-            List<Future<Row>> futures = new ArrayList<>();
+            List<Future<T>> futures = new ArrayList<>();
             AtomicInteger done = new AtomicInteger();
-            int total = pairings.size() * seeds;
-            for (Pairing p : pairings) {
-                for (long seed = 1; seed <= seeds; seed++) {
-                    long s = seed;
-                    futures.add(pool.submit(() -> {
-                        Row row = play(p, s, ground, scenario, skirmish, dir);
-                        int n = done.incrementAndGet();
-                        if (n % 25 == 0 || n == total) {
-                            System.out.println("openingBalance: " + n + " of " + total + " matches played");
-                        }
-                        return row;
-                    }));
-                }
+            int total = jobs.size();
+            for (Callable<T> job : jobs) {
+                futures.add(pool.submit(() -> {
+                    T result = job.call();
+                    int n = done.incrementAndGet();
+                    if (n % 25 == 0 || n == total) {
+                        System.out.println(label + ": " + n + " of " + total + " matches played");
+                    }
+                    return result;
+                }));
             }
-            List<Row> rows = new ArrayList<>();
-            for (Future<Row> f : futures) {
-                rows.add(f.get());
+            List<T> results = new ArrayList<>();
+            for (Future<T> f : futures) {
+                results.add(f.get());
             }
-            return rows;
+            return results;
         } finally {
             pool.shutdownNow();
         }
