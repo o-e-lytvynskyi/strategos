@@ -518,7 +518,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | in_progress |
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | in_progress |
 | MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | in_progress |
-| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | changed |
+| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | in_progress |
 | QA-16 | Balance matrix | M | QA-12, CIV-01 | in_progress |
 | PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | done |
 
@@ -533,6 +533,10 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 > is in (T25a); with the skirmish script's `depth` block on, AI matches stall and QA-12.1 fails, and what would make a
 > deep late game decisive is M11's AI-11 and AI-12. Proposed: AI-09.1 as a capability (City reached in seeded runs
 > against an opponent that does not attack), `depth` on in the shipped script with M11.
+> 2026-11-26: the owner took the recommended options («принимай решения рекомендованые сам»): AI-09.1 is the AI
+> reaching City in seeded runs against an opponent that does not attack; the shipped script keeps `depth` off, and M11
+> turns it on with QA-12.1 as its gate (AI-11, AI-12); QA-16's matrix leaves the easy mirror out until Easy can finish a won
+> match (M11, AI-12). AI-09 is `in_progress` again.
 
 ### M11 · Adaptive AI
 
@@ -547,6 +551,11 @@ Cards: [roadmap/M11-adaptive-ai.md](roadmap/M11-adaptive-ai.md#cards). 7 cards, 
 | AI-14 | Personalities and openings | M | AI-11, AI-12 | proposed |
 | AI-15 | Difficulty ladder | M | AI-14, QA-16 | proposed |
 | PERF-11 | AI CPU budget gate | S | AI-10, QA-07 | proposed |
+
+> 2026-11-26 (from M10, the owner's word above): M11 turns M10's AI `depth` block (the tree, City, healers, veterans,
+> `charge`, marches, workers by phase) on in the shipped skirmish script, with QA-12.1 as the gate — the late game must
+> stay decisive (AI-11's multi-base economy, AI-12's attack planning) — and teaches Easy to finish a won match, so QA-16's
+> matrix takes the easy mirror back. M10's diagnosis is in its spec, §1.6 row 29.
 
 ### M12 · Maps and game setup
 

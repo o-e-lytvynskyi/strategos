@@ -30,19 +30,19 @@ final class BalanceMatrixTest {
     }
 
     @Test
-    void oneCivilisationGivesThreeMirrors() {
+    void oneCivilisationGivesTwoMirrors() {
         assertThat(BalanceMatrix.pairings(List.of(CivId.DEFAULT)))
                 .extracting(BalanceMatrix.Pairing::name)
-                .containsExactly("default-default-easy", "default-default-normal", "default-default-hard");
+                .containsExactly("default-default-normal", "default-default-hard");
         assertThat(BalanceMatrix.pairings(List.of(CivId.DEFAULT))).allMatch(BalanceMatrix.Pairing::mirror);
     }
 
     @Test
     void twoCivilisationsGiveEveryOrderedPairAtEveryLevel() {
         List<BalanceMatrix.Pairing> p = BalanceMatrix.pairings(List.of(CivId.DEFAULT, LEAN));
-        assertThat(p).hasSize(12);
-        assertThat(p).extracting(BalanceMatrix.Pairing::name).contains("default-lean-hard", "lean-default-easy");
-        assertThat(p.stream().filter(BalanceMatrix.Pairing::mirror)).hasSize(6);
+        assertThat(p).hasSize(8);
+        assertThat(p).extracting(BalanceMatrix.Pairing::name).contains("default-lean-hard", "lean-default-normal");
+        assertThat(p.stream().filter(BalanceMatrix.Pairing::mirror)).hasSize(4);
     }
 
     @Test
@@ -66,7 +66,7 @@ final class BalanceMatrixTest {
     @Test
     void aNonMirrorIsFlaggedOutsideTheBandPerSide() {
         BalanceMatrix.Pairing p =
-                BalanceMatrix.pairings(List.of(CivId.DEFAULT, LEAN)).get(3); // default-lean-easy
+                BalanceMatrix.pairings(List.of(CivId.DEFAULT, LEAN)).get(3); // default-lean-hard
         assertThat(p.mirror()).isFalse();
         List<BalanceMatrix.Row> rows = new ArrayList<>();
         for (long seed = 1; seed <= 200; seed++) {

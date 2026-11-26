@@ -572,12 +572,7 @@ the new content, holding City back — §1.6 row 29):
   fallen building, a standing formation's member that never reaches its place, and a boxed-in unit whose stuck count
   was zeroed on every re-request. The shipped script leaves the `depth` block out, so every earlier gate holds.
   Verify: `verify verifySlow`, `:core:openingBalance`, `:core:jmh :core:jmhCompare`. Size: 1,200.
-- **T25b · A late game that finishes.** Spending follows the stock: gatherers go where the reserves and the queues are
-  short, and a reserve holds back only the resources it lacks; the mop-up searches the whole map and the last-seen
-  positions, re-tasks walking soldiers, counts foundations, and burns in smaller squads. Then the shipped script turns
-  the `depth` block on and `AiCityTest` joins `verifySlow` (AI-09.1). Verify: `verify verifySlow`,
-  `:core:openingBalance`. Size: 600. Waits for the owner since 2026-11-26 (AI-09 `changed`): its first attempt
-  regressed the opening balance and is parked; M10 goes on with T26–T28 meanwhile.
+- **T25b · City as a capability.** Changed on the owner's word (2026-11-26, recommended option (a)): `AiCityTest` plays the skirmish script at Normal with the `depth` block (a test resource; the shipped script keeps it off until M11) against an opponent that does not attack, without a conquest victory, 45 minutes, 12 seeds: the AI reaches City, researches tier-2 and tier-3 technologies, trains a healer, marches in formation and charges. Three depth-path defects from T25a's review go with it: a research hold waiting for a build step expires with the step's reserve time, a march measures from the soldiers it orders, and a veteran walking home stays resting until it is above `resume`. The first attempt at a decisive late game (spending by need, a map-wide mop-up) regressed the opening balance and is M11's to redo. Verify: `verify verifySlow`. Size: 400.
 
 #### T26 · QA-16 · The balance matrix
 `:core:balanceMatrix`, the report and its flags, the sheet diff, the L3 samples in `verifySoak`. Verify: the matrix
@@ -643,7 +638,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 1. Every acceptance criterion of the M10 cards passes at its level (§1.4).
 2. The default civilisation is invisible: M0–M9's pinned hashes, goldens and replays hold.
 3. The probe civilisation plays, replays and needed no edit outside `core.sim.civ` and the fixtures.
-4. QA-16: every pairing within 80–120 of 200 (the mirror per start slot); the L3 samples replay.
+4. QA-16: every pairing within 80–120 of 200 (the mirror per start slot); the L3 samples replay. The easy mirror is left out until Easy can finish a won match (the owner, 2026-11-26; M11).
 5. PERF-17 within A–E; the 2× stress pass holds.
 6. The consent batch (§1.7) seen and accepted.
 

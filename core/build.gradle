@@ -93,7 +93,7 @@ tasks.register('openingBalance', JavaExec) {
     outputs.upToDateWhen { false }
 }
 
-// [M10 T26] QA-16: the balance matrix, whole AI-versus-AI matches for every ordered civilisation pair at easy, normal and
+// [M10 T26] QA-16: the balance matrix, whole AI-versus-AI matches for every ordered civilisation pair at normal and
 // hard (-Pseeds=<n per pairing, 200>, -Pthreads=<n>, -Plimit=<game minutes, 90>); the report, with the balance sheet's
 // changes since the previous run, is in build/reports/balance-matrix; exits 1 when a pairing is outside 80-120 of 200.
 tasks.register('balanceMatrix', JavaExec) {

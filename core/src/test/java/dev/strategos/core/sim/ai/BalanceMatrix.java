@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * QA-16's balance matrix, run by {@code :core:balanceMatrix}: AI-versus-AI whole matches on the first skirmish map with
- * fog and conquest, for every ordered pair of the template set's civilisations at each level (easy, normal, hard, both
+ * fog and conquest, for every ordered pair of the template set's civilisations at each level (normal and hard; Easy is left out, see {@link #LEVELS}; both
  * sides at the same level), the sides swapped on odd seeds. It reports wins per side and per start slot, match length
  * and phase times, flags a pairing outside 80 to 120 wins of 200 (a mirror per start slot), and lists what changed in
  * {@code docs/balance/sheet.csv} since the previous run. The process exits 1 when anything is flagged.
@@ -33,7 +33,12 @@ public final class BalanceMatrix {
     /** A match's default limit: 90 game minutes. */
     static final int LIMIT_MINUTES = 90;
 
-    static final List<String> LEVELS = Levels.names();
+    /**
+     * The levels the matrix plays: Normal and Hard. Easy is left out (the owner, 2026-11-26): two Easy players end only
+     * 37 of 200 matches in 90 minutes, as Easy has no mop-up, and Easy is meant to lose to a person, not to beat an Easy
+     * opponent; teaching Easy to finish a won match is M11's (AI-12). The aisoak's L3 samples still rotate all three.
+     */
+    static final List<String> LEVELS = List.of("normal", "hard");
 
     private BalanceMatrix() {}
 
