@@ -51,6 +51,8 @@ public final class CommandRules {
                 .register(new UpgradeRules.UpgradeBuildingRule())
                 .register(new PlaceWallRule())
                 .register(new UseAbilityRule())
+                .register(new StandingRules.PatrolRule())
+                .register(new StandingRules.GuardRule())
                 .register(new FormationMoveRule());
     }
 

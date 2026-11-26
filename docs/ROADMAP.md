@@ -513,7 +513,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | done |
 | CMB-13 | Loot | S | CMB-01, ECO-01 | done |
 | ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | done |
-| ORD-07 | Patrol and guard | M | ORD-04 | specified |
+| ORD-07 | Patrol and guard | M | ORD-04 | done |
 | ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | specified |
 | UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | specified |
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | specified |

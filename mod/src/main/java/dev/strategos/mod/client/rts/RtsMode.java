@@ -154,9 +154,9 @@ public final class RtsMode {
         return orders.formationArmed();
     }
 
-    /** The click that marches the selection to what the cursor at window points picks; false when none is armed. */
-    boolean fireFormation(double x, double y) {
-        return orders.fireFormation(x, y);
+    /** The patrol and guard targeting (ORD-07). */
+    public StandingTargeting standing() {
+        return orders.standing();
     }
 
     /** The ability whose target the next click picks (UNIT-10), its index in the template set; -1 when none is armed. */
@@ -164,9 +164,9 @@ public final class RtsMode {
         return orders.abilityArmed();
     }
 
-    /** The click that aims the armed ability at what the cursor at window points picks; false when none is armed. */
-    boolean fireAbility(double x, double y, boolean shift) {
-        return orders.fireAbility(x, y, shift);
+    /** The click that fires an armed ability, formation march or patrol or guard (UNIT-10, ORD-06, ORD-07); false for none. */
+    boolean fireArmed(double x, double y, boolean shift) {
+        return orders.fireArmed(x, y, shift);
     }
 
     /** The last command a right click or a first-person key sent, for scenarios; null before any. */

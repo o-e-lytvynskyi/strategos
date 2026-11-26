@@ -25,6 +25,12 @@ public enum Action {
     FORMATION_BOX(false),
     /** The selection's next ground click marches it in a line formation (ORD-06). */
     FORMATION_LINE(false),
+    /** The selection's next ground clicks, Shift-click for each point but the last, patrol between the points (ORD-07). */
+    PATROL(false),
+    /** The selection's next click on a friendly unit or building guards it (ORD-07). */
+    GUARD(false),
+    /** Enter: ends a patrol's points and sends it (ORD-07). */
+    CONFIRM(false),
     /** Held while right-clicking an enemy building: the selection captures it instead of attacking it (CMB-10). */
     CAPTURE(true),
     CONTROL_GROUP_SET(false),

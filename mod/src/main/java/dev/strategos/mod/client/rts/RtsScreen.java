@@ -100,7 +100,11 @@ public final class RtsScreen extends Screen {
                 mode.placement().cancel();
                 in.context(ActionContext.RTS);
             }
-            case PAUSE -> mc.pauseGame(false);
+            case PAUSE -> {
+                if (!mode.standing().cancel()) { // Escape drops a patrol or guard being targeted first
+                    mc.pauseGame(false);
+                }
+            }
             case ACTIONS -> {
                 return actionKey(mc, in, keyCode, scanCode, modifiers);
             }
@@ -190,8 +194,9 @@ public final class RtsScreen extends Screen {
             boolean shift = Modifiers.shift(e.modifiers());
             switch (e.action()) {
                 case SELECT -> {
-                    if (mode.fireAbility(x(e.x()), y(e.y()), shift) || mode.fireFormation(x(e.x()), y(e.y()))) {
-                        // an armed ability (UNIT-10) or formation march (ORD-06) took the click
+                    if (mode.fireArmed(x(e.x()), y(e.y()), shift)) {
+                        // an armed ability (UNIT-10), formation march (ORD-06) or patrol or guard (ORD-07) took the
+                        // click
                     } else if (!mode.placement().place(shift)) {
                         RtsMode.Pick pick = pickAt(e.x(), e.y());
                         Seen unit = mode.seenAt(pick);

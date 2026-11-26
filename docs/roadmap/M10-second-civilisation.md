@@ -230,7 +230,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. A guard follows its charge and defends it (L1).
   3. Both orders work in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-04 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-26 — 1 `PatrolTest` (loops for several cycles, fights an enemy met on a leg and resumes, restores and replays); 2 `GuardTest` (follows a moving charge, defends it, returns, ends with the charge, refuses an enemy); 3 `ordertests.patrol_and_guard`. M10 T20.
 
 #### ECO-10 · Wild herds and hunting
 - **Value:** Hunting is a fast early food source and a reason to scout (P1).

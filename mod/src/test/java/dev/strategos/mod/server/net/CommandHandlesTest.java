@@ -27,6 +27,19 @@ class CommandHandlesTest {
                         new dev.strategos.core.shared.AbilityId("charge"),
                         dev.strategos.core.protocol.Target.none())))
                 .isEqualTo(3);
+        assertThat(NetGateway.handles(dev.strategos.core.protocol.Patrol.replace(
+                        three, java.util.List.of(new dev.strategos.core.shared.Vec2d(1, 2)))))
+                .as("ORD-07")
+                .isEqualTo(3);
+        assertThat(NetGateway.handles(dev.strategos.core.protocol.Guard.replace(three, 0x80001)))
+                .as("ORD-07")
+                .isEqualTo(3);
+        assertThat(NetGateway.handles(new dev.strategos.core.protocol.FormationMove(
+                        three,
+                        new dev.strategos.core.shared.Vec2d(1, 2),
+                        dev.strategos.core.protocol.FormationShape.BOX,
+                        QueueMode.REPLACE)))
+                .isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, three))).isEqualTo(3);
         assertThat(NetGateway.handles(new Ungarrison(0x80001, UnitSet.of())))
                 .as("everyone inside counts as a full centre")

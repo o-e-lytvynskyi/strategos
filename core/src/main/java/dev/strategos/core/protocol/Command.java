@@ -42,4 +42,6 @@ public sealed interface Command extends Hashable
                 UpgradeBuilding,
                 PlaceWall,
                 UseAbility,
+                Patrol,
+                Guard,
                 FormationMove {}

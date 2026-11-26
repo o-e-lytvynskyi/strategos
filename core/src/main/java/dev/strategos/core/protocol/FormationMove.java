@@ -53,8 +53,7 @@ public record FormationMove(UnitSet units, Vec2d target, FormationShape shape, Q
 
     @Override
     public void hashInto(Hasher h) {
-        h.putByte(
-                (byte) 38); // the command type: ... 35 UseAbility, 36 Patrol and 37 Guard (reserved), 38 FormationMove
+        h.putByte((byte) 38); // the command type: ... 35 UseAbility, 36 Patrol, 37 Guard, 38 FormationMove
         units.hashInto(h);
         h.putDouble(target.x()).putDouble(target.z()).putInt(shape.code()).putString(mode.id());
     }

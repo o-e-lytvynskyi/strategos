@@ -137,7 +137,7 @@ class WireCodecSizeTest {
                 .hasMessageContaining("target kind");
     }
 
-    /** ORD-06: the formation command is wire id 38 (36 and 37 are reserved), as small as its fields, and refuses a bad shape. */
+    /** ORD-06: the formation command is wire id 38 (after 36 Patrol and 37 Guard), as small as its fields, and refuses a bad shape. */
     @Test
     void formationMoveIsWireId38WithTheSizesOfItsFields() {
         FormationMove box = FormationMove.replace(UnitSet.of(5), new Vec2d(1, 2), FormationShape.BOX);
@@ -145,8 +145,7 @@ class WireCodecSizeTest {
                 new FormationMove(UnitSet.of(5, 6), new Vec2d(-1.5, 2), FormationShape.LINE, QueueMode.QUEUE);
         assertThat(CommandKinds.DEFAULT.of(box).wireId()).isEqualTo(38);
         assertThat(CommandKinds.DEFAULT.of(box).adminOnly()).isFalse();
-        assertThat(CommandKinds.DEFAULT.byWireId(36)).isNull();
-        assertThat(CommandKinds.DEFAULT.byWireId(37)).isNull();
+        assertThat(CommandKinds.DEFAULT.byWireId(39)).isNull();
         assertThat(size(FormationMove.WIRE, box))
                 .as("count and handle 2, point 16, shape 1, mode 1")
                 .isEqualTo(20);
@@ -171,6 +170,47 @@ class WireCodecSizeTest {
                 .hasMessageContaining("formation shape");
     }
 
+    /** ORD-07: patrol is wire id 36 and guard 37, each as small as its fields, and a patrol past its points' cap does not decode. */
+    @Test
+    void patrolAndGuardAreWireIds36And37WithTheSizesOfTheirFields() {
+        Patrol one = Patrol.replace(UnitSet.of(5), List.of(new Vec2d(1, 2)));
+        Patrol two = new Patrol(UnitSet.of(5, 6), List.of(new Vec2d(1, 2), new Vec2d(-3.5, 9)), QueueMode.QUEUE);
+        Guard guard = Guard.replace(UnitSet.of(5), 0x80007);
+        assertThat(CommandKinds.DEFAULT.of(one).wireId()).isEqualTo(36);
+        assertThat(CommandKinds.DEFAULT.of(guard).wireId()).isEqualTo(37);
+        assertThat(CommandKinds.DEFAULT.of(one).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.of(guard).adminOnly()).isFalse();
+        assertThat(size(Patrol.WIRE, one))
+                .as("count and handle 2, points 1, one point 16, mode 1")
+                .isEqualTo(20);
+        assertThat(size(Patrol.WIRE, two)).as("a handle and a point more").isEqualTo(37);
+        assertThat(size(Guard.WIRE, guard))
+                .as("count and handle 2, charge 3 as a varint, mode 1")
+                .isEqualTo(6);
+        for (Command command : List.<Command>of(one, two, guard)) {
+            assertThat(roundTrip(COMMANDS, command)).isEqualTo(command);
+            assertThat(size(COMMANDS, command)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        List<Vec2d> points = new java.util.ArrayList<>();
+        for (int k = 0; k < Patrol.MAX_POINTS; k++) {
+            points.add(new Vec2d(-1e300, 1e300));
+        }
+        Patrol widest = new Patrol(UnitSet.of(many), points, QueueMode.PUSH_FRONT);
+        assertThat(size(Patrol.WIRE, widest)).isLessThanOrEqualTo(Patrol.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        Guard farthest = new Guard(UnitSet.of(many), Integer.MAX_VALUE, QueueMode.PUSH_FRONT);
+        assertThat(size(Guard.WIRE, farthest)).isLessThanOrEqualTo(Guard.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, farthest)).isEqualTo(farthest);
+        assertThat(Patrol.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        points.add(new Vec2d(0, 0));
+        byte[] tooMany = WireCodec.encode(COMMANDS, new Patrol(UnitSet.of(5), points, QueueMode.REPLACE));
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, tooMany)).isInstanceOf(WireException.class);
+    }
+
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
@@ -178,7 +218,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:formation_move=38");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:patrol=36,strategos:guard=37,strategos:formation_move=38");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();

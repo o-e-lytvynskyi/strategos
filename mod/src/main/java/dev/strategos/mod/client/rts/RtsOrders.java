@@ -76,12 +76,33 @@ final class RtsOrders {
     private final FocusTargets focus = new FocusTargets();
     private @Nullable Command lastCommand;
 
+    private final StandingTargeting standing;
+
     RtsOrders(RtsMode mode) {
         this.mode = mode;
+        this.standing = new StandingTargeting(mode, this);
+    }
+
+    /** The patrol and guard targeting (ORD-07). */
+    StandingTargeting standing() {
+        return standing;
+    }
+
+    /** Another targeting arms: attack-move, a formation march and an ability drop out. */
+    void disarmOthers() {
+        attackMove = false;
+        formation = null;
+        ability = NO_ABILITY;
+    }
+
+    /** A marker of {@code kind} (see {@code markers}) at the world place, for the targeting's clicks. */
+    void mark(double x, double y, double z, int kind) {
+        markers.add(new double[] {x, y, z, 40, kind});
     }
 
     /** Attack-move arms for the next right click; cancelling or selecting disarms it. */
     void fired(Action action) {
+        standing.fired(action);
         if (action == Action.ATTACK_MOVE) {
             attackMove = true; // for the next right click
             ability = NO_ABILITY;
@@ -101,6 +122,7 @@ final class RtsOrders {
 
     /** The next click on the ground marches the selection in a formation of {@code shape} (ORD-06). */
     void armFormation(FormationShape shape) {
+        standing.disarm();
         formation = shape;
         attackMove = false;
         ability = NO_ABILITY;
@@ -140,6 +162,7 @@ final class RtsOrders {
 
     /** Targeting arms with the ability at {@code index} of the set (UNIT-10): the next click aims it. */
     void armAbility(int index) {
+        standing.disarm();
         ability = index;
         attackMove = false;
         formation = null;
@@ -208,6 +231,11 @@ final class RtsOrders {
         return true;
     }
 
+    /** The click that fires an armed ability, formation march or patrol or guard; false when none is armed. */
+    boolean fireArmed(double x, double y, boolean shift) {
+        return fireAbility(x, y, shift) || fireFormation(x, y) || standing.fire(x, y, shift);
+    }
+
     void preview(boolean on) {
         previewing = on;
     }
@@ -256,6 +284,9 @@ final class RtsOrders {
      */
     void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
         previewing = false;
+        if (standing.rightClick()) { // a patrol being targeted is sent, or a targeting cancelled
+            return;
+        }
         if (fireAbility(x, y, shift) || fireFormation(x, y)) { // an armed ability or formation takes the click
             return;
         }

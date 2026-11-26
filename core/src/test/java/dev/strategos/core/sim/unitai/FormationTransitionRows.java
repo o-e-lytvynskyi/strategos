@@ -14,7 +14,10 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.unitai.UnitTreeTransitionsTest.Unit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.params.provider.Arguments;
 
 /**
@@ -176,72 +179,105 @@ final class FormationTransitionRows {
         return out.stream();
     }
 
+    private static Arguments rowOf(
+            boolean worker,
+            String name,
+            StateId from,
+            Function<Unit, @Nullable BusMessage> message,
+            StateId to,
+            Consumer<Unit> effects) {
+        return worker
+                ? workerRow(name, from, message, to, effects)
+                : UnitTreeTransitionsTest.row(name, from, message, to, effects);
+    }
+
     /** What an order of its own does to a member in {@code from}: the state of its kind, in each. */
-    private static void addOwnOrders(List<Arguments> out, StateId from) {
+    static void addOwnOrders(List<Arguments> out, StateId from) {
+        addOwnOrders(out, from, true);
+    }
+
+    /** As above, its rows run by a worker or, for {@code worker} false, by the unit tree's spearman. */
+    static void addOwnOrders(List<Arguments> out, StateId from, boolean worker) {
         String in = " from " + from;
-        out.add(workerRow(
-                "a stop" + in, from, UnitTreeTransitionsTest::stop, UnitAi.IDLE, UnitTreeTransitionsTest::nothingElse));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
+                "a stop" + in,
+                from,
+                UnitTreeTransitionsTest::stop,
+                UnitAi.IDLE,
+                UnitTreeTransitionsTest::nothingElse));
+        out.add(rowOf(
+                worker,
                 "a move" + in,
                 from,
                 UnitTreeTransitionsTest::newMove,
                 UnitAi.WALKING,
                 UnitTreeTransitionsTest.kept(OrderKind.MOVE)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a flight" + in,
                 from,
                 FleeTransitionRows::newFlee,
                 UnitAi.FLEEING,
                 UnitTreeTransitionsTest.kept(OrderKind.FLEE)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "an attack" + in,
                 from,
                 UnitTreeTransitionsTest::newAttack,
                 UnitAi.APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.ATTACK)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "an attack-move" + in,
                 from,
                 UnitTreeTransitionsTest::newAttackMove,
                 UnitAi.WALKING_AND_FIGHTING,
                 UnitTreeTransitionsTest.kept(OrderKind.ATTACK_MOVE)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a follow" + in,
                 from,
                 UnitTreeTransitionsTest::newFollow,
                 UnitAi.FOLLOW_WALKING,
                 UnitTreeTransitionsTest.kept(OrderKind.FOLLOW)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a gather order" + in,
                 from,
                 GatherTransitionRows::newGather,
                 UnitAi.GATHER_APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.GATHER)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a build order" + in,
                 from,
                 BuildTransitionRows::newBuild,
                 UnitAi.BUILD_APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.BUILD)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a burn order" + in,
                 from,
                 BurnTransitionRows::newBurn,
                 UnitAi.BURN_APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.BURN)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a garrison order" + in,
                 from,
                 GarrisonTransitionRows::newGarrison,
                 UnitAi.GARRISON_APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.GARRISON)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "a capture order" + in,
                 from,
                 CaptureTransitionRows::newCapture,
                 UnitAi.CAPTURE_APPROACHING,
                 UnitTreeTransitionsTest.kept(OrderKind.CAPTURE)));
-        out.add(workerRow(
+        out.add(rowOf(
+                worker,
                 "an ability order" + in,
                 from,
                 AbilityTransitionRows::newAbility,

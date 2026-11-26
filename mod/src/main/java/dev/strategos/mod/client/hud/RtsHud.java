@@ -274,12 +274,14 @@ public final class RtsHud {
                 StrategosClient.templates(),
                 mode::send,
                 net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
-        if (c.effect() == CardController.Effect.ARM) {
-            mode.armPlacement(c.template());
-        } else if (c.effect() == CardController.Effect.TARGET) {
-            mode.armAbility(c.template()); // the next click aims it (UNIT-10)
-        } else if (c.effect() == CardController.Effect.FORMATION) {
-            mode.armFormation(FormationShape.ofCode(c.template())); // the next ground click marches (ORD-06)
+        switch (c.effect()) {
+            case ARM -> mode.armPlacement(c.template());
+            case TARGET -> mode.armAbility(c.template()); // the next click aims it (UNIT-10)
+            case FORMATION ->
+                mode.armFormation(FormationShape.ofCode(c.template())); // the next ground click marches (ORD-06)
+            case PATROL -> mode.standing().armPatrol(); // the next ground clicks are its points (ORD-07)
+            case GUARD -> mode.standing().armGuard(); // the next click on a friendly unit or building is the charge
+            default -> {}
         }
         build();
     }
@@ -742,6 +744,13 @@ public final class RtsHud {
                             b.template() == FormationShape.BOX.code() ? "minecraft:white_banner" : "minecraft:lead",
                             cell);
                     if (b.template() == mode.formationArmed()) { // waiting for its ground click: framed
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
+                    }
+                }
+                case PATROL, GUARD -> {
+                    boolean patrol = b.kind() == CommandCard.Kind.PATROL;
+                    paint.item(g, patrol ? "minecraft:compass" : "minecraft:shield", cell);
+                    if (patrol ? mode.standing().patrolArmed() : mode.standing().guardArmed()) { // waiting for clicks
                         g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
                     }
                 }

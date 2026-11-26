@@ -221,15 +221,16 @@ public final class MatchSnapshotCodec {
                     Vec2d.CODEC.fieldOf("target").forGetter(o -> new Vec2d(o.x(), o.z())),
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Order::group),
                     Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Order::slot),
-                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Order::target))
+                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Order::target),
+                    Vec2d.CODEC.listOf().optionalFieldOf("anchors", List.of()).forGetter(OrderQueues.Order::anchors))
             .apply(
                     i,
-                    (kind, target, group, slot, unit) ->
-                            new OrderQueues.Order(kind, target.x(), target.z(), group, slot, unit)));
+                    (kind, target, group, slot, unit, anchors) ->
+                            new OrderQueues.Order(kind, target.x(), target.z(), group, slot, unit, anchors)));
 
     /**
      * The rest of a unit's queue, inlined into the unit beside its {@code "target"}: the current order's kind, group,
-     * slot and attacked unit, and the orders after it, each written only when set, so M0's single order saves exactly
+     * slot, attacked unit and anchors, and the orders after it, each written only when set, so M0's single order saves exactly
      * as before.
      */
     private static final MapCodec<OrderQueues.Saved> ORDERS = RecordCodecBuilder.mapCodec(i -> i.group(
@@ -237,7 +238,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Saved::group),
                     Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Saved::slot),
                     Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Saved::target),
-                    ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next))
+                    ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next),
+                    Vec2d.CODEC.listOf().optionalFieldOf("anchors", List.of()).forGetter(OrderQueues.Saved::anchors))
             .apply(i, OrderQueues.Saved::new));
 
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(

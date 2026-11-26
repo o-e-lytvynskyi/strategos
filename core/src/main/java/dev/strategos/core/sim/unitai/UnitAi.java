@@ -59,7 +59,13 @@ import org.jspecify.annotations.Nullable;
  *     FORMATION_HOLDING  every 1 think: walk again once the place moves or the unit is pushed off it; a queued order
  *                                takes over; once the formation stands, look for enemies; Attacked: hit back (as
  *                                it does when it stands)
+ *   GUARDING             every 5   enter: the place beside the charge; think: the charge lost ends the order, an enemy
+ *                                near it is engaged, close enough: stand; Arrived: stand; Attacked: hit back
+ *   GUARD_STANDING       every 5   think: as GUARDING's; a charge that has moved on is followed, walking again
  * </pre>
+ *
+ * A patrol (ORD-07) is carried out in WALKING_AND_FIGHTING, as an attack-move: where the walk ends, the order's next
+ * point becomes its place instead of the order being done.
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
  * its next order: finding a new target is a step, not a state, so no unit ever rests in it. Finding the next node is a
@@ -107,6 +113,8 @@ public final class UnitAi {
     public static final StateId FORMATION_MEMBER = new StateId(29, "formation", null);
     public static final StateId FORMATION_MARCHING = new StateId(30, "formation.marching", UnitState.WALKING);
     public static final StateId FORMATION_HOLDING = new StateId(31, "formation.holding", UnitState.IDLE);
+    public static final StateId GUARDING = new StateId(32, "guarding", UnitState.WALKING);
+    public static final StateId GUARD_STANDING = new StateId(33, "guarding.standing", UnitState.IDLE);
 
     private UnitAi() {}
 
@@ -337,6 +345,23 @@ public final class UnitAi {
                                 .on(Arrived.class, (ctx, m) -> {}) // standing: nowhere to walk to
                                 .on(Attacked.class, (ctx, m) -> Marching.struck(ctx, m.attacker()))
                                 .transitions(next(FORMATION_MARCHING))
+                                .build(),
+                        StateDef.<MatchState>child(GUARDING, INDIVIDUAL)
+                                .thinkEvery(5)
+                                .enter(Guarding::enter)
+                                .think(Guarding::walk)
+                                .on(Arrived.class, (ctx, m) -> ctx.go(GUARD_STANDING))
+                                .on(Stuck.class, UnitAi::guardStuck)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
+                                .transitions(next(GUARD_STANDING))
+                                .build(),
+                        StateDef.<MatchState>child(GUARD_STANDING, INDIVIDUAL)
+                                .thinkEvery(5)
+                                .think(Guarding::stand)
+                                .on(Arrived.class, (ctx, m) -> {}) // beside the charge: nowhere to walk to
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -359,7 +384,8 @@ public final class UnitAi {
                 GARRISON,
                 CAPTURE,
                 ABILITY,
-                FORMATION_MEMBER));
+                FORMATION_MEMBER,
+                GUARDING));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -389,6 +415,10 @@ public final class UnitAi {
 
     /** An attack-move that ends short of its goal (no way nearer) attacks the wall in its way before it is done (BLD-13). */
     private static void arrivedOrBreach(Context<MatchState> ctx, Arrived m) {
+        if (ctx.host().orders().kind(ctx.unit()) == OrderKind.PATROL) {
+            Patrolling.nextLeg(ctx);
+            return;
+        }
         if (Breaching.shortOfGoal(ctx) && Breaching.breach(ctx)) {
             return;
         }
@@ -397,10 +427,23 @@ public final class UnitAi {
 
     /** An attack-move that cannot get nearer its goal attacks the wall in its way before it gives the order up (BLD-13). */
     private static void giveUpOrBreach(Context<MatchState> ctx, Stuck m) {
+        if (ctx.host().orders().kind(ctx.unit()) == OrderKind.PATROL) {
+            if (m.rung() == Stuck.GIVE_UP) {
+                Patrolling.nextLeg(ctx); // a leg no way leads to is skipped
+            }
+            return;
+        }
         if (m.rung() == Stuck.GIVE_UP && Breaching.breach(ctx)) {
             return;
         }
         giveUp(ctx, m);
+    }
+
+    /** A guard that cannot get nearer its charge stays where it is, and walks again when the charge has moved. */
+    private static void guardStuck(Context<MatchState> ctx, Stuck m) {
+        if (m.rung() == Stuck.GIVE_UP) {
+            Guarding.halt(ctx);
+        }
     }
 
     private static void repath(Context<MatchState> ctx, PathInvalidated m) {
@@ -432,7 +475,9 @@ public final class UnitAi {
                 CAPTURING,
                 ABILITY,
                 FORMATION_MARCHING,
-                FORMATION_HOLDING);
+                FORMATION_HOLDING,
+                GUARDING,
+                GUARD_STANDING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -461,7 +506,8 @@ public final class UnitAi {
             case OrderKind.MOVE -> WALKING;
             case OrderKind.FLEE -> FLEEING;
             case OrderKind.ATTACK, OrderKind.ENGAGE -> COMBAT;
-            case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
+            case OrderKind.ATTACK_MOVE, OrderKind.PATROL -> WALKING_AND_FIGHTING;
+            case OrderKind.GUARD -> GUARDING;
             case OrderKind.FOLLOW -> FOLLOW;
             case OrderKind.GATHER -> GATHER;
             case OrderKind.BUILD -> BUILD;

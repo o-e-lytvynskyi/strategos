@@ -47,7 +47,11 @@ public final class CardController {
         /** An ability that takes a target: {@link Click#template} is its index; the next click aims it. */
         TARGET,
         /** A formation march: {@link Click#template} is the shape's code; the next ground click sends it (ORD-06). */
-        FORMATION
+        FORMATION,
+        /** A patrol: the next ground clicks are its points, Shift-click keeping on, a right click or Enter sending (ORD-07). */
+        PATROL,
+        /** A guard: the next click on a friendly unit or building names the charge (ORD-07). */
+        GUARD
     }
 
     /** A click's effect, and for {@link Effect#ARM} the building template to place. */
@@ -215,6 +219,8 @@ public final class CardController {
                 yield new Click(Effect.SENT, -1);
             }
             case FORMATION -> units.size() < 2 ? Click.NONE : new Click(Effect.FORMATION, button.template());
+            case PATROL -> units.isEmpty() ? Click.NONE : new Click(Effect.PATROL, -1);
+            case GUARD -> units.isEmpty() ? Click.NONE : new Click(Effect.GUARD, -1);
             case BUILD_PAGE -> {
                 buildPage = true;
                 yield new Click(Effect.PAGE, -1);

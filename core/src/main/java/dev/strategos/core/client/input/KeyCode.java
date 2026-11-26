@@ -34,6 +34,7 @@ public record KeyCode(Kind kind, int code) {
     public static final int Y = 89;
     public static final int Z = 90;
     public static final int ESCAPE = 256;
+    public static final int ENTER = 257;
     public static final int F1 = 290;
     public static final int F2 = 291;
     public static final int F3 = 292;

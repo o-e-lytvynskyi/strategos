@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.EconomyRules;
@@ -248,6 +249,13 @@ public final class StateHasher {
             h = Hasher.mix(h, o.slot());
             if (OrderKind.targets(o.kind())) { // only attacks and follows hold one: older queues hash as before
                 h = Hasher.mix(h, o.target());
+            }
+            if (!o.anchors().isEmpty()) { // only a patrol holds points: older queues hash as before
+                h = Hasher.mix(h, o.anchors().size());
+                for (Vec2d anchor : o.anchors()) {
+                    h = Hasher.mix(h, Double.doubleToLongBits(anchor.x()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(anchor.z()));
+                }
             }
         }
         return h;

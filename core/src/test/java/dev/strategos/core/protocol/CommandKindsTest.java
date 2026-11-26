@@ -52,6 +52,8 @@ class CommandKindsTest {
                         "strategos:upgrade_building",
                         "strategos:place_wall",
                         "strategos:use_ability",
+                        "strategos:patrol",
+                        "strategos:guard",
                         "strategos:formation_move");
     }
 

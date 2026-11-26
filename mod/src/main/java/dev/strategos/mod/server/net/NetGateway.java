@@ -18,9 +18,11 @@ import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.FormationMove;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.Garrison;
+import dev.strategos.core.protocol.Guard;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Patrol;
 import dev.strategos.core.protocol.PlaceWall;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
@@ -384,6 +386,8 @@ public final class NetGateway {
             case Capture capture -> capture.units().size();
             case UseAbility use -> use.units().size();
             case FormationMove formation -> formation.units().size();
+            case Patrol patrol -> patrol.units().size();
+            case Guard guard -> guard.units().size();
             case PlaceWall wall -> wall.builders().size();
             case Ungarrison ungarrison ->
                 ungarrison.units().size() == 0

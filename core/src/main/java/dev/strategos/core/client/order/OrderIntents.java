@@ -9,7 +9,9 @@ import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.FormationMove;
 import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.Gather;
+import dev.strategos.core.protocol.Guard;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Patrol;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Vec2d;
@@ -102,6 +104,28 @@ public final class OrderIntents {
         }
         return FormationMove.replace(
                 UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()), new Vec2d(localX, localZ), shape);
+    }
+
+    /**
+     * The click that ends a patrol's targeting (ORD-07): the selection patrols between the match-local {@code points},
+     * replacing its orders; one point is a patrol between each unit's own place and it. None without a selection or a
+     * point.
+     */
+    public static @Nullable Patrol patrol(List<Integer> selection, List<Vec2d> points) {
+        if (selection.isEmpty() || points.isEmpty()) {
+            return null;
+        }
+        return Patrol.replace(
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()), points);
+    }
+
+    /** The click that ends a guard's targeting (ORD-07): the selection guards {@code charge}; none without a selection. */
+    public static @Nullable Guard guard(List<Integer> selection, int charge) {
+        if (selection.isEmpty() || charge == 0) {
+            return null;
+        }
+        return Guard.replace(
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()), charge);
     }
 
     public static @Nullable Move move(List<Integer> selection, double localX, double localZ, boolean shift) {

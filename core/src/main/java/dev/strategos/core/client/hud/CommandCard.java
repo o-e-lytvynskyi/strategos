@@ -82,7 +82,11 @@ public record CommandCard(Page page, List<Button> buttons) {
          */
         ABILITY,
         /** A formation march of the selection (ORD-06): {@link Button#template} is the shape's code; the next click aims it. */
-        FORMATION
+        FORMATION,
+        /** A patrol of the selection (ORD-07): the next ground clicks are its points. */
+        PATROL,
+        /** A guard of the selection (ORD-07): the next click on a friendly unit or building is the charge. */
+        GUARD
     }
 
     /** The cells ability buttons take, in order (see {@link #abilitySlot}): beside the build page's cell, then above stop (their keys follow the grid). */
@@ -298,9 +302,12 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (builders) {
             out.add(new Button(Kind.BUILD_PAGE, 0, -1, List.of(), true));
         }
-        boolean formations = FormationCard.offered(in.templates(), in.unitTemplates());
-        abilityButtons(in, out, formations ? FormationCard.ABILITIES_BESIDE : ABILITY_SLOT_COUNT);
-        if (formations) {
+        boolean standing = StandingCard.offered(in.templates(), in.unitTemplates());
+        abilityButtons(in, out, standing ? StandingCard.ABILITIES_BESIDE : ABILITY_SLOT_COUNT);
+        if (standing) {
+            StandingCard.buttons(out);
+        }
+        if (FormationCard.offered(in.templates(), in.unitTemplates())) {
             FormationCard.buttons(out);
         }
         List<Stance> stances = stances();

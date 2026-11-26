@@ -44,6 +44,13 @@ public final class OrderKind {
      * it and its ground place where that place will be a moment from now; done when the unit leaves the formation.
      */
     public static final int FORMATION = 13;
+    /**
+     * Patrolling between points (ORD-07): walking each leg as an attack-move does and starting the next at its end,
+     * for ever. The queue's anchors are the points, its slot the leg being walked and its place that leg's end.
+     */
+    public static final int PATROL = 14;
+    /** Guarding a friendly unit or building (ORD-07), whose handle the queue holds as the target: done when it is gone or changes hands. */
+    public static final int GUARD = 15;
 
     private OrderKind() {}
 
@@ -63,6 +70,8 @@ public final class OrderKind {
             case CAPTURE -> "capture";
             case ABILITY -> "ability";
             case FORMATION -> "formation";
+            case PATROL -> "patrol";
+            case GUARD -> "guard";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -83,6 +92,8 @@ public final class OrderKind {
             case "capture" -> CAPTURE;
             case "ability" -> ABILITY;
             case "formation" -> FORMATION;
+            case "patrol" -> PATROL;
+            case "guard" -> GUARD;
             default -> null;
         };
     }
@@ -94,7 +105,7 @@ public final class OrderKind {
 
     /**
      * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the unit it
-     * flees from, the node it gathers at, the building it builds, burns, captures or goes into, or the formation it keeps a place in.
+     * flees from, the node it gathers at, the building it builds, burns, captures or goes into, the formation it keeps a place in, or the charge it guards.
      */
     public static boolean targets(int kind) {
         return attacks(kind)
@@ -106,6 +117,7 @@ public final class OrderKind {
                 || kind == GARRISON
                 || kind == CAPTURE
                 || kind == ABILITY
-                || kind == FORMATION;
+                || kind == FORMATION
+                || kind == GUARD;
     }
 }

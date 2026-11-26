@@ -54,6 +54,8 @@
     "key.strategos.stop",
     "key.strategos.formation_box",
     "key.strategos.formation_line",
+    "key.strategos.patrol",
+    "key.strategos.guard",
     "key.strategos.capture",
     "key.strategos.toggle_first_person",
     "key.strategos.toggle_rts",

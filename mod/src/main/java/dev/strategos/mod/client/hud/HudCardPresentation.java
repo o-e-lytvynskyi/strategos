@@ -51,6 +51,8 @@ final class HudCardPresentation {
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
             case RESEARCH -> research(templates, b.template());
             case ABILITY -> ability(templates, b.template());
+            case PATROL -> Component.translatable("strategos.card.patrol").getString();
+            case GUARD -> Component.translatable("strategos.card.guard").getString();
             case FORMATION ->
                 Component.translatable("strategos.card.formation."
                                 + FormationShape.ofCode(b.template()).id())

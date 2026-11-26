@@ -16,9 +16,6 @@ final class FormationCard {
 
     static final int LINE_SLOT = 13;
 
-    /** The abilities that still show beside the buttons ({@link CommandCard#abilitySlot}'s cells below theirs). */
-    static final int ABILITIES_BESIDE = 6;
-
     private FormationCard() {}
 
     /** Whether the card offers formations for units of {@code unitTemplates}, one entry for each selected unit. */
