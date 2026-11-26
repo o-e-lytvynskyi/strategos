@@ -575,7 +575,8 @@ the new content, holding City back — §1.6 row 29):
   short, and a reserve holds back only the resources it lacks; the mop-up searches the whole map and the last-seen
   positions, re-tasks walking soldiers, counts foundations, and burns in smaller squads. Then the shipped script turns
   the `depth` block on and `AiCityTest` joins `verifySlow` (AI-09.1). Verify: `verify verifySlow`,
-  `:core:openingBalance`. Size: 600.
+  `:core:openingBalance`. Size: 600. Waits for the owner since 2026-11-26 (AI-09 `changed`): its first attempt
+  regressed the opening balance and is parked; M10 goes on with T26–T28 meanwhile.
 
 #### T26 · QA-16 · The balance matrix
 `:core:balanceMatrix`, the report and its flags, the sheet diff, the L3 samples in `verifySoak`. Verify: the matrix

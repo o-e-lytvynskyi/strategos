@@ -518,7 +518,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | in_progress |
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | in_progress |
 | MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | in_progress |
-| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | in_progress |
+| AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | changed |
 | QA-16 | Balance matrix | M | QA-12, CIV-01 | specified |
 | PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | specified |
 
@@ -528,6 +528,11 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 > следуй уже намеченым планам»): CIV-05 added, CIV-02 and ART-04 deferred to M14 (D-03 with them), AI-09, QA-16 and
 > PERF-17 follow; specified the same day in [M10's spec](milestones/M10-civilisations-and-depth.md) (§1.5, §1.6) with
 > [ADR-0028](adr/0028-civilisations-and-rule-seams.md).
+
+> 2026-11-26: AI-09 is `changed` and waits for the owner (the M10 branch file's "For the owner" 7). Its machinery
+> is in (T25a); with the skirmish script's `depth` block on, AI matches stall and QA-12.1 fails, and what would make a
+> deep late game decisive is M11's AI-11 and AI-12. Proposed: AI-09.1 as a capability (City reached in seeded runs
+> against an opponent that does not attack), `depth` on in the shipped script with M11.
 
 ### M11 · Adaptive AI
 
