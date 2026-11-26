@@ -310,7 +310,7 @@ public interface MatchQueries {
 
     /** PERF-16's territory, join, garrison and capture times so far. */
     default dev.strategos.core.diag.SystemTimes.Stats systemTimes() {
-        return new dev.strategos.core.diag.SystemTimes.Stats(0, 0, 0, 0);
+        return new dev.strategos.core.diag.SystemTimes.Stats(0, 0, 0, 0, 0, 0, 0);
     }
 
     /** How many territory grids were delivered so far (0 before the first): PERF-16's cadence check. */

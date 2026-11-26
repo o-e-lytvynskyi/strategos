@@ -11,6 +11,7 @@ import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.ForeignLoad;
 import dev.strategos.core.testkit.ForeignLoad.Assessment;
 import dev.strategos.core.testkit.ForeignLoad.Reading;
+import dev.strategos.core.testkit.M10Scene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.TerritoryScene;
@@ -74,7 +75,9 @@ final class PerfVerdicts {
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
-        boolean territoryScene = r.config().scene() instanceof TerritoryScene.Config; // PERF-16: A-C and E gate
+        // PERF-16 and PERF-17 (the M10 scene): four computer factions on MAP-02, A-C and E gate, D and G are reported
+        boolean m10Scene = r.config().scene() instanceof M10Scene.Config;
+        boolean territoryScene = r.config().scene() instanceof TerritoryScene.Config || m10Scene;
         long without = Percentiles.percentile(r.baseline(), 0.50);
         long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
         long[] c = new long[r.tick().length];
@@ -171,16 +174,21 @@ final class PerfVerdicts {
             json.add(
                     r.config().scene() instanceof MvpScene.Config
                             ? "mvp"
-                            : territoryScene
-                                    ? "territory"
-                                    : r.config().scene() instanceof BattleScene.Config
-                                            ? "battle"
-                                            : r.config().scene() instanceof EconomyScene.Config
-                                                    ? "economy"
-                                                    : "firstLoop",
+                            : m10Scene
+                                    ? "m10"
+                                    : territoryScene
+                                            ? "territory"
+                                            : r.config().scene() instanceof BattleScene.Config
+                                                    ? "battle"
+                                                    : r.config().scene() instanceof EconomyScene.Config
+                                                            ? "economy"
+                                                            : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast && !territoryScene));
             if (costs.territory() != null) {
                 json.add("systems", systems(costs.territory(), broken));
+            }
+            if (costs.depth() != null) {
+                json.add("systems", depth(costs.depth()));
             }
         }
         if (melee) {
@@ -255,7 +263,9 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        if (r.config().scene() instanceof MvpScene.Config || r.config().scene() instanceof TerritoryScene.Config) {
+        if (r.config().scene() instanceof MvpScene.Config
+                || r.config().scene() instanceof TerritoryScene.Config
+                || r.config().scene() instanceof M10Scene.Config) {
             mvp(json, r, costs, b, broken, gates);
             return json;
         }
@@ -403,6 +413,36 @@ final class PerfVerdicts {
                         + " ticks, above 1");
             }
         }
+        return systems;
+    }
+
+    /**
+     * PERF-17: the M10 systems' part of the report, {@code systems}: what the formation system, the wild animals'
+     * thinking (fauna) and the ability system (cooldowns, buffs, autocast) cost a sampled tick, in nanoseconds. Reported,
+     * not gated: they are inside budget A, which gates.
+     */
+    private static JsonObject depth(SoakCosts.Depth d) {
+        JsonObject systems = new JsonObject();
+        systems.add("formation", spread(d.formation()));
+        systems.add("fauna", spread(d.fauna()));
+        systems.add("ability", spread(d.ability()));
+        systems.addProperty("formedFraction", d.formed());
+        JsonObject scene = new JsonObject();
+        scene.addProperty("marches", d.marches());
+        scene.addProperty("charges", d.charges());
+        scene.addProperty("researches", d.researches());
+        JsonArray phases = new JsonArray();
+        for (String phase : d.phases()) {
+            phases.add(phase);
+        }
+        scene.add("phases", phases);
+        systems.add("scene", scene);
+        systems.addProperty(
+                "note",
+                "formation is the formation system's run and ability the ability system's, both UNIT_AI; fauna is the"
+                        + " Gaia units' own turns to think inside the units' state machines (UNIT_AI), the animals'"
+                        + " fleeing and hunting included; the abilities' orders and the units' use of them count in the"
+                        + " units' thinking, not here");
         return systems;
     }
 

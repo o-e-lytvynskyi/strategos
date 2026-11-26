@@ -1,0 +1,138 @@
+{
+  "what": "M10's perf gate on the M4 Pro (PERF-17, M10 spec §2.20): four factions at Hard on MAP-02 with formations of 40, wild herds, charge on a cadence and City reached; the soak (A–C and E gate) and the 2x stress (C p95 ≤ 50 ms gates)",
+  "date": "2026-11-26",
+  "soak": {
+    "test": "perftests.m_10_soak",
+    "units": 435,
+    "ticks": 18000,
+    "verdict": "pass",
+    "foreignLoadMean": 0.0494,
+    "budgetsNs": {
+      "a": {
+        "percentile": 0.5,
+        "ns": 1918626,
+        "limitNs": 5000000,
+        "verdict": "pass"
+      },
+      "a_p99": {
+        "percentile": 0.99,
+        "ns": 8985791,
+        "limitNs": 10000000,
+        "verdict": "pass"
+      },
+      "b": {
+        "percentile": 0.95,
+        "ns": 5438166,
+        "limitNs": 17000000,
+        "verdict": "report-only"
+      },
+      "c": {
+        "percentile": 0.95,
+        "ns": 10332625,
+        "limitNs": 23000000,
+        "verdict": "pass"
+      },
+      "d": {
+        "percentile": 0.99,
+        "ns": 314625,
+        "limitNs": 2000000,
+        "verdict": "report-only"
+      }
+    },
+    "systemsNs": {
+      "formation": {
+        "p50": 11625,
+        "p95": 31209,
+        "p99": 58333
+      },
+      "fauna": {
+        "p50": 3417,
+        "p95": 4500,
+        "p99": 5750
+      },
+      "ability": {
+        "p50": 6792,
+        "p95": 11208,
+        "p99": 21917
+      }
+    },
+    "formedFraction": 0.8652,
+    "scene": {
+      "marches": 4547,
+      "charges": 76,
+      "researches": 8,
+      "phases": [
+        "city",
+        "city",
+        "city",
+        "city"
+      ]
+    },
+    "budgetE": [
+      {
+        "bytesPerSecond": 7654,
+        "limit": 102400
+      },
+      {
+        "bytesPerSecond": 7029,
+        "limit": 102400
+      }
+    ]
+  },
+  "stress": {
+    "test": "perftests.m_10_stress",
+    "units": 1088,
+    "ticks": 6000,
+    "verdict": "pass",
+    "foreignLoadMean": 0.048,
+    "budgetsNs": {
+      "c": {
+        "percentile": 0.95,
+        "ns": 13417459,
+        "limitNs": 50000000,
+        "verdict": "pass"
+      },
+      "a": {
+        "percentile": 0.99,
+        "ns": 16400207,
+        "limitNs": -1,
+        "verdict": "report-only"
+      },
+      "d": {
+        "percentile": 0.99,
+        "ns": 740208,
+        "limitNs": -1,
+        "verdict": "report-only"
+      }
+    },
+    "systemsNs": {
+      "formation": {
+        "p50": 26709,
+        "p95": 49833,
+        "p99": 89459
+      },
+      "fauna": {
+        "p50": 3250,
+        "p95": 6541,
+        "p99": 7250
+      },
+      "ability": {
+        "p50": 10250,
+        "p95": 17625,
+        "p99": 30583
+      }
+    },
+    "formedFraction": 0.8611,
+    "scene": {
+      "marches": 4808,
+      "charges": 40,
+      "researches": 8,
+      "phases": [
+        "city",
+        "city",
+        "city",
+        "city"
+      ]
+    }
+  }
+}

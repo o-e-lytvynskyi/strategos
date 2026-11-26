@@ -40,6 +40,12 @@ public final class FormationSystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.systemTimes().start();
+        step(s);
+        s.systemTimes().formation(start); // PERF-17
+    }
+
+    private static void step(MatchState s) {
         FormationStore store = s.play().formations();
         for (int f = 0; f < store.count(); f++) {
             FormationController c = store.at(f);

@@ -243,7 +243,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. Animals flee as their stance says (L1).
   3. Fauna fit the unit budgets (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** ECO-16, UNIT-06 · **Size:** M · **Tier:** T1
-- **Status:** in_progress (criteria 1–2 pass: `HuntTest`, `FleeStanceTest`; criterion 3, fauna in the unit budgets, is PERF-17's scene in T27)
+- **Status:** done
+- **Done:** 2026-11-26 — `HuntTest`, `FleeStanceTest`; fauna in the unit budgets: `perftests.m_10_soak` with two herds a quadrant (fauna p95 4.5 µs a tick, every budget held) and the stress at twice the herds; `perf/m10-m4pro.json`; M10 T21, T27
 
 #### UI-17 · Full hotkeys and idle-unit cycling
 - **Value:** Experienced players can play at speed from the keyboard (P3).
@@ -328,4 +329,5 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists the cost of formations, fauna and abilities (R).
 - **Tests:** L6, R · **Depends on:** CIV-01, ORD-06, ECO-10, PERF-16 · **Size:** S · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-26 — `perftests.m_10_soak` (435 units, 18,000 ticks: A p50 1.92 ms, A p99 8.99 ms, B p95 5.44 ms, C p95 10.33 ms, D p99 0.32 ms, E 7.6 KB/s a viewer; valid, foreign load 4.9 %) and `perftests.m_10_stress` (1,088 units, C p95 13.4 ms ≤ 50 ms); the reports list formations (p95 31 µs a tick), fauna (4.5 µs) and abilities (11.2 µs), formed 86 % of the time, all four factions in City; `perf/m10-m4pro.json`; M10 T27. PERF-14 stays in the consent batch (T30)

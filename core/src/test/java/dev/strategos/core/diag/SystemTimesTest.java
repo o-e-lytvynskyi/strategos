@@ -24,13 +24,23 @@ final class SystemTimesTest {
         start = times.start();
         clock.advance(9);
         times.capture(start);
-        assertThat(times.stats()).isEqualTo(new SystemTimes.Stats(350, 50, 70, 9));
+        start = times.start();
+        clock.advance(11);
+        times.formation(start);
+        start = times.start();
+        clock.advance(13);
+        times.ability(start);
+        start = times.start();
+        clock.advance(17);
+        times.fauna(start);
+        times.fauna(times.start());
+        assertThat(times.stats()).isEqualTo(new SystemTimes.Stats(350, 50, 70, 9, 11, 13, 17));
     }
 
     @Test
     void untilAClockIsSetEverythingReadsZero() {
         SystemTimes times = new SystemTimes();
         times.territory(times.start());
-        assertThat(times.stats()).isEqualTo(new SystemTimes.Stats(0, 0, 0, 0));
+        assertThat(times.stats()).isEqualTo(new SystemTimes.Stats(0, 0, 0, 0, 0, 0, 0));
     }
 }

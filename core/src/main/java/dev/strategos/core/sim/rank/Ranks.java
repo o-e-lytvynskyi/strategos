@@ -11,6 +11,7 @@ import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.sim.stats.ModifierOp;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The rank rules (CMB-11, M10 spec §2.8). A unit earns {@code dealt × the target's Promotion/value ÷ the target's most
@@ -33,6 +34,16 @@ public final class Ranks {
      * no ranks or a target worth nothing.
      */
     public static void credit(MatchState s, int attacker, int target, double dealt, double max) {
+        credit(s, attacker, target, dealt, max, null);
+    }
+
+    /**
+     * As {@link #credit(MatchState, int, int, double, double)}, with {@code dying} the bitset (by unit index) of the
+     * units whose hit points reached 0 this tick, so "a dying attacker earns nothing" reads no stat; {@code null} reads
+     * the attacker's hit points instead.
+     */
+    public static void credit(
+            MatchState s, int attacker, int target, double dealt, double max, long @Nullable [] dying) {
         TemplateSet set = s.templates();
         if (!set.hasPromotions() || attacker == Handle.NONE || !(dealt > 0) || !(max > 0)) {
             return;
@@ -63,7 +74,7 @@ public final class Ranks {
             return;
         }
         long gain = Math.round(dealt * value / max * PromotionDef.SCALE);
-        if (gain <= 0 || s.health().damage(a) >= stats.maxHealth(a)) {
+        if (gain <= 0 || (dying != null ? isSet(dying, a) : s.health().damage(a) >= stats.maxHealth(a))) {
             return; // (a unit dying this tick only leaves at the death pass, and the dead earn nothing)
         }
         long total = store.experience(a) + gain;
@@ -77,6 +88,11 @@ public final class Ranks {
             apply(s, attacker, rank, true);
             s.outputs().add(new UnitRanked(attacker, Math.min(rank, thresholds.length)));
         }
+    }
+
+    private static boolean isSet(long[] bits, int index) {
+        int word = index >>> 6;
+        return word < bits.length && (bits[word] & (1L << index)) != 0;
     }
 
     /**

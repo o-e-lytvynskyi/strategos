@@ -28,6 +28,12 @@ public final class AbilitySystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.systemTimes().start();
+        step(s);
+        s.systemTimes().ability(start); // PERF-17
+    }
+
+    private static void step(MatchState s) {
         AbilityStore store = s.play().abilities();
         if (store.takeMoved() && !s.spatial().gridMatches(s.motion())) {
             s.spatial().rebuild(s); // units put elsewhere by an ability before this phase, once however many

@@ -7,6 +7,7 @@ import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
+import dev.strategos.core.testkit.M10Scene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.TerritoryScene;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
@@ -46,6 +47,12 @@ final class PerfSoaks {
     private static final int TERRITORY_STRESS_TICKS = Integer.getInteger("strategos.territoryStress.ticks", 6_000);
     private static final int TERRITORY_LANE = 13;
     private static final int TERRITORY_STRESS_LANE = 14;
+    /** PERF-17: 15 game minutes; {@code -Pm10.ticks} shortens a trial run, {@code m10.stressTicks} the stress's. */
+    private static final int M10_TICKS = Integer.getInteger("strategos.m10.ticks", M10Scene.SOAK_TICKS);
+
+    private static final int M10_STRESS_TICKS = Integer.getInteger("strategos.m10Stress.ticks", 6_000);
+    private static final int M10_LANE = 15;
+    private static final int M10_STRESS_LANE = 16;
 
     private PerfSoaks() {}
 
@@ -201,6 +208,33 @@ final class PerfSoaks {
                         TERRITORY_STRESS_TICKS,
                         TERRITORY_STRESS_LANE,
                         1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /** The M10 scene at {@code scale}, its four factions played by the shipped skirmish script at Hard. */
+    private static M10Scene.Config m10(GameTestHelper h, M10Scene.Config scale) {
+        return scale.withAi(Objects.requireNonNull(
+                Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json"));
+    }
+
+    static void m10Soak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop("m10_soak", m10(h, M10Scene.Config.SOAK), M10_TICKS, M10_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    static void m10Stress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "m10_stress", m10(h, M10Scene.Config.STRESS), M10_STRESS_TICKS, M10_STRESS_LANE, 1),
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);

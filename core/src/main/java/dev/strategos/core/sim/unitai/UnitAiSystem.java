@@ -78,10 +78,28 @@ public final class UnitAiSystem implements MatchSystem {
         EntityStore entities = state.entities();
         long tick = state.tick();
         int highWater = entities.highWater();
+        int gaia = state.gaia();
+        // PERF-17: the wild animals' share, timed per run of Gaia units (a herd spawns together), so a tick costs a
+        // pair of
+        // clock reads per run and not per animal
+        long faunaStart = 0;
+        boolean inRun = false;
         for (int i = 0; i < highWater; i++) {
             if (entities.aliveAt(i)) {
+                boolean wild = state.identity().faction(i) == gaia;
+                if (wild != inRun) {
+                    if (wild) {
+                        faunaStart = state.systemTimes().start();
+                    } else {
+                        state.systemTimes().fauna(faunaStart);
+                    }
+                    inRun = wild;
+                }
                 machine.think(tick, entities.handleAt(i));
             }
+        }
+        if (inRun) {
+            state.systemTimes().fauna(faunaStart);
         }
     }
 }
