@@ -681,7 +681,117 @@ The owner accepted 45088024574. The archive passes `tools/m7_perf_reports.py` an
 
 ## Review
 
-Pending independent review.
+### Maintainer review 2026-11-26 — head f2d5e739
+
+Independent maintainer session (it built neither M7 nor any branch it touches). Read from the diff
+`e18bcddb..f2d5e739` (322 commits; ~8.9k production lines, ~15.9k test lines), the M7 spec and this
+file. Three area reviews (core; mod server; client, dev tools and build surface) and a records check;
+the two core majors were re-read by the maintainer in the code.
+
+**Recommendation: back to the developer.** Fix the majors below with a test each that fails before
+the fix, then hand in again; the re-review covers only the commits since f2d5e739.
+
+#### Gates
+
+- `verify` (pull request, head): pass — run 45740758072, 8 m 8 s.
+- `full-ci` (label, head): pass — run 45786865123, all 23 jobs (harness, nightly with 250 tests and all 29 required GameTests in 7 m 16 s, 20 AI-soak shards, complete-soak).
+- `perf`: not re-run. PERF-10 reference 45088024574 / paired JMH 45088571229 on bd23adc2; the only
+  hot-path change since is `UnitFilter.enemiesOf` reading the precomputed `DiplomacyState.enemyMask`
+  (an array lookup).
+- `roadmap.py check`: 245 cards, 0 problems. Spec §5.3: 27 of 28 checked (T24 / QA-14 outside M7 Done),
+  every cited hash exists; 19 evidence paths, none missing; card statuses agree in ROADMAP and the card file.
+- `claims.py check --base origin/main`: 1 problem, not M7's — `o-e-lytvynskyi-m6-t2-t17.md` was merged
+  (#55) without its records; it is fixed on `main`, and every hand-in's `records` check stays red until then.
+- No new runtime dependencies, `.claude/settings.json` and the agent roster untouched, no tool traces in
+  commit messages, no personal data in the diff.
+
+#### Major (fix before merge)
+
+1. **Pre-schema-7 saves with shots in flight no longer load.** `core/.../persist/FrozenDamageSources.java:27`
+   (the 4→5 step) parses the old snapshot with the current `MatchSnapshotCodec.CODEC`, which requires
+   `play.presentation` (`MatchSnapshotCodec.java:485`) — added only by the later 6→7 `LegacyPresentation`
+   step. Any schema 3 save from `main` (M6) taken mid-combat fails to restore after upgrade. The fixtures
+   `match_v1..v4.json` hold no shots, so nothing catches it. Fix: read shot rows, units and buildings from
+   the raw `Dynamic`; add a released-shape v3 fixture with non-empty `play.shots.rows`. *(re-read: confirmed)*
+2. **`AttackSpread` bypasses fog.** `AttackRule.java:49-50,122` rejects a target the issuer cannot see
+   with `UNKNOWN_TARGET` under locked teams; `AttackSpreadRule.java:50` checks only `Engagement.gone`.
+   A client can probe hidden handles (accepted / `INVALID_ARGUMENT` for a hidden ally / `UNKNOWN_TARGET`
+   for a missing one), and lines 87-98 spread the order onto enemies near the target by true position,
+   unseen ones included. Contradicts §3.1 ("hidden and missing targets retain identical UNKNOWN_TARGET",
+   "does not bypass fog"). Fix: the same visibility guard; filter the spread set by the issuer's vision;
+   a test. *(re-read: confirmed)*
+3. **Stale-epoch packets are free.** `server/net/NetGateway.java:410-411` (from `C2sHandlers.java:51-54`):
+   `epoch <= 0` is charged, a stale `epoch > 0` is only counted as rejected — no violation, no auxiliary
+   token, no kick. Any logged-in client can flood `commands`/`ping`/`ui_query`/`mode_switch` with epoch 1;
+   each costs a decode, an allocation, lookups and a counter merge on the server thread. NET-06 asks for
+   bounded ingress. Fix: take an auxiliary token before the epoch check; kick after N consecutive stale epochs.
+4. **An ended match keeps its seats.** `MatchRegistry` frees seats only in `drop` (via
+   `/strategos match dispose`); `LobbyService.java:92` then refuses the host of a finished game
+   ("not an available host"), and a non-ENDED FAULTED match blocks `activeMatch()` for every lobby and
+   solo start. A second game on one server needs an operator. No test opens a lobby after ENDED.
+   Fix: unseat (or dispose) after a grace period, or have `seated`/`activeMatch` ignore ENDED and FAULTED.
+5. **A throwing lobby shutdown skips the stop-time save.** `StrategosServer.java:458-459`:
+   `lobby.shutdown()` may throw `IncompleteCleanupException` (`LobbyService.java:302-321`) before
+   `matches.prepareSave()`, with no try/catch. Fix: catch, log, always run `prepareSave()`; a composition test.
+6. **Build surface: the Gradle dependency cache is authenticated by run, not by content.**
+   `tools/ci_dependency_cache.py:20-60` with `verify.yml:68-84`, `perf.yml:93-107`, `nightly.yml:57-69`
+   restore a `modules-2` tarball from a same-branch nightly run into `~/.gradle/caches` with no checksum
+   of its contents (the repository has no `gradle/verification-metadata.xml`). Not a trust-boundary
+   escalation (dispatch needs write access, no secrets, read-only token, pull-request `verify` does not
+   use it), but no reviewer can read what that tarball puts on the build and plugin classpath of the
+   dispatched evidence runs, one of which published the playtest jar. Fix: a committed sha256 manifest of
+   the cached module files, or adopt `verification-metadata.xml` (security.md §4 "later"); record the
+   mechanism in security.md and 02-tooling.md. The owner decides which.
+
+#### Plausible (reported by an area review, not re-read by the maintainer)
+
+7. **Group restore is sent once and may be dropped silently.** `Replication.java:313-315` calls
+   `restoreGroups` only when `last == null`, after `authorities.put`; `NetGateway.java:268-285` returns
+   without sending when the wire view is missing or no longer current. The client now waits for that frame
+   before entering RTS (`RtsMode.enter`), so a dropped frame leaves the commander a spectator until a
+   rejoin. Needs a test of the race; fix by not recording the authority memory when the frame is dropped.
+8. **Lobby griefing.** Any online non-seated player may `JoinAvailable` a vacant seat and never ready;
+   there is no kick, and every join/leave clears all ready flags. Host-only kick, or invites. (D-20
+   hosting is the owner's decision; acceptable for private servers if recorded.)
+
+#### Minor
+
+- `AttackRule.java:72,138`: `Attack` on an allied unit or building is accepted, then never completes
+  (`DamageOrigins.permits` drops every hit); use `alliedFactions` as `AttackSpreadRule` does.
+- `IngestSystem.java:84`: `expire` throws on a faction ≥ `factions()` inside tick ingest, while the journal
+  accepts 0..15 — log and ignore as `configureDiplomacy` does.
+- `MatchState.java:586`: a late or malformed `DiplomacySetup` is only warn-logged; the match stays legacy
+  identity and allies fight. Return a result the adapter must handle.
+- `AiSystem.java:55`: an AI faction without a bound seat is skipped silently — document or refuse the setup.
+- `MatchRuntime.java:261,289`: the command inbox and damage list grow without a cap while PAUSED.
+- `LobbyService`: FAILED is terminal until restart with no operator reset; `lobby().tick()` runs unguarded.
+- `DamageBridge.java:50`: `>` should be `>=`.
+- `perf.yml:30-34`: the default `dependency_cache_run` points at an expired artifact; `perf.yml:242-310`
+  (`t7-completion`) can never run again and measures 4dd51afa — delete or mark historical.
+- `verify.yml:119-135` / `jmh_pair_reports.py:15-35`: the paired-JMH candidate SHA is not tied to the
+  verified head.
+- `verify.yml:9`: `paths-ignore: tools/**` now hides changes to the CI gates themselves.
+- `nightly.yml:140`: bare `tar -xzf` instead of the guarded restore.
+- `TeamPingRenderer.java:25`: a new list per frame.
+- `C2sHandlers.java:29-31`: the doc promises every handler's fault is contained; six handlers do not catch.
+
+#### Spec deviations not in "Decisions taken"
+
+- `Skirmishes.start` now refuses while any non-ENDED match exists (behaviour change for operators).
+- A restored PAUSED match on a dedicated server resumes only by `/strategos match resume`; undocumented.
+- A stale lobby `Ready` or a join into an empty lobby counts as a protocol violation, against the
+  "audit without kick" decision.
+- Schema 3→8 (five bumps) against §3.2's single schema 4 — covered by ADR-0028..0032; listed for the owner.
+
+#### Records
+
+- "Depends on unfinished work" still says T3b/T7/T5 remain and gives the initial order; update it to the
+  final state.
+- This "Review" section holds the developer's own log entries of 2026-11-18; move them to "Log".
+- The M7 assignment is not on `main` (no merged claim pull request; `main`'s STATE lists the M7 cards as
+  `proposed` pending the owner's scope approval). The owner approvals cited in "Now" are confirmed with
+  the owner directly; until then they are not counted.
+
 
 - 2026-11-18 · T7.2 test-first: both victory rules must emit ordered surviving winners once, exclude defeated allies, draw on simultaneous elimination, retain unlocked legacy individual wins, and restore terminal results. T7.1 verify 44217598204 remains in progress; shared final T7 slow/soak and paired JMH gates will cover both substeps without superseding an active required run.
 
