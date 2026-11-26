@@ -9,6 +9,8 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitView;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Marches in formation (AI-09, ORD-06): a wave that has a long way to the enemy's front, the script's {@code depth.march}
@@ -26,10 +28,19 @@ final class March {
     static Command order(StrategyScript script, List<UnitView> soldiers, int[] handles, Vec2d front) {
         UnitSet set = UnitSet.of(handles);
         int far = script.depth().march();
-        if (far > 0 && handles.length >= FEWEST && distance(soldiers, front) >= far) {
+        if (far > 0 && handles.length >= FEWEST && distance(ordered(soldiers, handles), front) >= far) {
             return FormationMove.replace(set, front, FormationShape.BOX);
         }
         return AttackMove.replace(set, front);
+    }
+
+    /** The {@code soldiers} that {@code handles} name. */
+    private static List<UnitView> ordered(List<UnitView> soldiers, int[] handles) {
+        Set<Integer> named = new TreeSet<>();
+        for (int h : handles) {
+            named.add(h);
+        }
+        return soldiers.stream().filter(u -> named.contains(u.handle())).toList();
     }
 
     /** How far the middle of {@code units} is from {@code at}, in blocks; 0 for none. */

@@ -1,11 +1,13 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.CivRoles;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -49,6 +51,8 @@ final class EconomyManager implements AiModule {
     private final StrategyScript script;
     private final AiMemory memory;
     private final Map<String, Long> stocks = new TreeMap<>(); // this think's, by resource
+    private final java.util.Set<String> lacking =
+            new java.util.TreeSet<>(); // this think's: short for what is saved for
     private double[] centres = new double[0]; // this think's finished own centres, (x, z) pairs
 
     EconomyManager(StrategyScript script, AiMemory memory) {
@@ -65,6 +69,7 @@ final class EconomyManager implements AiModule {
         for (String r : resources) {
             stocks.put(r, view.stock(r));
         }
+        lacks(view);
         int[] gatherers = view.gatherers();
         List<NodeView> everyNode = new java.util.ArrayList<>();
         for (NodeView n : view.nodes()) {
@@ -266,13 +271,56 @@ final class EconomyManager implements AiModule {
         return shape(
                 script.ratio().getOrDefault(resource, 0),
                 stocks.getOrDefault(resource, 0L),
-                script.battle().finish());
+                script.battle().finish(),
+                lacking.contains(resource));
+    }
+
+    /**
+     * AI-09 (T25b), in the depth path's late game only: the resources the stock is short of for what the AI saves for
+     * (the active reserve's building or technology) or queues (the ram, while rams are wanted). Gatherers go to these.
+     */
+    private void lacks(AiView view) {
+        lacking.clear();
+        if (!script.depth().late(view.tick())) {
+            return;
+        }
+        BuildManager.Due due = BuildManager.due(view, script, memory);
+        BuildManager.Due phase = TechManager.due(view, script, memory); // the same source as the production's
+        boolean phaseSaved = TechManager.savingPhase(phase);
+        TemplateId ram = view.civRole(CivRoles.SIEGE);
+        boolean rams = false;
+        if (ram != null && script.battle().rams() > 0 && !phaseSaved) {
+            int have = 0;
+            for (UnitView u : view.units()) {
+                have += u.template().equals(ram) ? 1 : 0;
+            }
+            rams = have < script.battle().rams();
+        }
+        for (String r : view.resources()) {
+            long stock = stocks.getOrDefault(r, 0L);
+            if ((due != null && stock < due.cost(view, r))
+                    || (phaseSaved && phase != null && stock < phase.cost(view, r))
+                    || (ram != null && rams && stock < view.cost(ram, r))) {
+                lacking.add(r);
+            }
+        }
     }
 
     /** {@code weight} shaped by {@code stock} (thousandths) when {@code finish} is on; unchanged otherwise. */
     static double shape(double weight, long stock, boolean finish) {
+        return shape(weight, stock, finish, false);
+    }
+
+    /**
+     * As above, and {@code lacking}: the resource is short for what the reserve or the queue wants, so its weight grows
+     * (tripled while the stock is also low).
+     */
+    static double shape(double weight, long stock, boolean finish, boolean lacking) {
         if (weight <= 0 || !finish) {
             return weight;
+        }
+        if (lacking) {
+            return stock < LOW ? weight * 3 : weight * 2;
         }
         return stock < LOW ? weight * 2 : stock > HIGH ? weight / 2 : weight;
     }

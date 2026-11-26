@@ -271,6 +271,15 @@ public interface MatchQueries {
     }
 
     /**
+     * Whether only {@code tech}'s requirements keep the research command from taking it at {@code building}: the
+     * building is finished and holds it in its effective list, it is in the owner's roster, and nothing else refuses it
+     * (AI-09's phase saved for before its buildings stand).
+     */
+    default boolean researchBlockedByRequirements(int building, dev.strategos.core.content.TechDef tech) {
+        return false;
+    }
+
+    /**
      * Resource node {@code node}'s work slots, the cells round its base where gatherers stand, each packed as
      * {@code x << 16 | z} in match-local columns; none for an unknown node (AI-02's sites keep them free).
      */

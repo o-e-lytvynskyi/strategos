@@ -55,7 +55,31 @@ final class HealerManager implements AiModule {
             return false;
         }
         double health = view.health(u);
-        return health < v.below() || (health < v.resume() && (u.state() == UnitState.IDLE || view.garrisoning(u)));
+        return health < v.below()
+                || (health < v.resume()
+                        && (u.state() == UnitState.IDLE || view.garrisoning(u) || walkingHome(view, u)));
+    }
+
+    /** Whether {@code u} is on a plain move that ends beside an own civic centre: a hurt unit on its way to heal. */
+    private static boolean walkingHome(AiView view, UnitView u) {
+        Vec2d t = u.target();
+        if (u.state() != UnitState.WALKING || t == null) {
+            return false;
+        }
+        for (BuildingView b : view.buildings()) {
+            if (view.isCentre(b)
+                    && DetMath.length(
+                                    t.x()
+                                            - (b.footprint().anchorX()
+                                                    + b.footprint().spanX() / 2.0),
+                                    t.z()
+                                            - (b.footprint().anchorZ()
+                                                    + b.footprint().spanZ() / 2.0))
+                            <= 2 * HOME_BESIDE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

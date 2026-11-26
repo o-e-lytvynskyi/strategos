@@ -37,6 +37,14 @@ public record Depth(
         workers = Collections.unmodifiableMap(new TreeMap<>(workers)); // in key order, whatever the codec gave
     }
 
+    /**
+     * Whether the depth path's late game has begun at {@code tick}: a tree is named and its minute ({@code techs.from})
+     * has come. Without a {@code depth} block it never does, and nothing that follows it applies (AI-09).
+     */
+    public boolean late(long tick) {
+        return !techs.order().isEmpty() && tick >= 20L * techs.from();
+    }
+
     /** How many more workers the script keeps for the technologies {@code researched} accepts (order is no matter). */
     public int extraWorkers(Predicate<String> researched) {
         int extra = 0;
@@ -51,15 +59,13 @@ public record Depth(
     /**
      * The tree's priority list: from {@code from} seconds of play, the first technology of {@code order} the rules
      * would take now is researched, once the stock pays for it (the stock is kept for it, as for a build order's step);
-     * a tier follows the one it supersedes and one of each exclusive pair is the script's to name. While fewer than {@code keep}
-     * soldiers stand or are queued they pass the stock kept for a technology (the army is never starved to save).
+     * a tier follows the one it supersedes and one of each exclusive pair is the script's to name.
      */
-    public record Techs(int from, int keep, List<String> order) {
-        public static final Techs NONE = new Techs(0, 0, List.of());
+    public record Techs(int from, List<String> order) {
+        public static final Techs NONE = new Techs(0, List.of());
 
         static final Codec<Techs> CODEC = RecordCodecBuilder.create(i -> i.group(
                         Codec.intRange(0, 100_000).optionalFieldOf("from", 0).forGetter(Techs::from),
-                        Codec.intRange(0, 1_000).optionalFieldOf("keep", 0).forGetter(Techs::keep),
                         Codec.STRING
                                 .listOf()
                                 .optionalFieldOf("order", List.of())

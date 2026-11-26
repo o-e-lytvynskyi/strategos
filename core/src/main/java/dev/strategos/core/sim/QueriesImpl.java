@@ -684,6 +684,13 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean researchBlockedByRequirements(int building, dev.strategos.core.content.TechDef tech) {
+        return state.buildings().alive(building)
+                && dev.strategos.core.sim.prod.Techs.refusal(state, building, tech)
+                        == dev.strategos.core.protocol.RejectReason.REQUIREMENTS;
+    }
+
+    @Override
     public int[] nodeSlotCells(int node) {
         dev.strategos.core.sim.econ.NodeStore n = state.nodes();
         if (node < 1 || node > n.count()) {

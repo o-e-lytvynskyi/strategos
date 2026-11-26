@@ -85,5 +85,12 @@ final class Slots {
      */
     static final int TECH_DUE = 34;
 
+    /**
+     * AI-09 (T25b): the build order's steps passed over while a phase was saved for, a nibble per step (up to {@value
+     * BuildManager#SKIPPABLE}): the step's building count when it was passed over plus one (capped at 15); 0 for a step not
+     * passed over.
+     */
+    static final int SKIPPED = 35;
+
     private Slots() {}
 }

@@ -106,4 +106,19 @@ class VeteransTest {
                 .as("between below and resume but fighting on: not pulled out")
                 .isFalse();
     }
+
+    @Test
+    void aVeteranWalkingHomeStaysRestingUntilItIsAboveResume() {
+        int[] own = s.spawn(DepthScene.INFANTRY, DepthScene.OWN, 80, 80, 1);
+        Map<Integer, Integer> ranks = DepthScene.ranked(1, own);
+        s.h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(own), new Vec2d(28, 28))); // beside the own centre
+        s.h.step();
+
+        assertThat(resting(own[0], ranks, DepthScene.healthy(0.5, own)))
+                .as("between below and resume, on its way home: not mustered again")
+                .isTrue();
+        assertThat(resting(own[0], ranks, DepthScene.healthy(0.85, own)))
+                .as("above resume: back in the army")
+                .isFalse();
+    }
 }

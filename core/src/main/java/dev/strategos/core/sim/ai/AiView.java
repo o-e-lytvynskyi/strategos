@@ -488,6 +488,11 @@ public final class AiView {
         return q.researchable(b.handle(), tech);
     }
 
+    /** Whether only {@code tech}'s requirements keep it from being researched at own building {@code b} (AI-09). */
+    public boolean blockedByRequirements(BuildingView b, TechDef tech) {
+        return q.researchBlockedByRequirements(b.handle(), tech);
+    }
+
     /** Unit {@code u}'s rank (CMB-11): 0 for none. */
     public int rank(UnitView u) {
         return q.rank(u.handle());

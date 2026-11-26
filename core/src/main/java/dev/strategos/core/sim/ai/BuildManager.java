@@ -88,34 +88,122 @@ final class BuildManager implements AiModule {
                 research(view, budget, sink, s, step, waited);
                 return;
             }
+            if (script.depth().late(tick) && !permitted(view, s.building())) {
+                // AI-09 (T25b): the saved phase keeps what this step costs: the order moves on (its Town buildings are
+                // what the phase asks for); the step is taken up again at the order's end ({@link #catchUp})
+                skip(step, count(view, s.building()));
+                base(0);
+                memory.set(Slots.STEP, step + 1L);
+                memory.set(Slots.DUE_SINCE, 0);
+                return;
+            }
             if (superfluous(view, s.building())) {
                 memory.set(Slots.STEP, step + 1L); // a building the rules make useless is not worth its price: skipped
-                memory.set(Slots.STEP_BASE, 0);
+                base(0);
                 memory.set(Slots.DUE_SINCE, 0);
                 return;
             }
             int count = count(view, s.building());
-            if (memory.get(Slots.STEP_BASE) == 0) {
-                memory.set(Slots.STEP_BASE, count + 1L);
+            if (base() == 0) {
+                base(count + 1);
             }
-            if (count > memory.get(Slots.STEP_BASE) - 1) {
+            if (count > base() - 1) {
                 memory.set(Slots.STEP, step + 1L);
-                memory.set(Slots.STEP_BASE, 0);
+                base(0);
                 memory.set(Slots.DUE_SINCE, 0);
             } else if (script.reserve()
                     && view.populationUsed() >= s.population()
-                    && memory.get(Slots.DUE_SINCE) == 0) {
+                    && memory.get(Slots.DUE_SINCE) == 0
+                    && permitted(view, s.building())) {
                 memory.set(Slots.DUE_SINCE, tick + 1); // due: the stock is kept for it a while (AI-02)
             }
-            if (count <= memory.get(Slots.STEP_BASE) - 1
+            if (count <= base() - 1
                     && waited
                     && view.populationUsed() >= s.population()
-                    && view.affords(s.building())) {
+                    && view.affords(s.building())
+                    && permitted(view, s.building())) {
                 place(view, budget, sink, base, s.building(), s.near());
             }
         } else if (waited) {
+            if (script.depth().late(tick) && catchUp(view, budget, sink, base)) {
+                return;
+            }
             expandCentre(view, budget, sink, base);
         }
+    }
+
+    /** The steps whose skips {@link #skip} can record: a nibble each in {@link Slots#SKIPPED} (a longer order is refused at parse). */
+    static final int SKIPPABLE = 16;
+
+    /** The skip record: the step's building count, plus one, when each skipped step was passed over (a nibble per step). */
+    private long skips() {
+        return memory.get(Slots.SKIPPED);
+    }
+
+    /** The current step's base: one more than its building's count when the step began. */
+    private int base() {
+        return (int) memory.get(Slots.STEP_BASE);
+    }
+
+    private void base(int value) {
+        memory.set(Slots.STEP_BASE, value);
+    }
+
+    /**
+     * AI-09 (T25b): notes that step {@code step}, passed over while a phase is saved, began with {@code count} of its
+     * building standing (the start kit's included, as the order counts: a step is done when more stand).
+     */
+    private void skip(int step, int count) {
+        long nibble = Math.min(count, 14) + 1L;
+        memory.set(Slots.SKIPPED, (skips() & ~(0xFL << (4 * step))) | (nibble << (4 * step)));
+    }
+
+    /**
+     * AI-09 (T25b): at the order's end, the first step passed over while a phase was saved whose building has not been
+     * raised since (more stand than when it was passed over) that may be placed now; whether a placement went out. A
+     * step done is forgotten, so a building lost later is the rebuilder's.
+     */
+    private boolean catchUp(AiView view, AiBudget budget, CommandSink sink, Base base) {
+        for (int i = 0; i < SKIPPABLE && i < script.build().size(); i++) {
+            long nibble = (skips() >>> (4 * i)) & 0xF;
+            StrategyScript.Step s = script.build().get(i);
+            if (nibble == 0 || s.researches()) {
+                continue;
+            }
+            int count = count(view, s.building());
+            if (count > nibble - 1) {
+                memory.set(Slots.SKIPPED, skips() & ~(0xFL << (4 * i)));
+            } else if (!superfluous(view, s.building())
+                    && !building(view, s.building())
+                    && view.populationUsed() >= s.population()
+                    && view.affords(s.building())
+                    && permitted(view, s.building())) {
+                place(view, budget, sink, base, s.building(), s.near());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * AI-09 (T25b), the depth path's late game: whether {@code building} may be placed while a phase is saved for. It may
+     * not take a resource the phase still lacks, unless it is a Town-class building (what City asks for); outside the
+     * late game, or with no phase saved, it always may.
+     */
+    private boolean permitted(AiView view, TemplateId building) {
+        return permitted(view, building, null);
+    }
+
+    /** As above; a dropsite by a node of {@code resource} is also free when the phase lacks that resource (it unlocks it). */
+    private boolean permitted(AiView view, TemplateId building, @Nullable String resource) {
+        if (!script.depth().late(view.tick()) || view.is(building, "Town")) {
+            return true;
+        }
+        Due saved = TechManager.due(view, script, memory);
+        return saved == null
+                || !TechManager.savingPhase(saved)
+                || (resource != null && view.stock(resource) < saved.cost(view, resource))
+                || ProductionManager.spendable(view, building, saved, true);
     }
 
     /**
@@ -136,7 +224,10 @@ final class BuildManager implements AiModule {
      */
     private void expandCentre(AiView view, AiBudget budget, CommandSink sink, Base base) {
         TemplateId centre = view.civRole(CivRoles.CENTRE);
-        if (centre == null || count(view, centre) >= view.buildingLimit(centre) || building(view, centre)) {
+        if (centre == null
+                || count(view, centre) >= view.buildingLimit(centre)
+                || building(view, centre)
+                || !permitted(view, centre)) {
             return;
         }
         for (String r : view.resources()) {
@@ -207,14 +298,6 @@ final class BuildManager implements AiModule {
      * #RESERVE_TICKS} ticks, a research for {@value #RESEARCH_RESERVE_TICKS}.
      */
     static @Nullable Due stepDue(AiView view, StrategyScript script, AiMemory memory) {
-        return stepDue(view, script, memory, true);
-    }
-
-    /**
-     * As {@link #stepDue(AiView, StrategyScript, AiMemory)}; with {@code expire} off the step stays due for as long as it
-     * is not done (the tree's research never takes what a due building waits for, AI-09).
-     */
-    static @Nullable Due stepDue(AiView view, StrategyScript script, AiMemory memory, boolean expire) {
         int step = (int) memory.get(Slots.STEP);
         long since = memory.get(Slots.DUE_SINCE);
         if (!script.reserve() || step >= script.build().size() || since == 0) {
@@ -223,7 +306,7 @@ final class BuildManager implements AiModule {
         StrategyScript.Step s = script.build().get(step);
         if (s.researches()) {
             TechDef tech = view.templates().tech(new TechId(s.research()));
-            return tech == null || (expire && view.tick() - (since - 1) > RESEARCH_RESERVE_TICKS)
+            return tech == null || view.tick() - (since - 1) > RESEARCH_RESERVE_TICKS
                     ? null
                     : new Due(s.building(), tech);
         }
@@ -231,7 +314,7 @@ final class BuildManager implements AiModule {
         long hold = late && script.depth().hold() > 0 && researchBefore(script, step)
                 ? script.depth().hold()
                 : RESERVE_TICKS;
-        return expire && view.tick() - (since - 1) > hold ? null : new Due(s.building(), null);
+        return view.tick() - (since - 1) > hold ? null : new Due(s.building(), null);
     }
 
     /**
@@ -244,7 +327,7 @@ final class BuildManager implements AiModule {
         TechDef tech = view.templates().tech(new TechId(s.research()));
         if (tech == null || view.hasOrQueues(tech)) {
             memory.set(Slots.STEP, step + 1L);
-            memory.set(Slots.STEP_BASE, 0);
+            base(0);
             memory.set(Slots.DUE_SINCE, 0);
             return;
         }
@@ -317,7 +400,7 @@ final class BuildManager implements AiModule {
             // before Town: one storehouse beyond the usual reach at most, and never into Town's price (QA-12)
             boolean remote = town || remoteDropsites(view, base, template) == 0;
             NodeView far = takes.contains(resource) ? farNode(view, base, resource, remote) : null;
-            if (far == null || (!town && !affordsWithTown(view, template))) {
+            if (far == null || (!town && !affordsWithTown(view, template)) || !permitted(view, template, resource)) {
                 continue;
             }
             if (!view.affords(template)) {

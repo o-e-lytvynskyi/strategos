@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 29 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 30 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T28 (2026-11-26).
-- **Next task:** T25b · AI-09 · City as a capability (the owner decided, 2026-11-26); T29's long runs are going in a worktree.
+- **Last finished task:** M10 T25b (2026-11-26).
+- **Next task:** T29 · The close's long runs (running in ../strategos-longrun/m10-close since 18:05), then T30's consent batch.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-26 — M10 T16–T28
+### 2026-11-26 — M10 T16–T28, T25b
 
+- **M10 T25b · City as a capability** — AI-09 **done** (the owner's option (a)). The depth path learned to save for a big price (spec §1.6 row 31): the phase's price is the reserve as soon as it heads the plan, no spend takes a resource of it below its amount above the army floor, blocked build steps are skipped and caught up, gatherers follow the lack; three T25a review fixes (a hold expires, a march measures from the soldiers it orders, a veteran walking home stays resting). `AiCityTest` against an opponent that never attacks: City in 11 of 12 seeds (26–32 min), tier 2 in 10, tier 3 in 9, healers and formations in 12, charges in 9 (78 s in `slowTest`). The shipped AI is unchanged: the opening balance at `-Pseeds=4` equals HEAD's. Unopposed, the first attempts reached City in 0, 1, 0 and 7 of 12: iron (about 1,065 a start before expansion) went elsewhere first.
 - **M10 T28 · The demo chapters** — nine chapters in the group `m10` (`-Pdemo=m10`), each run headless on the fake stage in `DemoScriptsTest` and checked by its end state: `city` (a house outside the border refused, Town and City, the same house then built), `tree` (Phalanx researched, its exclusive partner refused), `healers` (a temple's healer and its garrison heal a hurt squad), `veterans` (a survivor ranks up), `formations` (box, then line; one member leaves, eleven re-slot), `patrol` (a patrol engages and resumes; two guards defend a worker), `hunt` (horsemen hunt a boar and bring the carcass home; a kill's loot in a caption), `charge` (the ability and its cooldown), `night` (day and night on, dusk and night). verify 1 min 18 s. The window run is the consent batch's (T30).
 - **M10 T27 · The perf gate** — PERF-17 **done**, ECO-10 **done**. `M10Scene` (four Hard factions on MAP-02, a formation of 40 each re-ordered every 10 ticks, two wild-boar herds a quadrant, `charge` every 600 ticks, Town and City researched) in `perftests.m_10_soak` (18,000 ticks) and `m_10_stress` (2×, 6,000 ticks); the reports add `systems.formation`, `fauna`, `ability`, the formed fraction and the scene's counts. Soak: 435 units, A p50 1.92 ms, A p99 8.99, B p95 5.44, C p95 10.33, D p99 0.32, E 7.6 KB/s; stress: 1,088 units, C p95 13.4 ms; formations p95 31 µs a tick, fauna 4.5, abilities 11.2 (`perf/m10-m4pro.json`). The combat path: a dying-this-tick bitset replaces the attacker's max-health read, the death pass allocates no rows, `CombatSystemTest` (mutual kill, self-hit, row and bitset growth, no carry-over); the cost of `volley60` is the ranks' own (row 30) — 6.636 µs/op, proposed. The fauna timer reads the clock per run of Gaia units, not per animal (`FaunaTimerTest`). Gates: verify + verifySlow 5 min 11 s; `jmhCompare` red only on `volley60{preferred}`.
 - **M10 T26 · Three causes of stalled walkers in long matches** (found by the matrix's 90-minute easy matches; each with a test that failed first): the AI's base became a captured centre on the enemy's start, so its waves marched onto that footprint (`Base.homeCentre`, the finished centre nearest the own start; BaseTest); the net-progress backstop restarted its count only after 8 blocks, while the invariant restarts on any nearer distance, so it ran out up to 276 ticks late (`StuckLadder.net` now keeps the best squared distance and its target, hashed while it runs, saved as optional snapshot fields); a new order to the same place restarted the count (an AI alternating Burn and Capture). A landing tick counts but never fails an order, so Arrived and a failure never meet in one tick. The golden journals were rebaselined for the hash only: a per-tick digest of every unit's motion, AI state, order and health, replayed on the old and the new code, was identical on all 3,140 ticks of the five goldens. Gates: verify + verifySlow 5 min 2 s; `:core:openingBalance` every criterion holds, no exception (818 of 1000 by conquest, median 34:49, 8 min 46 s); `:core:balanceMatrix -Pseeds=60` no exception (it exits 1 on the easy mirror's known flag, "For the owner" 8). `jmhCompare` follows with T27, which also touches the hot path.
@@ -89,6 +90,11 @@ Newest first; one entry per session in the worklog's shape.
 8. **Decided (the owner, 2026-11-26): the easy mirror, option (c)** — QA-16's matrix plays Normal and Hard only; Easy learns to finish a won match in M11 (AI-12), and the matrix takes the easy mirror back then.
 
 ## Decisions taken
+- 2026-11-26 · AiCityTest's opponent is the shipped script with its attacks off (`attack.first` past the limit, `attack.min` 1,000,000, `battle.finish` false) and the match has no conquest victory: the owner's reading of AI-09.1; its bar is the measured 11 of 12 seeds — undo: a contested test with M11.
+- 2026-11-26 · The depth script lives in a test resource (core/src/test/resources/ai/skirmish-depth.json: `techs.from` 720 s, `phaseHold` 36,000), merged into the shipped script by the test; M11 moves it into the shipped script — undo: none needed.
+- 2026-11-26 · The saving rules are all behind `Depth.late`; the shipped AI's opening balance is identical at `-Pseeds=4` — undo: revert T25b.
+- 2026-11-26 · trial reviewer: pass — T25b's review found a phase saved that no building can research, a dropsite held back from the very resource it unlocks, an army that could sink to nothing, and dead `techs.keep`.
+- 2026-11-26 · trial implementer: pass — T25b after seven rounds: each round's measurement named the next cause (iron's budget, the late reserve, the build order's leak, my wrong "free resource" rule, a deadlock), and it never loosened the bar.
 - 2026-11-26 · The owner's word in the session: «принимай решения рекомендованые сам» — the recommended options of "For the owner" 6, 7 and 8 are applied (the baseline row, AI-09's option (a), the matrix without the easy mirror), and later recommended options are taken the same way and listed here — undo: the owner's veto.
 - 2026-11-26 · Easy keeping `finish` alone is not applied: tried and measured — 191 of 200 easy mirrors unfinished, Normal over Easy 103 of 200 (AI-05.2: 124) — reverted; the choice is "For the owner" 8 — undo: none.
 - 2026-11-26 · No `ortho` demo chapter: the demo director has no channel to the client's view options; the orthographic view stays in the demo script's step 8 for a person — undo: a director-to-client channel and the chapter.
@@ -190,6 +196,7 @@ Newest first; one entry per session in the worklog's shape.
 
 - `docs/kb/rts-sim-perf.md` (split out of rts-sim.md in T25): a for-each over a `List` in a hot path allocates its iterator (T3/T5).
 - `docs/kb/minecraft-mod-data.md`: Gson's getters throw more than `IllegalArgumentException` on a wrong shape (T5).
+- `docs/kb/rts-sim-economy.md`: an AI that saves for a big price — what its reserve must hold (T25b).
 - `docs/kb/rts-sim-perf.md`: JMH straight after an all-core run reads high, and the foreign-load profiler does not see it (T25a).
 - `docs/kb/rts-sim.md`: passing the last point of a truncated route is not progress — a boxed-in unit's count was zeroed on every re-request (T25).
 

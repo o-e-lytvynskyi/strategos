@@ -302,7 +302,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The AI plays the probe civilisation and reaches Town with no houses, dropsites or builders (L1).
   3. An L3 sample reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-08, CIV-05, TECH-04 · **Size:** M · **Tier:** T1
-- **Status:** in_progress (the owner, 2026-11-26: criterion 1 is the AI reaching City in seeded runs against an opponent that does not attack; the shipped script's `depth` block goes on with M11)
+- **Status:** done
+- **Done:** 2026-11-26 — 1 `AiCityTest` (the owner's reading: the skirmish script with its `depth` block reaches City in 11 of 12 seeded runs against an opponent that does not attack, 26–32 minutes, with tier-2 research in 10 and tier-3 in 9, healers, formation marches and charges); 2 `AiProbeTest` (T9b); 3 `aisoak.a_sample_of_the_ai_reaches_town_and_its_journal_replays` (the `ai_sample` slow batch, replayed to its hash). The shipped script's `depth` block goes on with M11 (AI-11, AI-12), QA-12.1 as the gate. M10 T9a, T9b, T25a, T25b
 
 #### QA-16 · Balance matrix
 - **Value:** Civilisations and difficulty levels stay fair as content grows (P4).

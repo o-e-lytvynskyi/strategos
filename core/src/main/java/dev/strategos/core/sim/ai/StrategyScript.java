@@ -315,6 +315,10 @@ public record StrategyScript(
         if (!opening.isEmpty() && openings.stream().noneMatch(o -> o.name().equals(opening))) {
             throw new IllegalArgumentException("a strategy script pins the opening '" + opening + "', which it lacks");
         }
+        if (!depth.techs().order().isEmpty() && build.size() > BuildManager.SKIPPABLE) {
+            throw new IllegalArgumentException("a strategy script with a depth block takes a build order of at most "
+                    + BuildManager.SKIPPABLE + " steps, not " + build.size());
+        }
         openings = List.copyOf(openings);
         ratio = Collections.unmodifiableSortedMap(new TreeMap<>(ratio));
         build = List.copyOf(build);

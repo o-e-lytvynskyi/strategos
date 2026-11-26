@@ -56,12 +56,17 @@ final class DepthScene {
     }
 
     static StrategyScript script(String depthBlock) {
+        return script(depthBlock, "");
+    }
+
+    /** As {@link #script(String)} with the build order's {@code steps} (JSON objects, comma-separated). */
+    static StrategyScript script(String depthBlock, String steps) {
         // a bare script with the battle's tactics on, and the depth block (if any) at its end
         return StrategyScript.parse("""
-            { "maxWorkers": 0, "ratio": {}, "build": [], "housingMargin": 0, "soldierQueue": 3, "reserve": true,
+            { "maxWorkers": 0, "ratio": {}, "build": [%s], "housingMargin": 0, "soldierQueue": 3, "reserve": true,
               "attack": { "first": 100000, "every": 600, "min": 1, "muster": 24, "announce": 30 },
               "battle": { "focus": "wounded", "behind": 4, "retreat": 0.6, "reach": 28, "defence": 600 },
-              "sites": []%s }""".formatted(depthBlock.isEmpty() ? "" : "," + depthBlock));
+              "sites": []%s }""".formatted(steps, depthBlock.isEmpty() ? "" : "," + depthBlock));
     }
 
     /** The script without any depth block, as the shipped one is for now. */

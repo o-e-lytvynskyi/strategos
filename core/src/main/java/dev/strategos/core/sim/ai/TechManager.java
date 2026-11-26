@@ -52,28 +52,76 @@ final class TechManager implements AiModule {
             return;
         }
         List<Option> options = options(view, budget, techs);
-        if (options.isEmpty()) {
+        TechDef saved = pendingPhase(view, techs, options);
+        if (options.isEmpty() && saved == null) {
             memory.set(Slots.TECH_DUE, 0);
             return;
         }
-        TechDef head = options.get(0).tech();
+        TechDef head = saved != null ? saved : options.get(0).tech();
         long due = memory.get(Slots.TECH_DUE);
         if (due == 0 || (due & 0xFFFF) != head.netIndex() + 1L) {
             due = (view.tick() + 1) << 16 | (head.netIndex() + 1L);
         }
         boolean keeping = view.tick() - ((due >> 16) - 1) <= hold(script, head);
-        BuildManager.Due step = BuildManager.stepDue(view, script, memory, false);
+        BuildManager.Due step = BuildManager.stepDue(view, script, memory);
         for (Option o : options) {
             if (!o.tech().equals(head) && keeping) {
                 break; // the stock is kept for the first
             }
-            if (view.affords(o.tech()) && (step == null || affordsBoth(view, o.tech(), step)) && budget.spend(10)) {
+            if (view.affords(o.tech())
+                    && (step == null
+                            || (script.depth().late(view.tick())
+                                    ? ProductionManager.spendable(view, r -> view.cost(o.tech(), r), step)
+                                    : affordsBoth(view, o.tech(), step)))
+                    && (saved == null
+                            || !script.depth().late(view.tick())
+                            || ProductionManager.spendable(
+                                    view,
+                                    r -> view.cost(o.tech(), r),
+                                    new BuildManager.Due(StrategyScript.Step.NONE, saved, true),
+                                    true))
+                    && budget.spend(10)) {
                 memory.set(Slots.TECH_DUE, 0);
                 sink.send(new Research(o.building().handle(), o.tech().id()));
                 return;
             }
         }
         memory.set(Slots.TECH_DUE, due);
+    }
+
+    /**
+     * The phase the priority list saves for before its requirements stand: the first technology of {@code order} not yet
+     * had or queued, when it is a phase that an own finished building holds in its effective list and would take but for its
+     * requirements (its buildings; the roster is read the same way), and it stands before the first technology that is taken now.
+     * Null for none.
+     */
+    private static @Nullable TechDef pendingPhase(AiView view, Depth.Techs techs, List<Option> options) {
+        for (String id : techs.order()) {
+            TechDef t = view.templates().tech(new TechId(id));
+            if (t == null || view.hasOrQueues(t)) {
+                continue;
+            }
+            if (!t.isPhase()) {
+                return null; // the first not yet had is no phase to save for
+            }
+            for (Option o : options) {
+                if (o.tech().equals(t)) {
+                    return null;
+                }
+            }
+            for (BuildingView b : view.buildings()) {
+                if (view.blockedByRequirements(b, t)) {
+                    return t; // an own building would research it but for its requirements (its buildings)
+                }
+            }
+            return null; // not in the roster, or no building holds it yet: nothing to save for
+        }
+        return null;
+    }
+
+    /** Whether {@code due} is a phase the priority list saves for. */
+    static boolean savingPhase(BuildManager.@Nullable Due due) {
+        return due != null && due.tree() && due.tech() != null && due.tech().isPhase();
     }
 
     /** What the stock is kept for, once the build order's step is not due (see {@link BuildManager#due}); null for none. */
@@ -87,11 +135,6 @@ final class TechManager implements AiModule {
             return null;
         }
         return tech == null ? null : new BuildManager.Due(StrategyScript.Step.NONE, tech, true);
-    }
-
-    /** Whether {@code due} is a technology the priority list saves for, not a building of the build order. */
-    static boolean saving(BuildManager.@Nullable Due due) {
-        return due != null && due.tree();
     }
 
     /** Whether a technology is in any own queue. */

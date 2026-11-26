@@ -8,6 +8,7 @@ import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.civ.AiHint;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Keeps the queues full within the stock (04 §14's ProductionManager): its civic centre trains workers until the
@@ -78,8 +79,15 @@ final class ProductionManager implements AiModule {
         // a fixed cap is refused with POPULATION_CAP and no house lifts it: at the cap nothing more is queued (CIV-05)
         boolean capped = !view.needs(AiHint.NEEDS_HOUSING) && view.populationUsed() >= view.populationCap();
         BuildManager.Due due = BuildManager.due(view, script, memory);
+        // AI-09 (T25b): in the depth path's late game no reserve holds a soldier back below the wave's size
+        boolean late = script.depth().late(view.tick());
+        int floorSize = late ? script.attack().min() : 0;
+        BuildManager.Due phase =
+                late ? TechManager.due(view, script, memory) : null; // the saved phase, whatever is due
+        phase = TechManager.savingPhase(phase) ? phase : null;
+        boolean phaseSaved = phase != null; // a phase's price outranks the ram's
         boolean ramWanted = false; // a ram is wanted and an arsenal stands: soldiers leave its price in the stock
-        if (ram != null && battle.rams() > 0 && rams < battle.rams()) {
+        if (ram != null && battle.rams() > 0 && rams < battle.rams() && !phaseSaved) {
             for (BuildingView b : view.buildings()) {
                 ramWanted |= b.state() == 2 && view.trains(b.template(), ram);
             }
@@ -103,7 +111,7 @@ final class ProductionManager implements AiModule {
                         && b.queue().isEmpty()
                         && rams < battle.rams()
                         && view.affords(ram)
-                        && (due == null || affordsBoth(view, ram, due))) {
+                        && (due == null || kept(view, late, ram, due, phase))) {
                     budget.spend(10);
                     rams++;
                     sink.send(new Train(b.handle(), ram));
@@ -114,7 +122,9 @@ final class ProductionManager implements AiModule {
                 continue; // the cap is refused whatever is queued: back off until a unit dies
             }
             if (healer != null && healers < healersWanted && view.trains(b.template(), healer)) {
-                if (b.queue().isEmpty() && view.affords(healer) && (due == null || affordsBoth(view, healer, due))) {
+                if (b.queue().isEmpty()
+                        && view.affords(healer)
+                        && (due == null || kept(view, late, healer, due, phase))) {
                     budget.spend(10);
                     healers++;
                     sink.send(new Train(b.handle(), healer)); // a temple's healers, a few, once it stands (AI-09)
@@ -131,15 +141,24 @@ final class ProductionManager implements AiModule {
                 sink.send(new Train(b.handle(), worker));
             } else if (b.queue().size() < script.soldierQueue()) {
                 TemplateId unit = compose ? Composition.pick(view, script, memory, b.template(), have) : soldier;
+                boolean floor = early(floorSize, have);
+                // AI-09 (T25b): below half the wave's size the cheapest soldier the stock pays passes any reserve: an
+                // army never sinks to nothing while a phase is saved
+                boolean critical = late && early(floorSize / 2, have);
+                TemplateId cheap = critical ? cheapest(view, b.template(), soldier) : null;
+                unit = cheap != null ? cheap : unit;
                 if (unit != null
                         && view.trains(b.template(), unit)
                         && view.affords(unit)
                         && (due == null
-                                || affordsBoth(view, unit, due) // AI-02: the build order first
-                                || early(script.early(), have)
-                                || (TechManager.saving(due)
-                                        && early(script.depth().techs().keep(), have)))
+                                || (cheap != null && unit.equals(cheap))
+                                || (late
+                                        ? spendable(view, unit, due) // the reserve keeps only what the stock lacks
+                                                && (phase == null || spendable(view, unit, phase, !floor))
+                                        : affordsBoth(view, unit, due) // AI-02: the build order first
+                                                || early(script.early(), have)))
                         && (!ramWanted
+                                || floor
                                 || ram == null
                                 || affordsBoth(view, unit, ram))) { // QA-12: the rams' price is kept
                     budget.spend(10);
@@ -151,6 +170,26 @@ final class ProductionManager implements AiModule {
                 }
             }
         }
+    }
+
+    /** The cheapest of the foot soldier, the ranged and the cavalry that {@code building} trains and the stock pays; null for none. */
+    private static @Nullable TemplateId cheapest(AiView view, TemplateId building, @Nullable TemplateId foot) {
+        TemplateId best = null;
+        long cheapest = Long.MAX_VALUE;
+        for (TemplateId t : new TemplateId[] {foot, view.civRole(CivRoles.RANGED), view.civRole(CivRoles.CAVALRY)}) {
+            if (t == null || !view.trains(building, t) || !view.affords(t)) {
+                continue;
+            }
+            long price = 0;
+            for (String r : view.resources()) {
+                price += view.cost(t, r);
+            }
+            if (price < cheapest) {
+                cheapest = price;
+                best = t;
+            }
+        }
+        return best;
     }
 
     /** QA-12: whether fewer than the script's {@code early} soldiers stand or queue: they pass the reserve. */
@@ -167,6 +206,71 @@ final class ProductionManager implements AiModule {
     private static boolean affordsBoth(AiView view, TemplateId a, TemplateId b) {
         for (String r : view.resources()) {
             if (view.stock(r) < view.cost(a, r) + view.cost(b, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Whether {@code a} may be spent while {@code due} is kept: the late game's rule, else the whole price kept. */
+    private static boolean kept(
+            AiView view, boolean late, TemplateId a, BuildManager.Due due, BuildManager.@Nullable Due phase) {
+        return late
+                ? spendable(view, a, due) && (phase == null || spendable(view, a, phase, true))
+                : affordsBoth(view, a, due);
+    }
+
+    /** As {@link #spendable(long[], long[], long[])} for {@code a} against what {@code due} keeps. */
+    static boolean spendable(AiView view, TemplateId a, BuildManager.Due due) {
+        return spendable(view, r -> view.cost(a, r), due);
+    }
+
+    /** As above for any price ({@code cost}, per resource, thousandths). */
+    static boolean spendable(AiView view, java.util.function.ToLongFunction<String> cost, BuildManager.Due due) {
+        return spendable(view, cost, due, false);
+    }
+
+    /** As {@link #spendable(AiView, TemplateId, BuildManager.Due)} for the saved phase's price: kept whole when {@code strict}. */
+    static boolean spendable(AiView view, TemplateId a, BuildManager.Due due, boolean strict) {
+        return spendable(view, r -> view.cost(a, r), due, strict);
+    }
+
+    /** As above for any price. {@code strict}: see {@link #keeps(long[], long[], long[])}; else the lacking rule. */
+    static boolean spendable(
+            AiView view, java.util.function.ToLongFunction<String> cost, BuildManager.Due due, boolean strict) {
+        List<String> resources = view.resources();
+        long[] stock = new long[resources.size()];
+        long[] price = new long[stock.length];
+        long[] held = new long[stock.length];
+        for (int r = 0; r < stock.length; r++) {
+            stock[r] = view.stock(resources.get(r));
+            price[r] = cost.applyAsLong(resources.get(r));
+            held[r] = due.cost(view, resources.get(r));
+        }
+        return strict ? keeps(stock, price, held) : spendable(stock, price, held);
+    }
+
+    /**
+     * The stricter rule above the army's floor: a spend may not take any resource of the reserve's price below its amount
+     * ({@code stock - cost >= held} for each resource the spend costs); resources outside the price are free.
+     */
+    static boolean keeps(long[] stock, long[] cost, long[] held) {
+        for (int r = 0; r < stock.length; r++) {
+            if (cost[r] > 0 && stock[r] - cost[r] < held[r]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * AI-09 (T25b), the depth path's late game: whether {@code cost} may be spent from {@code stock} while a reserve keeps
+     * {@code held}. The stock must pay the price; a resource the reserve still lacks (the stock is under {@code held}) is
+     * not spent at all, and one it does not lack is free.
+     */
+    static boolean spendable(long[] stock, long[] cost, long[] held) {
+        for (int r = 0; r < stock.length; r++) {
+            if (stock[r] < cost[r] || (stock[r] < held[r] && cost[r] > 0)) {
                 return false;
             }
         }

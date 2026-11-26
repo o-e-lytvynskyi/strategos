@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -84,5 +85,16 @@ class MarchTest {
         assertThat(fighting)
                 .as("the enemy in reach: the wave is given its attack orders")
                 .anyMatch(c -> c instanceof Attack a && a.units().contains(army[0]));
+    }
+
+    @Test
+    void theDistanceIsMeasuredFromTheSoldiersOrdered() {
+        int[] near = s.spawn(DepthScene.INFANTRY, DepthScene.OWN, 95, 95, 6); // inside the march's 70 blocks
+        s.spawn(DepthScene.INFANTRY, DepthScene.OWN, 30, 30, 8); // the rest of the army stands far behind
+        List<Command> sent = new ArrayList<>();
+        s.think((v, b, sink) -> sent.add(March.order(script, v.units(), near, new Vec2d(120, 120))));
+
+        assertThat(formation(sent)).as("the wave ordered is near its target").isFalse();
+        assertThat(attackMove(sent)).isTrue();
     }
 }
