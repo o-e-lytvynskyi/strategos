@@ -1,5 +1,7 @@
 package dev.strategos.core.sim.spatial;
 
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
+
 /**
  * Which units a query reports (04 §10.1): those of a faction in {@code factions} (bit {@code f} for faction {@code
  * f}) that have every class in {@code classes} (bits of the set's class tokens; none: any class).
@@ -18,9 +20,9 @@ public record UnitFilter(int factions, long classes) {
         return new UnitFilter(~(1 << faction), 0);
     }
 
-    /** The units of the match's {@code players} factions but {@code faction}: never Gaia's animals (ECO-16). */
-    public static UnitFilter enemiesOf(int faction, int players) {
-        return new UnitFilter(((1 << players) - 1) & ~(1 << faction), 0);
+    /** The units of factions on opposing teams, excluding Gaia. */
+    public static UnitFilter enemiesOf(int faction, DiplomacyState diplomacy) {
+        return new UnitFilter(diplomacy.enemyMask(faction), 0);
     }
 
     /** This filter, keeping only units that also have every class in {@code classes}. */

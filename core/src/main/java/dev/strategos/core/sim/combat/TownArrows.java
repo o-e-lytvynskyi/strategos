@@ -90,12 +90,7 @@ public final class TownArrows implements MatchSystem {
             capacity = count;
             picked = 0;
             s.spatial()
-                    .forEachInRadius(
-                            centreX,
-                            centreZ,
-                            range,
-                            UnitFilter.enemiesOf(faction, s.config().factions()),
-                            candidate);
+                    .forEachInRadius(centreX, centreZ, range, UnitFilter.enemiesOf(faction, s.diplomacy()), candidate);
             for (int k = 0; k < count && picked > 0; k++) {
                 int target = s.entities().handleAt(pick[k % picked]);
                 Damage damage = new Damage(target, handle, 0, (float) pierce, 0, 0, List.of(), false);

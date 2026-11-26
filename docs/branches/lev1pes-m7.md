@@ -6,6 +6,8 @@
 
 ## Now
 
+- **2026-11-26 live follow-up:** The owner confirmed dedicated 2v2 start and Open to LAN. They reported ineffective Escape access to Share control, allied arrows, and a conquest match still running after destroying the visible troops and producers. Team vision remains FOW-02. T25 is open while the reproduced UI and targeting defects are addressed in the cloud.
+
 - **T25 in progress:** Team Skirmish ships a four-start map and a separate 2v2 lobby preset. The solo map and two-player lobby remain available. [Slow/Soak 45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed all 29 server slow tests, including the team launch, admission within ten seconds and terminal victory for both allied recipients. Live acceptance remains open.
 
 - **Milestone:** M7 Multiplayer; 26 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).

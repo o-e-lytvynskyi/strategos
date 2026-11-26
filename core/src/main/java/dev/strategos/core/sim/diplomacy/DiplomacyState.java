@@ -25,6 +25,7 @@ public final class DiplomacyState implements DiplomacyView {
     private static final int UNBOUND = -1;
 
     private final int[] teams;
+    private final int[] enemyMasks;
     private final int[] bindings;
     private final int[] grants; // receiving player -> bitset of granting factions
     private final boolean locked;
@@ -39,6 +40,7 @@ public final class DiplomacyState implements DiplomacyView {
         for (int f = 0; f < factions; f++) {
             teams[f] = f;
         }
+        enemyMasks = enemyMasks(teams);
         bindings = new int[SEATS];
         Arrays.fill(bindings, UNBOUND);
         grants = new int[SEATS];
@@ -48,6 +50,7 @@ public final class DiplomacyState implements DiplomacyView {
 
     private DiplomacyState(int[] teams, int[] bindings, int[] grants, boolean locked) {
         this.teams = teams;
+        enemyMasks = enemyMasks(teams);
         this.bindings = bindings;
         this.grants = grants;
         this.locked = locked;
@@ -92,6 +95,20 @@ public final class DiplomacyState implements DiplomacyView {
     /** Primitive kernel query; absent factions, including Gaia, are never allies. */
     public boolean alliedFactions(int first, int second) {
         return first >= 0 && second >= 0 && first < factions() && second < factions() && teams[first] == teams[second];
+    }
+
+    /** The opponents of a configured faction. An absent source has no team. */
+    public int enemyMask(int faction) {
+        return faction >= 0 && faction < teams.length ? enemyMasks[faction] : (1 << teams.length) - 1;
+    }
+
+    private static int[] enemyMasks(int[] teams) {
+        int[] allies = new int[SEATS];
+        for (int f = 0; f < teams.length; f++) allies[teams[f]] |= 1 << f;
+        int all = (1 << teams.length) - 1;
+        int[] result = new int[teams.length];
+        for (int f = 0; f < teams.length; f++) result[f] = all & ~allies[teams[f]];
+        return result;
     }
 
     /** Allocation-free primary-faction query; admin and unbound players have no primary faction. */

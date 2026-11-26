@@ -62,7 +62,8 @@ final class AttackSpreadRule implements CommandRule<AttackSpread> {
             RejectReason reason = Ownership.check(envelope.issuer(), handle, state);
             if (reason == null) {
                 int i = Handle.index(handle);
-                reason = state.identity().faction(i) == targetFaction || targetFaction == state.gaia()
+                reason = state.diplomacy().alliedFactions(state.identity().faction(i), targetFaction)
+                                || targetFaction == state.gaia()
                         ? RejectReason.INVALID_ARGUMENT
                         : !state.stats().canAttack(i)
                                         || state.stats()
@@ -86,11 +87,7 @@ final class AttackSpreadRule implements CommandRule<AttackSpread> {
         List<Ranked> enemies = new ArrayList<>();
         state.spatial()
                 .forEachInRadius(
-                        x,
-                        z,
-                        state.stats().vision(t),
-                        UnitFilter.enemiesOf(attackerFaction, state.config().factions()),
-                        j -> {
+                        x, z, state.stats().vision(t), UnitFilter.enemiesOf(attackerFaction, state.diplomacy()), j -> {
                             if (state.entities().aliveAt(j)) {
                                 enemies.add(new Ranked(
                                         j,
