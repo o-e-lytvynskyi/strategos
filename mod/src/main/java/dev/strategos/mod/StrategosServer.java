@@ -32,6 +32,7 @@ import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.MatchSky;
 import dev.strategos.mod.server.world.MaterialTable;
 import dev.strategos.mod.server.world.Protection;
 import java.util.ArrayList;
@@ -79,6 +80,7 @@ public final class StrategosServer {
     private final TemplateSync templateSync = new TemplateSync();
     private final CommanderService commanders = new CommanderService();
     private final Skirmishes skirmishes = new Skirmishes();
+    private final MatchSky sky = new MatchSky();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -162,6 +164,11 @@ public final class StrategosServer {
     /** The server's template set, its id table and the last load's problems (DATA-03). */
     public ServerTemplates templates() {
         return templates;
+    }
+
+    /** The levels whose time a match with day and night drives (MATCH-16). */
+    public MatchSky sky() {
+        return sky;
     }
 
     /** The skirmishes waiting for their import to be set up (QA-11.5). */

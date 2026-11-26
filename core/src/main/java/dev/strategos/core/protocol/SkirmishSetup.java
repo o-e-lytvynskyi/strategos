@@ -13,11 +13,18 @@ import java.util.function.ToIntFunction;
  * A skirmish as the setup screen and {@code /strategos skirmish} choose it (MATCH-02, spec §2.11): the map package, the
  * computer's level (D-19), the starting resources (the map's, half or double), the population cap (D-01) and the
  * visibility (MATCH-07), and each slot's civilisation (CIV-01): empty is the default civilisation for every slot, one
- * id is that civilisation for every slot, else one per slot. {@link #DEFAULTS} is two clicks: Skirmish, then Start.
+ * id is that civilisation for every slot, else one per slot; and whether the match has day and night (MATCH-16, off
+ * by default). {@link #DEFAULTS} is two clicks: Skirmish, then Start.
  */
 @CoreApi
 public record SkirmishSetup(
-        String map, Level level, StartResources resources, int populationCap, Visibility visibility, List<CivId> civs) {
+        String map,
+        Level level,
+        StartResources resources,
+        int populationCap,
+        Visibility visibility,
+        List<CivId> civs,
+        boolean dayNight) {
     public static final String FIRST_SKIRMISH = "strategos:first_skirmish";
     public static final int MIN_POPULATION = 50;
     public static final int MAX_POPULATION = 200;
@@ -95,6 +102,17 @@ public record SkirmishSetup(
         this(map, level, resources, populationCap, visibility, List.of());
     }
 
+    /** A setup without day and night. */
+    public SkirmishSetup(
+            String map,
+            Level level,
+            StartResources resources,
+            int populationCap,
+            Visibility visibility,
+            List<CivId> civs) {
+        this(map, level, resources, populationCap, visibility, civs, false);
+    }
+
     public SkirmishSetup {
         civs = List.copyOf(civs);
         if (civs.size() > MatchConfig.MAX_FACTIONS) {
@@ -132,10 +150,15 @@ public record SkirmishSetup(
                     .writeByte(s.resources().code())
                     .writeVarInt(s.populationCap())
                     .writeByte(s.visibility().code());
-            if (s.civs().stream()
-                    .anyMatch(c -> !c.equals(CivId.DEFAULT))) { // appended: a setup without them is as it was
-                out.writeVarInt(s.civs().size());
-                s.civs().forEach(c -> out.writeString(c.value(), CivId.MAX_BYTES));
+            boolean custom = s.civs().stream().anyMatch(c -> !c.equals(CivId.DEFAULT));
+            if (custom || s.dayNight()) { // appended: a setup without them is as it was
+                out.writeVarInt(custom ? s.civs().size() : 0);
+                if (custom) {
+                    s.civs().forEach(c -> out.writeString(c.value(), CivId.MAX_BYTES));
+                }
+                if (s.dayNight()) { // after the civilisations, whose count may be 0 only before this byte
+                    out.writeByte(1);
+                }
             }
         }
 
@@ -148,13 +171,15 @@ public record SkirmishSetup(
             int visibility = in.readUnsignedByte();
             try {
                 List<CivId> civs = readCivs(in);
+                boolean dayNight = in.remaining() > 0 && flag(in.readUnsignedByte());
                 return new SkirmishSetup(
                         map,
                         pick(Level.values(), level, Level::code, "level"),
                         pick(StartResources.values(), resources, StartResources::code, "resources"),
                         cap,
                         pick(Visibility.values(), visibility, Visibility::code, "visibility"),
-                        civs);
+                        civs,
+                        dayNight);
             } catch (IllegalArgumentException e) { // client input: a wire fault, not a bug
                 throw new WireException(String.valueOf(e.getMessage()));
             }
@@ -162,24 +187,38 @@ public record SkirmishSetup(
 
         @Override
         public int maxSize() {
-            return 3 + MAX_MAP_BYTES + 1 + 1 + 5 + 1 + 1 + MatchConfig.MAX_FACTIONS * (1 + CivId.MAX_BYTES);
+            return 3 + MAX_MAP_BYTES + 1 + 1 + 5 + 1 + 1 + MatchConfig.MAX_FACTIONS * (1 + CivId.MAX_BYTES) + 1;
         }
     };
 
-    /** The appended civilisations: absent for none; a present list is never empty (the writer leaves it out then). */
+    /**
+     * The appended civilisations: absent for none; a present list is empty only before the day-and-night byte (the
+     * writer leaves an empty one out otherwise).
+     */
     private static List<CivId> readCivs(WireReader in) {
         if (in.remaining() == 0) {
             return List.of();
         }
         int n = in.readVarInt(MatchConfig.MAX_FACTIONS);
         if (n == 0) {
-            throw new IllegalArgumentException("an empty civilisation list is never written");
+            if (in.remaining() == 0) {
+                throw new IllegalArgumentException("an empty civilisation list is never written");
+            }
+            return List.of();
         }
         List<CivId> out = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             out.add(new CivId(in.readString(CivId.MAX_BYTES)));
         }
         return out;
+    }
+
+    /** The day-and-night byte: written only when set, so it is 1 or a fault. */
+    private static boolean flag(int b) {
+        if (b != 1) {
+            throw new IllegalArgumentException("a day-and-night byte of " + b);
+        }
+        return true;
     }
 
     private static <E> E pick(E[] values, int code, ToIntFunction<E> codeOf, String what) {

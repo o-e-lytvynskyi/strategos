@@ -33,6 +33,7 @@ final class TemplateSwap {
         Techs.dropRetired(state, old);
         AiHandicap.reapply(state); // the computer players' open handicaps, from the new set (AI-05)
         CivBonuses.reapply(state); // the civilisations' bonuses, from the new set (CIV-01)
+        NightFactor.reapply(state); // night's vision, from the new set (MATCH-16)
         Ranks.reapply(state); // the ranks' sets, from the new set (CMB-11)
         state.costs().swap(state.stats());
         state.gatherRates().swap(state.stats());

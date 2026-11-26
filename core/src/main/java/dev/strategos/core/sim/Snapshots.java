@@ -246,6 +246,7 @@ final class Snapshots {
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)
         CivBonuses.reapply(state); // and each civilisation's bonuses (CIV-01)
+        NightFactor.reapply(state); // and night's vision at the restored tick (MATCH-16)
         state.alerts().restore(snapshot.play().alerts());
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);

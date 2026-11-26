@@ -167,6 +167,7 @@ view and the first Minecraft twist, day and night.
 | 25 | Hunting (T21) | The wild animal is the wild boar on the pig model (150 meat, 30 HP, flees 16 blocks through `Behaviour/flee` — no separate `Fauna/flee`); a new `Hunter` class (horsemen hunt at 5 food/s, carry 20; workers only gather a carcass, at 1/s) keeps horsemen out of the AI's worker logic; a food subtype `hunt`; herds through an optional `MapManifest.herds`, four point-mirrored herds on `first_skirmish` |
 | 26 | Hotkeys (T22) | Back to work T, garrison ;, delete Backspace pressed twice within 3 s (a new `DeleteUnits`, wire 39: own units die, no loot), next idle soldier Shift+I, select all soldiers Ctrl+A and workers Ctrl+W, camera bookmarks F4/F5/F7/F8 (set with Ctrl, x and z only, per match); queueing stays Shift on any order. The vanilla keys left no free letters. Units holding a standing order (patrol, guard) are flagged in `unit_summary` by the server and skipped by idle cycling |
 | 27 | The orthographic view (T23) | Verified: `GameRenderer#getProjectionMatrix(double)` (GameRenderer.java:980) and `Frustum#offsetToFullyIncludeCameraCube(int)` (Frustum.java:33). The client mixins sit in `mod.client.mixin` under a second, client-only config (`strategos.client.mixins.json`), as ArchUnit's B5/B10 require. The picture's half height is `height / sin(pitch) · tan(FOV/2)`, the perspective view's height at the focus; picking needed no change (it unprojects both planes). Off by default; Ctrl+O while the RTS screen is open or the config toggles it; with Sodium or Iris loaded it stays off unless `orthographicWithRenderMods`; a fault turns it off for the session |
+| 28 | Day and night (T24) | A 24,000-tick day; match tick 0 is noon; night 13,000–23,000 in time-of-day (the first night at match tick 7,000), dusk and dawn 1,000 each. At night `Vision/range` ×`Vision/night` (0.6, on the unit and building bases) through `NightFactor`, refreshed only when the night begins or ends; `Vision/light` (civic centre 12, house 8, tower 24, sentry tower 20) holds at night. One match in a level drives the level's time (`setDayTime` every 20 ticks, vanilla's sync); more than one gets a client tint instead (`MatchStateMsg.tint`). `PlayRules.dayNight` is a boolean (no forced-tint mode); the cycle length is a constant (`DayClock.CYCLE`). `AFTER-M8` in NightFactor: FOW-02's shared vision reads the stamped radius |
 | 14 | T8's boundary rule | `MatchConfig`, `StateHasher`, `ScenarioSetup` (kits), the protocol and the HUD (names, phases, the card) hold or read civilisation ids by design; the rule forbids them in the systems' packages (`econ`, `build`, `prod`, `unitai`, `ai`, `combat`, `territory`, `capture`, `garrison`, `vision`, `nav`, `move`, `order`), where behaviour must come from `CivRules` |
 
 ### 1.7 Consent plan
@@ -609,7 +610,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T21 (2026-11-26)
 - [x] T22 (2026-11-26)
 - [x] T23 (2026-11-26)
-- [ ] T24
+- [x] T24 (2026-11-26)
 - [ ] T25
 - [ ] T26
 - [ ] T27

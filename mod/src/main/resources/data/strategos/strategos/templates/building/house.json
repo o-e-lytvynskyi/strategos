@@ -8,6 +8,7 @@
   "Health": { "max": 400 },
   "Loot": { "resources": { "wood": 16 } },
   "Cost": { "resources": { "wood": 80 }, "time": 30 },
+  "Vision": { "light": 8 },
   "Housing": { "capacity": 5 },
   "GarrisonHolder": { "capacity": 5, "classes": "Worker" }
 }

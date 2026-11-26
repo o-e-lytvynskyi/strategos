@@ -81,6 +81,7 @@ public final class MatchState {
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
+    private boolean nightApplied;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
     private final SpatialQueries spatial;
 
@@ -148,6 +149,7 @@ public final class MatchState {
         this.terrain = new MatchTerrain(this);
         ensureCapacity(entities.highWater());
         CivBonuses.reapply(this); // the civilisations' bonuses, derived at the start as at every restore (CIV-01)
+        NightFactor.reapply(this); // night's vision, derived like them (MATCH-16)
     }
 
     /** The published terrain: a copy-on-write grid, so a job keeps the one it captured. */
@@ -580,6 +582,15 @@ public final class MatchState {
 
     public MatchConfig config() {
         return config;
+    }
+
+    /** Whether {@link NightFactor}'s modifiers are in the stats now: derived, never saved. */
+    boolean nightApplied() {
+        return nightApplied;
+    }
+
+    void setNightApplied(boolean applied) {
+        nightApplied = applied;
     }
 
     /** A journaled rule change's rules (MATCH-01): the config carries them, and the population takes its maximum. */

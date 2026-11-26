@@ -289,7 +289,7 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. Night goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** FOW-01, MATCH-01, D-13 · **Size:** M ·
   **Tier:** T2
-- **Status:** specified
+- **Status:** in_progress (criteria 1–3 pass: `NightVisionTest`, `LightSourceTest`, `NightReplayTest`; criterion 4, night goldens, is in the consent batch)
 
 #### AI-09 · AI uses the new content
 - **Value:** The AI plays any civilisation it is given, by its rules, and the late game well (P5).

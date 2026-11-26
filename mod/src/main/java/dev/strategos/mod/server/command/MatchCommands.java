@@ -94,7 +94,13 @@ final class MatchCommands {
                 .then(Commands.literal("config")
                         .then(Commands.argument("key", StringArgumentType.word())
                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                        List.of("populationMax", "victory", "revealMap", "explored", "aiVision"),
+                                        List.of(
+                                                "populationMax",
+                                                "victory",
+                                                "revealMap",
+                                                "explored",
+                                                "aiVision",
+                                                "dayNight"),
                                         builder))
                                 .then(Commands.argument("value", StringArgumentType.word())
                                         .executes(ctx -> withMatchAtSource(ctx.getSource(), rt -> {
@@ -225,7 +231,7 @@ final class MatchCommands {
 
     /**
      * {@code skirmish <map> [level=easy|normal|hard] [visibility=fog|explored|revealed] [resources=map|low|high]
-     * [population=50..200] [civ=<id>[,<id>]]} (MATCH-02, CIV-01: one civilisation for every slot, or one per slot): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
+     * [population=50..200] [civ=<id>[,<id>]] [daynight=on|off]} (MATCH-02, CIV-01: one civilisation for every slot, or one per slot): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
      * skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one, with seed
      * {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it as its
      * observer.
@@ -265,6 +271,15 @@ final class MatchCommands {
         });
     }
 
+    /** {@code on} or {@code off} (MATCH-16's day and night); anything else is a bad option. */
+    private static boolean onOff(String value) {
+        return switch (value) {
+            case "ON" -> true;
+            case "OFF" -> false;
+            default -> throw new IllegalArgumentException("neither on nor off: " + value);
+        };
+    }
+
     /** The setup that {@code options} (space-separated {@code key=value}) make of the defaults. */
     static SkirmishSetup setup(ResourceLocation map, String options) {
         SkirmishSetup d = SkirmishSetup.DEFAULTS;
@@ -273,6 +288,7 @@ final class MatchCommands {
         SkirmishSetup.StartResources resources = d.resources();
         int population = d.populationCap();
         List<CivId> civs = d.civs();
+        boolean dayNight = d.dayNight();
         for (String token : options.trim().split("\\s+", -1)) {
             if (token.isEmpty()) {
                 continue;
@@ -287,6 +303,7 @@ final class MatchCommands {
                     case "resources" -> resources = SkirmishSetup.StartResources.valueOf(value);
                     case "population" -> population = Integer.parseInt(value);
                     case "civ" -> civs = civs(token.substring(eq + 1));
+                    case "daynight" -> dayNight = onOff(value);
                     default -> throw new MatchRefusedException("unknown skirmish option " + key);
                 }
             } catch (IllegalArgumentException e) {
@@ -294,7 +311,7 @@ final class MatchCommands {
             }
         }
         try {
-            return new SkirmishSetup(map.toString(), level, resources, population, visibility, civs);
+            return new SkirmishSetup(map.toString(), level, resources, population, visibility, civs, dayNight);
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }

@@ -27,6 +27,7 @@ import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
+import dev.strategos.mod.client.overlay.NightTint;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.client.territory.BorderEcho;
 import dev.strategos.mod.client.territory.BorderRenderer;
@@ -101,6 +102,7 @@ public final class StrategosClient {
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
+        NightTint.register(modBus); // MATCH-16: the fallback night, below every other layer
         FAR.register();
         SHROUD.register();
         BorderRenderer.register();

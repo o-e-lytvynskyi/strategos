@@ -6,7 +6,7 @@
   "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
   "Resistance": { "fire": 0 },
   "Health": { "max": 400 },
-  "Vision": { "range": 20 },
+  "Vision": { "range": 20, "light": 20 },
   "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
   "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
   "Loot": { "resources": { "wood": 20 } },

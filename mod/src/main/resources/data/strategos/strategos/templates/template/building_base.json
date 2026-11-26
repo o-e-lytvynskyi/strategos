@@ -1,6 +1,7 @@
 {
   "abstract": true,
   "Identity": { "classes": "Structure" },
+  "Vision": { "night": 0.6 },
   "Building": { "material": "stone" },
   "Placement": { "territory": 1 },
   "GarrisonHolder": { "ejectBelow": 0.1 },

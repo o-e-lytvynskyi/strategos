@@ -215,6 +215,9 @@ public final class StateHasher {
             h = Hasher.mix(h, rules.play().revealMap() ? 1 : 0);
             h = Hasher.mix(h, rules.play().explored() ? 1 : 0);
             h = Hasher.mix(h, rules.play().aiVision() ? 1 : 0);
+            if (rules.play().dayNight()) { // appended, so every rule set without it hashes as before (MATCH-16)
+                h = Hasher.mix(h, 1);
+            }
             h = Hasher.mix(h, rules.economy().populationMax());
         }
 

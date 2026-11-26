@@ -31,7 +31,10 @@ public final class ArenaWorld {
 
     public static final ResourceKey<Biome> BIOME = ResourceKey.create(Registries.BIOME, Ids.id("arena"));
 
-    /** Noon: the time an arena keeps, its daylight cycle off. */
+    /**
+     * Noon: the time an arena keeps, its daylight cycle off. A lone match with day and night (MATCH-16) sets the time
+     * itself through {@link MatchSky}, which hands the arena back to noon afterwards; the daylight gamerule stays off.
+     */
     public static final long NOON = 6_000;
 
     /** The lobby pad reaches this many blocks from the spawn on each side: 9 x 9. */

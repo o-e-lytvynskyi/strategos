@@ -193,6 +193,15 @@ public final class CorePaths {
      */
     public static final String PROMOTION_VALUE = "Promotion/value";
 
+    /**
+     * Day and night (MATCH-16): {@code Vision/night} is the multiplier a template's vision takes at night, and {@code
+     * Vision/light} the radius a building keeps at night (a torch or a campfire). Optional number paths, so they stay
+     * out of {@link #all()}.
+     */
+    public static final String VISION_NIGHT = "Vision/night";
+
+    public static final String VISION_LIGHT = "Vision/light";
+
     private CorePaths() {}
 
     public static double min(String path) {

@@ -31,7 +31,8 @@
     "UnitMotion/turnRate": "Degrees a tick: a full turn in eight ticks, quick enough for orders to feel immediate, slow enough to see the turn",
     "Body/width": "A player's hit box, so the vanilla humanoid model fits (D-04)",
     "Body/height": "A player's hit box, so the vanilla humanoid model fits (D-04)",
-    "Body/radius": "The avoidance radius, a little over half the width, so a dense crowd still shows gaps between bodies (M1, PATH-06)"
+    "Body/radius": "The avoidance radius, a little over half the width, so a dense crowd still shows gaps between bodies (M1, PATH-06)",
+    "Vision/night": "A multiplier of 0.6 at night, when the match has day and night: a 12-block sight is 7.2, enough to see the next house but not the next ridge (MATCH-16)"
   },
   "strategos:unit/debug_walker": {
     "UnitMotion/walkSpeed": "Five blocks a second: the movement tests' brisk walker, never a game unit"
@@ -163,6 +164,7 @@
     "minecraft:sweet_berry_bush": "Sixty food a bush, a worker's cost; a bush left alone fills again in ten minutes, but an emptied one stays empty: early food that runs out, so fields matter (ECO-09)"
   },
   "strategos:building/civic_centre": {
+    "Vision/light": "Twelve blocks, the centre's own sight by day: a campfire in the square keeps it at night, so the heart of a town is never dark (MATCH-16)",
     "Loot/resources/wood": "Sixty wood: 0 A.D.'s civic centre pays sixty wood (research mechanics 1.21, CMB-13)",
     "Loot/resources/stone": "Sixty stone: 0 A.D.'s civic centre pays sixty stone (research mechanics 1.21, CMB-13)",
     "Loot/resources/iron": "Fifty iron: 0 A.D.'s civic centre pays fifty metal, our iron (research mechanics 1.21, CMB-13)",
@@ -192,6 +194,7 @@
   },
   "strategos:template/building_base": {
     "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
+    "Vision/night": "A multiplier of 0.6 at night, as the units': every building's sight shrinks with the rest of the faction's (MATCH-16)",
     "Health/max": "Five hundred: what a structure without its own figure holds; a deposit has it too, though nothing in M4 attacks one",
     "DamageStages/first": "The first blocks fall once a seventh of the building is gone, early enough to show an attack is working (BLD-05, 04 §11.8)",
     "DamageStages/second": "Two thirds of its hit points left: a third of its blocks down, the building plainly hurt",
@@ -200,6 +203,7 @@
     "GarrisonHolder/ejectBelow": "A tenth of its health: 0 A.D.'s garrison holders let everyone out below 10 % (research second-pass 1.13), so a falling building does not bury its garrison (BLD-10)"
   },
   "strategos:building/house": {
+    "Vision/light": "Eight blocks: a torch by the door, a little more than a night's 7.2 and short of a day's twelve, so a lit village is dim but not blind (MATCH-16)",
     "Loot/resources/wood": "16 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
     "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
@@ -244,6 +248,7 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/tower": {
+    "Vision/light": "Twenty-four, its whole day sight: a beacon on the platform, so a tower is the last thing a night takes from a town (MATCH-16)",
     "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Loot/resources/stone": "30 stone: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
@@ -265,6 +270,7 @@
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/sentry_tower": {
+    "Vision/light": "Twenty, its whole day sight: a brazier on the lookout (MATCH-16)",
     "Loot/resources/wood": "20 wood: a fifth of its cost, a building's share above a soldier's tenth and far below the civic centre's (research mechanics 1.21, CMB-13); our own starting value, to be tuned against QA-16",
     "Attack/Building/arrows": "One arrow a shot and one more for each of its three garrisoned infantry: a sentry post is a lookout with a bow, so it warns and wears a raid down but, empty, is no defence (BLD-12, BLD-11)",
     "Attack/Building/perGarrisoned": "One more arrow for each unit inside, as the defence tower's: 0 A.D.'s sentry tower adds an arrow per garrisoned infantry too (research second-pass 1.6), so a full one fires four (BLD-12)",

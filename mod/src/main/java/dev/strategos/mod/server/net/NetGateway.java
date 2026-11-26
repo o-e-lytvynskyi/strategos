@@ -51,6 +51,7 @@ import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import dev.strategos.mod.server.world.MatchSky;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -226,7 +227,9 @@ public final class NetGateway {
             if (lastState.get(rt.id().value()) != rt.lifecycle()
                     || !looks.equals(lastLooks.get(rt.id().value()))
                     || tick % STATE_EVERY == 0) {
-                send(new Audience.Match(rt.id()), state(rt, looks));
+                send(
+                        new Audience.Match(rt.id()),
+                        state(rt, looks, MatchSky.of(rt, matches.get()) == MatchSky.Mode.TINT));
             }
         }
         lastState.clear();
@@ -345,7 +348,7 @@ public final class NetGateway {
         }
     }
 
-    private static MatchStatePayload state(MatchRuntime rt, List<FactionLook> looks) {
+    private static MatchStatePayload state(MatchRuntime rt, List<FactionLook> looks, boolean tint) {
         MatchStateMsg.Lifecycle lifecycle = switch (rt.lifecycle()) {
             case CREATED -> MatchStateMsg.Lifecycle.CREATED;
             case PREPARING -> MatchStateMsg.Lifecycle.PREPARING;
@@ -361,7 +364,7 @@ public final class NetGateway {
                 ? core.queries().matchResults()
                 : null;
         return new MatchStatePayload(
-                new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results, looks));
+                new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results, looks, tint));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {

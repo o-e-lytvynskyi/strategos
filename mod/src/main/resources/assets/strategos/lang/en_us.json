@@ -163,6 +163,8 @@
   "strategos.skirmish.visibility.fog": "Fog",
   "strategos.skirmish.visibility.explored": "Explored",
   "strategos.skirmish.visibility.revealed": "Revealed",
+  "strategos.skirmish.daynight": "Day and night",
+  "strategos.skirmish.daynight.tooltip": "Night shrinks what every faction sees; torches on buildings hold their light.",
   "strategos.skirmish.start": "Start",
   "strategos.skirmish.preparing": "Preparing the map: %s %%",
   "strategos.feed.wave": "An attack is coming",

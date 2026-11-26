@@ -132,13 +132,14 @@ public final class Skirmishes {
         return def == null ? CivDef.DEFAULT_AI_PROFILE : def.aiProfile();
     }
 
-    /** Conquest under the setup's visibility (MATCH-07); the computer does not see through fog. */
+    /** Conquest under the setup's visibility (MATCH-07) and day and night (MATCH-16); the computer does not see through fog. */
     static PlayRules play(SkirmishSetup setup) {
         return new PlayRules(
                 PlayRules.Victory.CONQUEST,
                 setup.visibility() == SkirmishSetup.Visibility.REVEALED,
                 setup.visibility() == SkirmishSetup.Visibility.EXPLORED,
-                false);
+                false,
+                setup.dayNight());
     }
 
     /** Each server tick, before the matches step: those imported are set up. */

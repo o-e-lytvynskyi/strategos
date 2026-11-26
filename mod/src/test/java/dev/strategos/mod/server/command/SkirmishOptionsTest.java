@@ -38,6 +38,16 @@ class SkirmishOptionsTest {
     }
 
     @Test
+    void dayNightIsOffByDefaultAndSetByOnOrOff() {
+        assertThat(MatchCommands.setup(MAP, "").dayNight()).isFalse();
+        assertThat(MatchCommands.setup(MAP, "daynight=on level=easy").dayNight())
+                .isTrue();
+        assertThat(MatchCommands.setup(MAP, "daynight=OFF").dayNight()).isFalse();
+        assertThatThrownBy(() -> MatchCommands.setup(MAP, "daynight=maybe")).isInstanceOf(MatchRefusedException.class);
+        assertThatThrownBy(() -> MatchCommands.setup(MAP, "daynight")).isInstanceOf(MatchRefusedException.class);
+    }
+
+    @Test
     void badOptionsAreRefusedNotThrownRaw() {
         for (String bad : new String[] {
             "level=insane",

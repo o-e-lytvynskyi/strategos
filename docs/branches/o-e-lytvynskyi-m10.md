@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 24 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **Milestone:** M10, 25 of 32 tasks done; spec [M10](../milestones/M10-civilisations-and-depth.md).
 - **In progress:** none.
-- **Last finished task:** M10 T23 (2026-11-26).
-- **Next task:** T24 · MATCH-16 · Day and night.
+- **Last finished task:** M10 T24 (2026-11-26).
+- **Next task:** T25 · AI-09 · The AI on the new content.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -29,8 +29,9 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-26 — M10 T16–T23
+### 2026-11-26 — M10 T16–T24
 
+- **M10 T24 · Day and night** — MATCH-16 in progress (night goldens are the consent batch's). `PlayRules.dayNight` (off by default, in the setup screen, the command and RuleChange); `DayClock` and `NightFactor` (spec §1.6 row 28): night scales vision by 0.6 through a faction modifier refreshed at the boundaries, lights on buildings keep their radius; `MatchSky` drives the level's time for a lone match, a client tint (`NightTint`) when the level holds more matches; engine names verified (`ServerLevel#setDayTime` :455, `GameRules.RULE_DAYLIGHT` :65, `MinecraftServer#forceTimeSynchronization` :1103, the GUI layer API). The pre-TECH-01 reconstruction strips the new vision paths, including from the abstract bases, so that historical pin holds; the content version re-pinned (409a9f8e… → 079773f9…). Tests: `DayClockTest`, `NightVisionTest` 6, `LightSourceTest` 2, `NightReplayTest` 2, `DayNightWireTest` 3, `MatchSkyTest`, `NightTintTest`, the setup's size pin. No state hash, golden or replay changed with the rule off. `verify verifySlow` green, 4 min 57 s; `jmhCompare` red only on the known `volley60` row (6.755 µs/op).
 - **M10 T23 · The orthographic view** — CAM-06 in progress (switching and Sodium/Iris are the consent batch's). `Orthographic` (core: the half height from the camera height and pitch, the matrix), `Mat4.orthographic`, `View.orthographic()`; client mixins on `GameRenderer#getProjectionMatrix` and `Frustum#offsetToFullyIncludeCameraCube` (names verified in the decompiled sources) under a second, client-only mixin config; `OrthoView` (the option, Ctrl+O, the render-mod rule, the fault fallback); the inventory lists both mixins (spec §1.6 row 27). Tests: `OrthoPickingTest` 4 (a grid of poses and cursors round-trips through the matrix within 1e-6; perspective picking unchanged), the inventory test. No state hash, golden or replay changed. `verify verifySlow` green, 4 min 38 s (two earlier runs were red from the worker's own overlapping builds and the arch rules, both fixed).
 - **M10 T22 · Hotkeys** — UI-17 in progress (idle cycling on screen is the consent batch's). Fourteen new actions with default bindings (spec §1.6 row 26), modified bindings resolved before plain keys; `DeleteUnits` (wire 39) behind a two-press confirmation; garrison into the nearest admitting holder; back to work through the all clear; idle soldiers and workers skip units holding a standing order, which the server flags per own unit in `unit_summary` (a second trailing field; frames without one unchanged) — a guard whose charge died becomes idle again; camera bookmarks; the key reference generated from the bindings, its columns fitted to the screen. Tests: `HotkeyCoverageTest`, `KeyReferenceTest`, `IdleSoldiersTest`, `UnitRoleTest`, `CameraBookmarksTest`, `DeleteConfirmTest`, `HotkeyOrdersTest`, `DeleteUnitsTest`, `StandingReplicationTest`, the payload and wire pins. No state hash, golden or replay changed. `verify verifySlow` green, 4 min 49 s.
 - **M10 T21 · Wild herds and hunting** — ECO-10 in progress (the L6 budget is T27's). The wild boar (Gaia, 150 meat, flees 16 blocks when hurt, never breeds); horsemen hunt (`Hunter`, 5 food/s, carry 20), workers gather a carcass slowly; a kill leaves a carcass node where the boar fell and sends its hunters to gather it; herds from an optional `MapManifest.herds`, four on `first_skirmish` (spec §1.6 row 25). The pre-TECH-01 reconstruction leaves the boar and the hunting additions out, so that historical pin holds; the content version re-pinned (303c703b… → 409a9f8e…). Tests: `HuntTest` 3, `FleeStanceTest` 2, `HerdTest` 4; count and index pins grown. No state hash, golden, replay, map test or opening balance moved with the herds on the map (the AI soak on that map runs at the close). `verify verifySlow :core:soak` green, 5 min; `:core:test` after the re-pin, 140 s.
@@ -91,6 +92,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-25 · Three content GameTests removed the house to test a reload; the default civilisation's lint now refuses a set that loses a role's template, so they remove `quarry_large` (no role, no unlock) instead — the intent (a reload that drops an unused template) is kept; a data pack that removes a role's template while shipping the default is now refused, as ADR-0028 intends — undo: lint roles leniently.
 - 2026-11-25 · The civilisation's name key is `strategos.civ.default`, the lang file's `strategos.<kind>.<name>` convention; phases reuse `strategos.phase.0–2` — undo: rename the key.
 - 2026-11-25 · trial implementer: pass — M10 T9a, green; it checked its tests fail without the change and raised the refusal-channel question instead of widening its scope.
+- 2026-11-26 · trial implementer: pass — M10 T24 over two rounds; it found the abstract bases bypassing the reconstruction's strip.
 - 2026-11-26 · trial implementer: pass — M10 T23, green; it verified every engine name with file:line and owned up to its overlapping builds.
 - 2026-11-26 · The orthographic switch is Ctrl+O polled by `OrthoView`, not a rebindable `Action` like UI-17's set — follow-up: an `Action` once the RTS screen routes it — undo: n/a.
 - 2026-11-26 · trial implementer: pass — M10 T22 over two rounds; the first inferred standing orders on the client from sent commands, replaced by the server's flag.

@@ -34,6 +34,7 @@ public final class SkirmishScreen extends Screen {
     private SkirmishSetup.StartResources resources = SkirmishSetup.DEFAULTS.resources();
     private int population = SkirmishSetup.DEFAULTS.populationCap();
     private SkirmishSetup.Visibility visibility = SkirmishSetup.DEFAULTS.visibility();
+    private boolean dayNight = SkirmishSetup.DEFAULTS.dayNight();
     private CivId playerCiv = CivId.DEFAULT;
     private CivId computerCiv = CivId.DEFAULT;
 
@@ -46,7 +47,13 @@ public final class SkirmishScreen extends Screen {
     SkirmishSetup setup() {
         boolean custom = !playerCiv.equals(CivId.DEFAULT) || !computerCiv.equals(CivId.DEFAULT);
         return new SkirmishSetup(
-                map, level, resources, population, visibility, custom ? List.of(playerCiv, computerCiv) : List.of());
+                map,
+                level,
+                resources,
+                population,
+                visibility,
+                custom ? List.of(playerCiv, computerCiv) : List.of(),
+                dayNight);
     }
 
     @Override
@@ -96,6 +103,16 @@ public final class SkirmishScreen extends Screen {
                         20,
                         Component.translatable("strategos.skirmish.visibility"),
                         (b, v) -> visibility = v));
+        y += ROW;
+        addRenderableWidget(CycleButton.onOffBuilder(dayNight)
+                .withTooltip(v -> Tooltip.create(Component.translatable("strategos.skirmish.daynight.tooltip")))
+                .create(
+                        x,
+                        y,
+                        WIDTH,
+                        20,
+                        Component.translatable("strategos.skirmish.daynight"),
+                        (b, v) -> dayNight = v));
         y += ROW * 2;
         addRenderableWidget(Button.builder(
                         Component.translatable("strategos.skirmish.start"),

@@ -18,6 +18,7 @@ final class BuiltinTemplates {
             {
               "abstract": true,
               "Identity": { "classes": "Unit" },
+              "Vision": { "night": 0.6 },
               "UnitMotion": { "walkSpeed": 0.1875, "turnRate": 45, "mobility": "infantry" },
               "Body": { "entityType": "strategos:unit_humanoid", "model": "humanoid", "width": 0.6, "height": 1.8, "radius": 0.35 }
             }
@@ -228,6 +229,7 @@ final class BuiltinTemplates {
             {
               "abstract": true,
               "Identity": { "classes": "Structure" },
+              "Vision": { "night": 0.6 },
               "Building": { "material": "stone" },
               "Placement": { "territory": 1 },
               "GarrisonHolder": { "ejectBelow": 0.1 },
@@ -245,6 +247,7 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 65535, "radius": 56, "root": 1 },
               "Placement": { "territory": 2, "spacing": 64 },
               "Health": { "max": 2000 },
+              "Vision": { "light": 12 },
               "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },
               "Loot": { "resources": { "wood": 60, "stone": 60, "iron": 50 } },
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
@@ -280,6 +283,7 @@ final class BuiltinTemplates {
               "Health": { "max": 400 },
               "Loot": { "resources": { "wood": 16 } },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
+              "Vision": { "light": 8 },
               "Housing": { "capacity": 5 },
               "GarrisonHolder": { "capacity": 5, "classes": "Worker" }
             }
@@ -312,7 +316,7 @@ final class BuiltinTemplates {
               "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1000 },
-              "Vision": { "range": 24 },
+              "Vision": { "range": 24, "light": 24 },
               "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 10, "range": 28 } },
               "GarrisonHolder": { "capacity": 5, "classes": "Infantry" },
               "Loot": { "resources": { "wood": 20, "stone": 30 } },
@@ -329,7 +333,7 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
-              "Vision": { "range": 20 },
+              "Vision": { "range": 20, "light": 20 },
               "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
               "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
               "Loot": { "resources": { "wood": 20 } },
@@ -1141,11 +1145,11 @@ final class BuiltinTemplates {
      */
     static TemplateSet compile(boolean withTechs) {
         List<RawTemplate> templates = new ArrayList<>(List.of(
-                raw("strategos:template/unit_base", UNIT_BASE),
+                raw("strategos:template/unit_base", UNIT_BASE, withTechs),
                 raw("strategos:template/unit_soldier", UNIT_SOLDIER, withTechs),
                 raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
                 raw("strategos:template/unit_fauna", UNIT_FAUNA),
-                raw("strategos:template/building_base", BUILDING_BASE),
+                raw("strategos:template/building_base", BUILDING_BASE, withTechs),
                 raw("strategos:unit/debug_walker", DEBUG_WALKER),
                 raw("strategos:unit/infantry", INFANTRY, withTechs),
                 raw("strategos:unit/archer", ARCHER, withTechs),
@@ -1249,6 +1253,14 @@ final class BuiltinTemplates {
             object.remove("Abilities"); // UNIT-10's, long after that pin
             object.remove("Promotion"); // CMB-11's ranks and values, likewise
             object.remove("Loot"); // CMB-13's, too
+            if (object.has("Vision")) { // MATCH-16's night factor and light radii
+                JsonObject vision = object.getAsJsonObject("Vision");
+                vision.remove("night");
+                vision.remove("light");
+                if (vision.size() == 0) {
+                    object.remove("Vision");
+                }
+            }
             if (object.has("Builder")) {
                 object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
             }

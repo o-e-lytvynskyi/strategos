@@ -9,6 +9,7 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.NightFactor;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.build.BuildingStore;
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ public final class VisionSystem implements MatchSystem {
 
     @Override
     public void run(MatchState state) {
+        NightFactor.refresh(state); // MATCH-16: night's modifiers move only at dusk and dawn, so the stamps re-cut then
         var play = state.config().rules().play();
         if (play.explored() && !allExplored) {
             for (VisionGrid g : grids) {
@@ -181,16 +183,25 @@ public final class VisionSystem implements MatchSystem {
             }
         }
         int visionPath = state.stats().path(CorePaths.VISION);
+        boolean night = NightFactor.active(state);
+        double nightScale = night ? NightFactor.multiplier(state.templates(), true) : 1;
+        int lightPath = night ? state.stats().path(CorePaths.VISION_LIGHT) : -1;
         for (int handle : buildings.handles()) {
             int faction = buildings.faction(handle);
             if (faction < 0 || faction >= grids.length || buildings.state(handle) < BuildingStore.CONSTRUCTING) {
                 continue;
             }
-            double range = CorePaths.DEFAULT_VISION;
+            double range = CorePaths.DEFAULT_VISION * nightScale; // a template without a range: the default, dimmed
             if (visionPath >= 0) { // the faction's value: a phase's +2 vision reaches its buildings (TECH-02)
                 double v = state.stats().blockValue(buildings.template(handle), faction, visionPath);
                 if (!Double.isNaN(v)) {
-                    range = v;
+                    range = v; // at night the faction's night modifier has scaled it already
+                }
+            }
+            if (lightPath >= 0) { // a torch or a campfire: the light's radius holds at night (MATCH-16)
+                double light = state.stats().blockValue(buildings.template(handle), faction, lightPath);
+                if (!Double.isNaN(light) && light > range) {
+                    range = light;
                 }
             }
             int[] s = {
