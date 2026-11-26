@@ -6,15 +6,21 @@ import static dev.strategos.gametest.suites.Units.core;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.SetControl;
 import dev.strategos.core.protocol.SpawnBuilding;
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.Train;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.VisionDelta;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
@@ -26,6 +32,7 @@ import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
@@ -66,7 +73,9 @@ public final class CoopReplicationTests {
         var centre = new TemplateId("strategos:building/civic_centre");
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f0, 4, 4, 0));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f1, 26, 26, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, f0, new Vec2d(13, 13), 1, 0));
         long[] revokedAt = {-1};
+        int[] delegatedUnit = {0};
         h.startSequence()
                 .thenWaitUntil(() -> check(
                         kit.ready() && core(rt).queries().buildings().size() == 2,
@@ -152,15 +161,26 @@ public final class CoopReplicationTests {
                                 "join confused primary faction with recipient identity");
                     }
                     check(authority(kit, 2).controlsFaction(0), "initial control grant absent");
-                    kit.sendCommands(0, new CommandBatch(1, List.of(new SetControl(p2, false))));
+                    delegatedUnit[0] = core(rt).queries().unitHandlesOf(f0)[0];
+                    kit.sendCommands(
+                            2,
+                            new CommandBatch(
+                                    1, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(16, 13)))));
                 })
+                .thenWaitUntil(() -> check(feedback(kit, 1, CommandOutcome.ACCEPTED), "delegated move was refused"))
+                .thenExecute(() -> kit.sendCommands(0, new CommandBatch(1, List.of(new SetControl(p2, false)))))
                 .thenWaitUntil(() -> check(!authority(kit, 2).controlsFaction(0), "revoke did not reach its recipient"))
                 .thenExecute(() -> {
                     var changed = authority(kit, 2);
                     check(changed.primaryFaction() == 1 && changed.controlsFaction(1), "revoke lost primary authority");
                     revokedAt[0] = changed.tick();
-                    kit.sendCommands(1, new CommandBatch(1, List.of(new SetControl(p2, true))));
+                    kit.sendCommands(
+                            2,
+                            new CommandBatch(
+                                    2, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(20, 13)))));
                 })
+                .thenWaitUntil(() -> check(feedback(kit, 2, CommandOutcome.REJECTED), "revoked move was accepted"))
+                .thenExecute(() -> kit.sendCommands(1, new CommandBatch(1, List.of(new SetControl(p2, true)))))
                 .thenWaitUntil(() -> check(
                         authority(kit, 2).controlsFaction(0)
                                 && authority(kit, 2).tick() > revokedAt[0],
@@ -182,6 +202,13 @@ public final class CoopReplicationTests {
                     kit.close();
                 })
                 .thenSucceed();
+    }
+
+    private static boolean feedback(MultiplayerHarness kit, int sequence, CommandOutcome outcome) {
+        return kit.payloads(2, FeedbackPayload.class).stream()
+                .anyMatch(payload -> payload.message() instanceof Feedback result
+                        && result.clientSeq() == sequence
+                        && result.outcome() == outcome);
     }
 
     private static PlayerAuthority authority(MultiplayerHarness kit, int player) {

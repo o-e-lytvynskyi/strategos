@@ -119,7 +119,15 @@ an unpublished singleplayer world.
 
 In a fresh dedicated arena the owner confirmed that both clients could issue
 orders for the same faction. Grant and revoke between separate factions were
-not recorded individually. LAN entry and the allied victory round remain open.
+not recorded individually in that session.
+
+On 2026-11-26 the owner confirmed dedicated 2v2 start and full Open to LAN
+entry. The dedicated save at tick 53,932 recorded no surviving AI units, but
+29 standing or constructing buildings relevant to Conquest, including a civic
+centre, barracks and storehouses. Fields are excluded. The match remained in
+progress. The owner also reported allied volleys that dealt no damage and an
+RTS Escape path that did not open Share control. Grant receipt, allied pings
+and a completed live allied victory remain open.
 
 Copy the following fields once per session. Add observations from both
 clients and a link to evidence for every failed or ambiguous row. Escalate P0
