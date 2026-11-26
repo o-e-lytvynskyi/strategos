@@ -6,6 +6,14 @@ general toolchain is in [minecraft-mod.md](minecraft-mod.md), GameTest in
 `mod/src/devtools/` (the harness), `docs/spikes/S3-*.md` and `S4-*.md` (here `../spikes/`),
 `.github/workflows/scenario.yml`.
 
+## Escape from a custom RTS screen
+
+In Minecraft 1.21.1, `Minecraft.pauseGame(false)` opens the pause menu only
+when `Minecraft.screen` is null. Clear the RTS input screen before calling
+it. The RTS mode reinstalls its screen after the player closes the menu.
+Exercise the actual Escape key and menu entry in the client scenario so the
+test covers NeoForge screen initialization and the installed menu button.
+
 ## The client window steals focus
 
 GLFW focuses the window on show by default (`GLFW_FOCUS_ON_SHOW`), and on macOS it also activates

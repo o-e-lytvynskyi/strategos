@@ -3,7 +3,7 @@
 Planning delivery, 2026-10-28; implementation readiness reconciled 2026-10-29 against `main` at `267da40` (M5 delivered by PR #33).
 Inputs: [M7 cards](../roadmap/M7-multiplayer.md), [architecture](../04-architecture.md),
 [M6 specification](M6-first-skirmish.md), ADRs 0008–0010, 0014, 0016–0020, 0022–0023.
-Status: **independent foundations in progress**. On 2026-10-29 the operator requested the whole M7 and explicitly instructed development before assignment approval/merge. Claim PR #34 remains pending independent review. This exception permits available foundations; missing runtime dependencies and explicit product/acceptance decisions remain gated.
+Status: **implementation complete for hand-in**. The owner accepted the recorded native and cloud evidence on 2026-11-26. [PR #34](https://github.com/o-e-lytvynskyi/strategos/pull/34) carries the implementation for independent review and human merge. The original development authorization preceded claim approval on 2026-10-29.
 
 ## 0. Authority and implementation rules
 
@@ -1067,18 +1067,18 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T22 (2026-11-22) · [Roman assets](../art/roman.md) and engine coverage; Verify [45062739294](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062739294) passes 3,095 cases. T23 holds the visual verdict.
 - [x] T23 (2026-11-22) · The owner approved Roman styling, silhouettes and three 60-block frames. [Canonical comparison 45063579435](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063579435) passes all frames and rejects all three inverted controls.
 - [ ] T24 · Floating platform gate (independent; not in M7 Done).
-- [ ] T25 · Milestone handoff and owner acceptance. Team Skirmish and the 2v2 lobby now ship alongside the existing solo and two-player routes. [L4 45646136029](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45646136029) passed all seven references and rejected all seven altered controls. [Server Slow 45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed the ten-second admission and allied-victory checks on the shipped map. The new GameTest completed in 9.102 s. The [live record](../testing/m7-multiplayer.md#acceptance-record) is incomplete.
+- [x] T25 (2026-11-26) · Milestone handoff and owner acceptance. The dedicated 2v2 start, LAN entry, co-op orders and reconnect were confirmed natively. The owner accepted the [recorded cloud checks](../testing/m7-multiplayer.md#acceptance-record) for the remaining observations. The compact Team Skirmish passed the ten-second admission gate and both allied victory messages in [Server Slow 45734144707](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144707). [Verify 45734590049](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734590049) passed the allied grant and revoke transport checks. [L4 45734872668](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734872668) passed the actual RTS Escape and Share control entry plus all four golden comparisons and altered controls.
 
 ## 6. Acceptance checklist
 
-- [ ] Every M7 runtime card criterion in §5.2 is demonstrated; no unexecuted contract test is called runtime evidence.
+- [x] M7 runtime card evidence in §5.2 is complete under the owner's recorded hand-in decision.
 - [x] Recipient and reconnect regression matrix passes on the server adapter, including full/delta/query/reconnect/deferred output.
 - [x] Commander guards pass with positive controls, actual Sodium movement/fog and integrated `-Pcompat` Verify.
 - [x] S11 mock and two-real-client comparison complete. Every client passed E and tier 4 stays in reserve.
 - [x] PERF-10 normal and stress gates passed at unchanged thresholds and are [archived](../../perf/m7/README.md). The underfilled diagnostics remain recorded.
 - [x] ART-03 blueprint/icon/golden checks passed. The owner approved the Roman look and silhouettes.
-- [ ] Dedicated two-client acceptance covers allied victory, co-op, pings and mid-fight reconnect; no P0/P1 remains open.
-- [ ] V/S and all change-type gates pass; branch/card/spec/KB/inventory records agree; handoff names residual M8 work.
+- [x] The [acceptance record](../testing/m7-multiplayer.md#acceptance-record) combines native observations and cloud evidence for allied victory, co-op, pings and reconnect. The owner accepted this coverage for hand-in, with no open P0/P1.
+- [x] [Final V](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45735638010), [full S](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144707) and the applicable L4/L6 gates pass. Branch, card, specification, KB and inventory records cover the hand-in and residual M8 work. The inherited M6 Claims/Records finding is in the branch record.
 - [ ] QA-14 tracked on its own timing/claim with owner decision; never used to block or falsely complete M7.
 
 ## 7. Risks and fallbacks

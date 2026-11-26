@@ -1,29 +1,27 @@
 # M7 on dev/lev1pes/m7
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/m7 · **Work:** M7 · **Base:** main @ 267da40 · **Claimed:** 2026-10-29 · **Status:** in progress
+**Developer:** lev1pes · **Branch:** dev/lev1pes/m7 · **Work:** M7 · **Base:** main @ 267da40 · **Claimed:** 2026-10-29 · **Status:** ready for review
 
 **Note:** whole M7 requested by the operator on 2026-10-29; draft [PR #34](https://github.com/o-e-lytvynskyi/strategos/pull/34); explicit pre-merge development authorization persists on resume. Assignment is represented by this branch file after main removed the shared registry.
 
 ## Now
 
-- **2026-11-26 live follow-up:** The owner confirmed dedicated 2v2 start and Open to LAN. They reported ineffective Escape access to Share control, allied arrows, and a conquest match still running after destroying the visible troops and producers. Team vision remains FOW-02. T25 is open while the reproduced UI and targeting defects are addressed in the cloud.
+- **T25 acceptance:** The owner accepted the [native and cloud evidence](../testing/m7-multiplayer.md#acceptance-record) for hand-in on 2026-11-26. The compact Team Skirmish passed the ten-second admission and allied victory checks. The allied grant and revoke passed on real server connections, and the actual client opened Share control via Escape from RTS. Shared team vision remains M8 FOW-02.
 
-- **T25 in progress:** Team Skirmish ships a four-start map and a separate 2v2 lobby preset. The solo map and two-player lobby remain available. [Slow/Soak 45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed all 29 server slow tests, including the team launch, admission within ten seconds and terminal victory for both allied recipients. Live acceptance remains open.
-
-- **Milestone:** M7 Multiplayer; 26 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer. All 27 required implementation steps are complete. The separate QA-14 platform decision is T24. See the [specification](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
-- **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. UI-15 human two-client acceptance is T25. Tests, builds and client runs stay cloud-only; optional T24 stays in scope.
+- **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. Tests and builds stay in the cloud. QA-14 follows its separate schedule.
 
 - **Previously finished:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
 - **Last finished task:** T16 channel budgets and live summary deferral. Verify 45058126895 passes 3,089 cases on c2d56f5b.
-- **T19 complete:** The [two-client protocol](../testing/m7-multiplayer.md) and step-to-evidence review pass Verify 45060561545 (3,089 cases, zero failures, errors or skips). QA-15 L7 stays T25.
+- **T19 complete:** The [two-client protocol](../testing/m7-multiplayer.md) and step-to-evidence review pass Verify 45060561545 (3,089 cases, zero failures, errors or skips). The protocol records the evidence accepted at T25.
 - **T22 complete:** Verify 45062739294 on d4bb32b5 passes 3,095 cases, including Roman materials, all seven buildings, construction, damage/restore/repair and command-card icons. T23 is complete too. The owner approved the Roman look and all three inspected 60-block frames from 45063031385. Canonical run 45063579435 passes at maximum NMSE 1.9631e-6 (limit 1e-5), and rejects all three inverted controls.
 - **T17 complete:** S11 cloud measurement 45062182584 verified all four 60-second scenes and four peers; the highest per-peer gameplay mean was 34,341.80 B/s under the 102,400 B/s limit. T18 confirms the native packet accounting and keeps tier 4 in reserve.
 - **T18 complete:** The dedicated server and two native clients measured all four S11 scenes. Eight peer means pass E, up to 62,639.93 B/s. Pan travelled 39.2 and 39.8 blocks/game-second. Tier 4 stays in reserve.
 - **T20 complete:** T20 adds the 24,000-tick four-faction measurement, 2× stress and existing path-latency checks. Diagnostics 45064656511 and 45068257346 exposed workload underfill. Exact-census PERF-10 45088024574 and paired JMH 45088571229 passed on bd23adc2. The AMD EPYC 7763 hosted runner passed the A–E, 2× stress, workload and path-latency checks. Host C p95 was 6.748 ms normal and 10.505 ms stress. The largest E mean was 6,771 B/s, with order latency p95 of three ticks. Client-profile Verify 45088028364 passes 3,096 cases on that commit. The owner accepted this run on 2026-11-25. See the [reference reports](../../perf/m7/README.md).
 - **T21 complete:** T21 adds the recipient/reconnect inventory. Canonical lobby 45065058405 selects Roman on production transport with seven zero-diff frames and seven rejected controls. The actual Sodium co-op scenario 45064693729 passes with eight inspected frames. Server 45064683957 passes 3,095 cases, client 45065907954 passes 3,096, and full S 45064689520 passes 23 jobs, 249 cases, all 20 replayed AI seeds and 896,421 ticks. The integrated client-profile Verify [45632292032](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45632292032) passed 3,096 tests, including the 323-case GameTest batch, on `869f3884`. Ordinary Verify [45634199109](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45634199109) passed the same totals on the T20 evidence commit. Full S [45629092616](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45629092616) passed all 23 jobs, 249 nightly cases and all 20 exact-commit AI seeds across 896,421 ticks. The first three Verify dispatches stopped at dependency or formatter setup before tests. The same-branch checksum-approved formatter artifact 44417846067 restored the pinned formatter for the successful runs.
 - **T24 timing:** Keep the owner's optional QA-14 request in scope. The M6 playability verdict unblocks ART-03. The separate MVP acceptance still requires the QA-13 playtest record; T24 is due at the formal MVP exit or 2027-Q2 and proceeds on its own claim.
-- **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
+- **Merged from main last:** `e18bcddb`, via `869f3884`. The final client-profile Verify [45735638010](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45735638010) on `cc1296e7` passed all 3,099 cases, including 323 GameTests, with zero failures, errors or skips. It published the production playtest jar.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -54,6 +52,10 @@ or replication privacy; those retain their own integration tests and dependencie
 The owner confirmed dedicated 2v2 admission and Open to LAN. Commit `47230968` closes the RTS screen before opening Minecraft's pause menu and applies diplomacy when choosing combat targets. The Sodium scenario [45731571127](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731571127) passed the new Escape assertion. The allied-arrow regression, Conquest and AlliedWave tests also passed. The extended allied-order transport test failed in [45732644401](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45732644401). It now reports missing feedback separately from a rejection. T25 remains open.
 
 Slow/Soak [45731571141](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731571141) measured 12.265 seconds at Team Skirmish admission against the existing ten-second limit. The separate team map now uses 384 × 256 blocks and 96 tiles, with the four starts and their relative positions preserved. The cloud generator [45733256075](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45733256075) verified its terrain hash. Client Verify [45734144026](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144026), Slow/Soak [45734144707](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144707) and paired JMH [45731885955](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731885955) are the follow-up runs.
+
+Verify [45735638010](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45735638010) confirmed the three allied-order cases. A hidden unit returns `UNKNOWN_TARGET` while the grant is active. A scout from the recipient's primary faction reveals the unit and the move is accepted. Once revoked, the still-visible unit returns `NOT_OWNER`. L4 [45734872668](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734872668) confirmed the Escape path into Share control, four passing goldens and four rejected altered controls. All eight frames were inspected. Paired JMH [45731885955](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731885955) passed the existing timing and allocation gates across 30 configurations and 28 methods. The server slow phase confirmed both admissions within ten seconds and both allied victory messages, with all 29 server GameTests passing.
+
+Full Slow/Soak [45734144707](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144707) passed all 23 jobs, 250 slow and core replay cases, and 20 distinct AI seeds. The aggregate contains 896,421 ticks and matches the exact workflow commit `4b37402d`. The final Verify commit `cc1296e7` has identical production core and mod trees. The owner accepted the combined evidence for hand-in. The roadmap check passes all 245 cards. For the owner item 6 records the inherited M6 Claims/Records failure.
 
 ### 2026-11-25 — Confirm the optimized import and lobby visuals
 
@@ -568,7 +570,7 @@ The owner accepted 45088024574. The archive passes `tools/m7_perf_reports.py` an
 
 1. Independently review and merge the assignment PR. The operator explicitly waived the development wait in this session; independent review and human merge remain required.
 2. Planning PR #32 and persistence PR #30 are delivered on current main. D-20 was explicitly resolved in this M7 session on 2026-10-30: dedicated plus LAN, one active match. Reconcile its main STATE record at review. D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict and art acceptance remain separate owner gates.
-3. Later two-client measurement and acceptance require the owner's clients and the completed hardening prerequisites. No platform-port decision, public release or performance baseline change is included.
+3. The two-client measurement is recorded in S11. The owner accepted the T25 evidence on 2026-11-26. QA-14 remains an independent platform decision.
 
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
@@ -578,14 +580,16 @@ The owner accepted 45088024574. The archive passes `tools/m7_perf_reports.py` an
 
 7. **Resolved 2026-11-16:** full cloud soak 43763260481 passed the complete 20-seed set and aggregate evidence gate. The operator authorized the repair and continuation; no decision is pending here. Review the workflow/harness changes normally with the M7 hand-in.
 
-8. Resolved 2026-11-22. The owner approved the three inspected Linux/llvmpipe team HUD frames. T25 retains the real two-client ping acceptance.
+8. Resolved 2026-11-22. The owner approved the three inspected Linux/llvmpipe team HUD frames. The owner accepted the cloud ping evidence for T25 hand-in on 2026-11-26.
 
 9. D-03 and artwork scope resolved 2026-11-22. The first civilisation is Roman antiquity. The owner described M6 as playable but difficult and delegated all ART-03 assets to this session. The existing vanilla-faithful D-04 direction applies. QA-13 retains its other release-candidate checks.
 
-10. **T25 live acceptance remains open.** The owner approved the separate Team Skirmish package and 2v2 lobby preset on 2026-11-25 after the initial deferral. Server-side admission and allied victory pass. The team lobby opened in the local production-jar session before Computer Use stopped. Record a complete live allied round, separate-faction grant and revoke, LAN entry and outstanding per-client observations before hand-in.
+10. **Resolved 2026-11-26.** The owner approved the combined cloud and recorded native results for T25 hand-in. The evidence records which details were observed natively.
 
 ## Decisions taken
 
+- **2026-11-26, T25 hand-in.** Use the recorded native observations and automated team victory, ping, control and reconnect evidence as accepted by the owner. A full native replay of the protocol would supersede this decision if the owner requests one.
+- **2026-11-26, compact Team Skirmish.** Remove unused northern and southern terrain to reduce import work and retain the original ten-second admission budget. The four starts keep their relative positions. Revert the generator and matching 96-tile package together to restore the previous extent.
 - **2026-11-25, shipped 2v2.** The owner delegated the decision to complete the allied match. Ship Team Skirmish as a separate four-start map with a dedicated lobby preset. The original solo map and two-player preset retain their existing files and configuration. The team map was generated by [45642135184](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45642135184). To revert, remove the team preset and package together.
 - **2026-11-25, lobby entry golden.** Adopt the inspected Linux/llvmpipe entry frame from [45643900024](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45643900024). The new button is the only changed frame. The other six frames matched exactly, including the existing two-player flow. Undo by reverting the entry golden with the button. Keep the existing threshold and altered-image guard.
 

@@ -6,8 +6,9 @@ MVP are coarser by design and are refined at the review that opens their milesto
 
 Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
 It defines tasks and contracts for review; it did not itself approve implementation.
-MATCH-06 and NET-02 are `done`; QA-15 and NET-03 are `in_progress` under the continuing M7 development instruction;
-other card statuses and their owner decision gates remain explicit below.
+Runtime cards are complete for hand-in. On 2026-11-26 the owner accepted the combined
+[native and cloud evidence](../testing/m7-multiplayer.md#acceptance-record) in place of a repeat
+two-client round. QA-14 follows its separate schedule.
 
 ## Milestone
 
@@ -157,7 +158,10 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. In a real two-client session, a client that drops its connection rejoins mid-fight (L7,
      acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** NET-02, CORE-07 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-26. The owner confirmed a native reconnect within 219 seconds. The
+  [recipient and reconnect inventory](../testing/m7-multiplayer.md#recipient-and-reconnect-regression-inventory)
+  records the automated order, expiry, camera, group and private-view checks accepted for hand-in.
 
 #### NET-06 · Command validation hardening and fuzzing
 - **Value:** A modified client cannot cheat with forged or flooded commands.
@@ -231,10 +235,11 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   3. The owner's two-client session uses pings (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** UI-20, NET-02 · **Size:** M ·
   **Tier:** T1
-- **Status:** in_progress
-- **Implementation:** 2026-11-22 — T14 server and client checks pass, and the proposed
+- **Status:** done
+- **Done:** 2026-11-26. T14 server and client checks pass, and the proposed
   llvmpipe frames compare at zero difference. See [T14 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
-  The owner approved the three Linux/llvmpipe goldens on 2026-11-22. Cloud 45059965221 passes the approved comparison and all altered-frame controls. The T25 two-client ping acceptance remains pending.
+  The owner approved the three Linux/llvmpipe goldens on 2026-11-22. Cloud 45059965221 passes
+  the approved comparison and all altered-frame controls. The owner accepted the cloud ping evidence for hand-in.
 
 #### AI-06 · AI in team games
 - **Value:** AI allies and opponents behave sensibly in team games.
@@ -265,8 +270,9 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. Captured payloads can be asserted per player (L3).
   3. The extended protocol is used at the M7 acceptance (L7, acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** QA-19, NET-02 · **Size:** M · **Tier:** T1
-- **Engine evidence (2026-11-18):** T6 cloud verify 44300748747, 2,734 cases without failures/errors/skips; four acknowledging players/private captures/actual byte counters/owned cleanup 1.099 s under 30 s, plus atomic admission and hostile ingress with positive controls. L7 protocol/use remains T19/T25.
-- **Status:** in_progress
+- **Engine evidence (2026-11-18):** T6 cloud verify 44300748747, 2,734 cases without failures/errors/skips; four acknowledging players/private captures/actual byte counters/owned cleanup 1.099 s under 30 s, plus atomic admission and hostile ingress with positive controls. The owner accepted the recorded [T25 protocol results](../testing/m7-multiplayer.md#acceptance-record) for hand-in.
+- **Status:** done
+- **Done:** 2026-11-26. The multiplayer kit and protocol evidence passed T6, T19 and T25.
 
 #### PERF-10 · Multiplayer perf and bandwidth gate
 - **Value:** Four-player matches stay smooth for every player.

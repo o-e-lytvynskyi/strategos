@@ -1,5 +1,12 @@
 # Recipient boundaries and full joins
 
+An M7 control grant expands authority while the recipient keeps their primary
+faction's vision. An allied unit under fog refuses a command with
+`UNKNOWN_TARGET` even when a grant exists. In a transport test, put a scout
+from the recipient's faction near the target and wait for recipient visibility
+before checking an accepted order. Keep the scout there for revocation so
+`NOT_OWNER` establishes that the grant was removed.
+
 A UUID identifies an account, not the origin of a queued response. Capture the
 actual server player and connection, runtime, seat, primary faction and live
 recipient generation when producing a frame. Revalidate before sending it.

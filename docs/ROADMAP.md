@@ -445,8 +445,8 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 
 Cards: [roadmap/M7-multiplayer.md](roadmap/M7-multiplayer.md#cards). 13 cards, at most 51 card-days.
 
-Planning spec: [M7 Multiplayer](milestones/M7-multiplayer.md). Tasks and contracts are specified
-for review; the cards below remain `proposed` until owner approval and opening for claims.
+Planning spec: [M7 Multiplayer](milestones/M7-multiplayer.md). The owner accepted the recorded
+native and cloud evidence for hand-in. QA-14 remains an independent platform decision gate.
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
@@ -454,13 +454,13 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | NET-02 | Match lobby on a dedicated server | L | MATCH-02, MATCH-06, NET-01, D-20 | done |
 | NET-03 | Per-player and per-faction state through the gateway | M | NET-08, MATCH-06 | done |
 | NET-04 | Spike S11: bandwidth and per-channel byte budgets | M | NET-03, QA-19, PERF-01 | done |
-| NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | in_progress |
+| NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | done |
 | NET-06 | Command validation hardening and fuzzing | M | CORE-03, NET-02 | done |
 | NET-09 | Commander hardening against modified clients | M | NET-02, QA-15 | done |
 | MATCH-06 | Teams, diplomacy and shared control | M | MATCH-03, CORE-01 | done |
-| UI-15 | Multiplayer HUD and pings | M | UI-20, NET-02 | in_progress |
+| UI-15 | Multiplayer HUD and pings | M | UI-20, NET-02 | done |
 | AI-06 | AI in team games | M | AI-05, MATCH-06 | done |
-| QA-15 | Multiplayer test kit | M | QA-19, NET-02 | in_progress |
+| QA-15 | Multiplayer test kit | M | QA-19, NET-02 | done |
 | PERF-10 | Multiplayer perf and bandwidth gate | S | NET-04, QA-15, PERF-09 | done |
 | ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | done |
 

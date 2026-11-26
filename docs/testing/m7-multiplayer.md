@@ -127,13 +127,24 @@ orders for the same faction. Grant and revoke between separate factions were
 not recorded individually in that session.
 
 On 2026-11-26 the owner confirmed dedicated 2v2 start and full Open to LAN
-entry. The owner reported that the AI had no visible unit-producing buildings
-and the match remained in progress. The later dedicated save, at tick 53,932,
+entry. The owner reported that the AI had no unit-producing buildings when
+they checked and the match remained in progress. The later dedicated save, at tick 53,932,
 recorded no surviving AI units and 29 standing or constructing buildings
 that count toward Conquest at that snapshot. Conquest excludes fields and
 decorations. The owner also reported allied volleys that dealt no damage and
 an RTS Escape path that did not open Share control. Grant receipt, allied
 pings and a completed live allied victory remain open.
+
+For the 2026-11-26 hand-in, the owner accepted the live observations above
+together with the cloud evidence in Steps 1–6 in place of another native
+two-client round. The compact Team Skirmish server test verified admission
+inside ten seconds and both allied connections' victory messages. The
+[allied-order GameTest](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734590049)
+verified the hidden-unit rejection, successful visible-unit order and
+revocation. The [actual client scenario](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734872668)
+opened Share control through the RTS pause menu. Client-side reconnect and
+ping details use the recorded automated evidence above. The native session
+did not record those details separately or complete an allied victory.
 
 Copy the following fields once per session. Add observations from both
 clients and a link to evidence for every failed or ambiguous row. Escalate P0
