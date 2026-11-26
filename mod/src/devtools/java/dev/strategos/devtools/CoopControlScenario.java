@@ -22,10 +22,15 @@ import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.menu.ControlSharingScreen;
+import dev.strategos.mod.client.rts.RtsScreen;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 /** Actual P1/F0 admission and private/palette frames; named-ally DTOs exercise sharing presentation only. */
 final class CoopControlScenario implements Scenario {
@@ -197,7 +202,7 @@ final class CoopControlScenario implements Scenario {
             ctx.result.addProperty("primaryFaction", 0);
             ctx.result.addProperty(
                     "source",
-                    "actual co-op admission and palette/private frames; decoded named-ally visual DTO only for sharing panel; actual full-join DTO replay for client reset contract");
+                    "actual co-op admission and palette/private frames; RTS Escape and pause-menu entry to the sharing panel with decoded named-ally visual DTOs; actual full-join DTO replay for client reset contract");
             ctx.result.addProperty("ok", captures == 8);
             return true;
         }
@@ -223,7 +228,24 @@ final class CoopControlScenario implements Scenario {
                 var visualNames =
                         WireCodec.decode(MatchPresentation.WIRE, WireCodec.encode(MatchPresentation.WIRE, names));
                 StrategosClient.presentation(visualNames);
-                mc.setScreen(new ControlSharingScreen(null));
+                if (!(mc.screen instanceof RtsScreen rts)) return failure(ctx, "RTS screen unavailable before sharing");
+                rts.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+                if (!(mc.screen instanceof PauseScreen pause)) return failure(ctx, "RTS Escape did not open pause");
+                var label = Component.translatable("strategos.control_sharing.title");
+                for (var child : pause.children()) {
+                    if (child instanceof Button button
+                            && button.active
+                            && button.getMessage().equals(label)) {
+                        pause.mouseClicked(
+                                button.getX() + button.getWidth() / 2.0,
+                                button.getY() + button.getHeight() / 2.0,
+                                GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                        break;
+                    }
+                }
+                if (!(mc.screen instanceof ControlSharingScreen))
+                    return failure(ctx, "pause menu did not open Share control");
+                ctx.result.addProperty("shareControlFromRts", true);
             }
             if (phase < 3) mc.setScreen(null);
         }

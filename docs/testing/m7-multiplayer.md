@@ -32,6 +32,11 @@ this playtest.
 | 5. Reclaim mid-fight | During an ongoing fight, B saves a control group and camera pose, then disconnects. A stays connected and watches B's existing orders continue. B connects with the same account inside the configured grace period (300 seconds by default). Confirm the same seat, authorised surviving group handles, camera, continuing fight and refreshed private view. | [Reclaim, timeout and transport](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918199224), [actual camera/group restoration](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918953137) |
 | 6. Commander and UI | Show fog in both views and pan the commander around a map boundary. Confirm body/camera correction and ordinary input recovery after opening chat and pause. In the approved 60-block ART-03 scene identify each silhouette and faction colour. | [Commander compatibility](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968393924), [actual Sodium movement](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968610434) and [fog](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968388209) |
 
+For Step 4, open **Share control** via Escape from RTS mode. The grant takes
+effect when the recipient's authority updates. Move a scout from the
+recipient's primary faction into sight of the delegated unit before issuing
+its order. Each faction still uses its own vision in M7.
+
 ## S11 live capture (T18)
 
 Use an isolated dedicated dev server with dev-only map resources and two real client
@@ -122,12 +127,13 @@ orders for the same faction. Grant and revoke between separate factions were
 not recorded individually in that session.
 
 On 2026-11-26 the owner confirmed dedicated 2v2 start and full Open to LAN
-entry. The dedicated save at tick 53,932 recorded no surviving AI units, but
-29 standing or constructing buildings relevant to Conquest, including a civic
-centre, barracks and storehouses. Fields are excluded. The match remained in
-progress. The owner also reported allied volleys that dealt no damage and an
-RTS Escape path that did not open Share control. Grant receipt, allied pings
-and a completed live allied victory remain open.
+entry. The owner reported that the AI had no visible unit-producing buildings
+and the match remained in progress. The later dedicated save, at tick 53,932,
+recorded no surviving AI units and 29 standing or constructing buildings
+that count toward Conquest at that snapshot. Conquest excludes fields and
+decorations. The owner also reported allied volleys that dealt no damage and
+an RTS Escape path that did not open Share control. Grant receipt, allied
+pings and a completed live allied victory remain open.
 
 Copy the following fields once per session. Add observations from both
 clients and a link to evidence for every failed or ambiguous row. Escalate P0
