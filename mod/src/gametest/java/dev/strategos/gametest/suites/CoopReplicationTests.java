@@ -11,6 +11,7 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.PlayerAuthority;
+import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.SetControl;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -38,6 +39,7 @@ import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
+import org.jspecify.annotations.Nullable;
 
 /** T8.3a: real four-player private transport with non-identity primaries and a control-only ally. */
 public final class CoopReplicationTests {
@@ -167,7 +169,14 @@ public final class CoopReplicationTests {
                             new CommandBatch(
                                     1, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(16, 13)))));
                 })
-                .thenWaitUntil(() -> checkFeedback(kit, 1, CommandOutcome.ACCEPTED))
+                .thenWaitUntil(() -> checkFeedback(kit, 1, CommandOutcome.REJECTED, RejectReason.UNKNOWN_TARGET))
+                .thenExecute(() ->
+                        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, f1, new Vec2d(13, 15), 1, 0)))
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().visibleUnit(1, delegatedUnit[0]), "allied scout did not reveal the worker"))
+                .thenExecute(() -> kit.sendCommands(
+                        2, new CommandBatch(2, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(16, 13))))))
+                .thenWaitUntil(() -> checkFeedback(kit, 2, CommandOutcome.ACCEPTED, null))
                 .thenExecute(() -> kit.sendCommands(0, new CommandBatch(1, List.of(new SetControl(p2, false)))))
                 .thenWaitUntil(() -> check(!authority(kit, 2).controlsFaction(0), "revoke did not reach its recipient"))
                 .thenExecute(() -> {
@@ -177,9 +186,9 @@ public final class CoopReplicationTests {
                     kit.sendCommands(
                             2,
                             new CommandBatch(
-                                    2, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(20, 13)))));
+                                    3, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(20, 13)))));
                 })
-                .thenWaitUntil(() -> checkFeedback(kit, 2, CommandOutcome.REJECTED))
+                .thenWaitUntil(() -> checkFeedback(kit, 3, CommandOutcome.REJECTED, RejectReason.NOT_OWNER))
                 .thenExecute(() -> kit.sendCommands(1, new CommandBatch(1, List.of(new SetControl(p2, true)))))
                 .thenWaitUntil(() -> check(
                         authority(kit, 2).controlsFaction(0)
@@ -204,10 +213,13 @@ public final class CoopReplicationTests {
                 .thenSucceed();
     }
 
-    private static void checkFeedback(MultiplayerHarness kit, int sequence, CommandOutcome outcome) {
+    private static void checkFeedback(
+            MultiplayerHarness kit, int sequence, CommandOutcome outcome, @Nullable RejectReason reason) {
         for (var payload : kit.payloads(2, FeedbackPayload.class)) {
             if (payload.message() instanceof Feedback result && result.clientSeq() == sequence) {
-                check(result.outcome() == outcome, "expected " + outcome + " but received " + result);
+                check(
+                        result.outcome() == outcome && result.reason() == reason,
+                        "expected " + outcome + " (" + reason + ") but received " + result);
                 return;
             }
         }

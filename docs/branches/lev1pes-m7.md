@@ -49,6 +49,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-26 — Recheck native 2v2 findings in the cloud
+
+The owner confirmed dedicated 2v2 admission and Open to LAN. Commit `47230968` closes the RTS screen before opening Minecraft's pause menu and applies diplomacy when choosing combat targets. The Sodium scenario [45731571127](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731571127) passed the new Escape assertion. The allied-arrow regression, Conquest and AlliedWave tests also passed. The extended allied-order transport test failed in [45732644401](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45732644401). It now reports missing feedback separately from a rejection. T25 remains open.
+
+Slow/Soak [45731571141](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731571141) measured 12.265 seconds at Team Skirmish admission against the existing ten-second limit. The separate team map now uses 384 × 256 blocks and 96 tiles, with the four starts and their relative positions preserved. The cloud generator [45733256075](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45733256075) verified its terrain hash. Client Verify [45734144026](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144026), Slow/Soak [45734144707](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45734144707) and paired JMH [45731885955](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45731885955) are the follow-up runs.
+
 ### 2026-11-25 — Confirm the optimized import and lobby visuals
 
 On `442efe8f`, client-profile Verify [45650068357](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45650068357) passed and published the production playtest jar. On the same runtime, canonical L4 [45650588329](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45650588329) passed both the normal and altered-golden checks. Full-ci [45649126601](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45649126601) passed all 29 GameTests in its server slow job. The shipped Team Skirmish case completed in 9.102 seconds, including its 10-second admission check and allied victory. Existing co-op and four-human admission cases completed in 5.522 and 4.829 seconds. Core replay soak passed. The workflow completed all 23 jobs. Its aggregate matches exact commit `9e457c10`, with all 20 seeds, 20 matches and 896,421 ticks. Live T25 observations remain open.
