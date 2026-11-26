@@ -206,10 +206,12 @@ public final class MotionSystem implements MatchSystem {
             switch (mode[i]) {
                 case WALKING -> stride(s, i);
                 case SPENT -> {
-                    if (s.paths().status(i) == PathStatus.NO_PATH) {
+                    boolean nowhere = s.paths().status(i) == PathStatus.NO_PATH;
+                    if (nowhere) {
                         arrive(s, i, entities.handleAt(i)); // nowhere nearer to go
                     }
-                    ladder.net(s, i, entities.handleAt(i)); // QA-12: it walks, in the state's eyes, all the same
+                    // QA-12: it walks, in the state's eyes, all the same; an arrival this tick fails no order
+                    ladder.net(s, i, entities.handleAt(i), !nowhere);
                     settle(s, i); // a spent partial path: the next request pass asks again
                 }
                 default -> {
@@ -434,6 +436,8 @@ public final class MotionSystem implements MatchSystem {
                             && d <= (s.orders().group(i) != 0 ? ARRIVE_CROWD : ARRIVE_ALONE));
         }
         if (landed) {
+            // the place it lands on counts for the net progress too, but a walk that ends in arrival fails no order
+            ladder.net(s, i, handle, false);
             if ((flags[i] & FOLLOWING) != 0) {
                 paths.advance(i);
                 if ((flags[i] & LAST) != 0) {
@@ -446,7 +450,7 @@ public final class MotionSystem implements MatchSystem {
             }
         } else {
             ladder.climb(s, i, handle); // a nudge displaces it
-            ladder.net(s, i, handle);
+            ladder.net(s, i, handle, true);
         }
         if (moved || motion.x(i) != x || motion.z(i) != z || motion.y(i) != startY[i] || yaw != yaw0) {
             s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), yaw, STANDING);

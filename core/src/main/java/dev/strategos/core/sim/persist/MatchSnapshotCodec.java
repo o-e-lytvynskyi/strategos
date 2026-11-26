@@ -160,7 +160,10 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.optionalFieldOf("netZ", 0.0).forGetter(MotionStore.Ladder::netZ),
                     Codec.INT.optionalFieldOf("net", 0).forGetter(MotionStore.Ladder::net),
                     Codec.INT.optionalFieldOf("settle", 0).forGetter(MotionStore.Ladder::settle),
-                    Codec.LONG.optionalFieldOf("netOrder", 0L).forGetter(MotionStore.Ladder::netOrder))
+                    Codec.LONG.optionalFieldOf("netOrder", 0L).forGetter(MotionStore.Ladder::netOrder),
+                    Codec.DOUBLE.optionalFieldOf("netBest", 0.0).forGetter(MotionStore.Ladder::netBest),
+                    Codec.DOUBLE.optionalFieldOf("netAimX", 0.0).forGetter(MotionStore.Ladder::netAimX),
+                    Codec.DOUBLE.optionalFieldOf("netAimZ", 0.0).forGetter(MotionStore.Ladder::netAimZ))
             .apply(i, MotionStore.Ladder::new));
 
     /** Each field defaults to a unit that never touched terrain, the only motion an M0 save has. */

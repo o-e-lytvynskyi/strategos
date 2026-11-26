@@ -118,6 +118,13 @@ allocations) is in [rts-sim-perf.md](rts-sim-perf.md). The mod toolchain is in
   the ladder never left its first rung and the same invariant fired (M10 T25, horsemen boxed in at
   their base). Passing the last point of a route keeps the count (`MotionMoves.passedLast`,
   `StuckLadderTest.aTruncatedRouteAtTheUnitsFeetDoesNotRestartTheCount`).
+- A backstop that ends an order before the invariant fires must restart its count exactly where the
+  invariant does, or it runs out later than the invariant. QA-12's net-progress count restarted only
+  after 8 blocks of displacement, while the invariant restarts on any strictly nearer distance to
+  the target: units creeping into a crowd at one front point were failed 276 ticks too late (M10,
+  long AI matches). It now keeps the best squared distance and the target it was taken against
+  (both hashed while it runs), counts on landing ticks too, and a new order to the same place keeps
+  the count (an AI alternating Burn and Capture on one building restarted it every swap).
 
 ## Vision: COMMANDS phase runs before WORLD
 

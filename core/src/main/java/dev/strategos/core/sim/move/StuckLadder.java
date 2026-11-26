@@ -144,21 +144,45 @@ public final class StuckLadder {
     static final int NET_FAIL = FAIL + 20;
 
     /**
-     * The backstop (QA-12): counts a walking unit's ticks spent within {@value #NET} blocks of where the count began; at {@value #NET_FAIL} its order fails as the ladder's last rung does.
+     * The backstop (QA-12): counts a walking unit's ticks without net progress; at {@value #NET_FAIL} its order fails as
+     * the ladder's last rung does. Net progress is what the stall check of QA-02.3 counts: coming nearer the order's
+     * target than ever, or {@value #NET} blocks from the place that last counted. The count restarts on exactly those, so
+     * it runs out before that check does (a restart only on {@value #NET} blocks from where the count began ran out
+     * later than the check for a unit that crept nearer in a crowd and loitered there). {@code mayFail} is false on a
+     * tick the walk may end in arrival: the count runs, but the order is not failed beside the arrival.
      */
-    void net(MatchState s, int i, int handle) {
+    void net(MatchState s, int i, int handle, boolean mayFail) {
         MotionStore motion = s.motion();
         int count = motion.net(i);
         long order = orderKey(s, i);
-        if (count == 0
-                || motion.netOrder(i) != order
+        double tx = s.orders().targetX(i);
+        double tz = s.orders().targetZ(i);
+        double nearness = (tx - motion.x(i)) * (tx - motion.x(i)) + (tz - motion.z(i)) * (tz - motion.z(i));
+        boolean aimMoved = tx != motion.netAimX(i) || tz != motion.netAimZ(i);
+        // a new order to the same place is the same walk to the stall check (a bot that swaps a burn for a capture of
+        // the one building, and back, every few hundred ticks): the count goes on
+        boolean same = count != 0 && (motion.netOrder(i) == order || !aimMoved);
+        if (same && aimMoved) {
+            // a place traded in a group, a chased unit moving: the distance and the disc are measured afresh from
+            // here, the count goes on
+            motion.setNet(i, motion.x(i), motion.z(i), count, order);
+            motion.setNetBest(i, nearness, tx, tz);
+        }
+        if (!same
+                || nearness < motion.netBest(i)
                 || DetMath.length(motion.x(i) - motion.netX(i), motion.z(i) - motion.netZ(i)) >= NET) {
+            double best = same ? Math.min(nearness, motion.netBest(i)) : nearness;
             motion.setNet(i, motion.x(i), motion.z(i), 1, order);
+            motion.setNetBest(i, best, tx, tz);
             return;
         }
         if (count + 1 < NET_FAIL) {
             motion.setNet(i, motion.netX(i), motion.netZ(i), count + 1, order);
             return;
+        }
+        if (!mayFail) {
+            return; // a walk that ends in arrival this tick: no failure beside it, the next tick fails it if it walks
+            // on
         }
         motion.setNet(i, 0, 0, 0);
         s.countRung(Stuck.GIVE_UP);
