@@ -60,7 +60,8 @@ public final class MapgenDriver {
 
     private record Source(
             String name,
-            int size,
+            int sizeX,
+            int sizeZ,
             int height,
             int tile,
             List<String> palette,
@@ -110,6 +111,7 @@ public final class MapgenDriver {
                 yield new Source(
                         map,
                         ProvingGround.SIZE,
+                        ProvingGround.SIZE,
                         ProvingGround.HEIGHT,
                         ProvingGround.TILE,
                         ProvingGround.PALETTE,
@@ -128,12 +130,13 @@ public final class MapgenDriver {
                 yield new Source(
                         map,
                         FirstSkirmish.SIZE,
+                        g.sizeZ(),
                         FirstSkirmish.HEIGHT,
                         FirstSkirmish.TILE,
                         FirstSkirmish.PALETTE,
-                        g::block,
-                        g::top,
-                        g::lowestStored,
+                        g::mapBlock,
+                        g::mapTop,
+                        g::mapLowestStored,
                         g.startSlots(),
                         g.waypoints(),
                         FirstSkirmish.VERSION,
@@ -158,8 +161,8 @@ public final class MapgenDriver {
         }
         MapManifest manifest = new MapManifest(
                 "strategos:" + source.name(),
-                source.size(),
-                source.size(),
+                source.sizeX(),
+                source.sizeZ(),
                 0,
                 source.height(),
                 "minecraft:stone",

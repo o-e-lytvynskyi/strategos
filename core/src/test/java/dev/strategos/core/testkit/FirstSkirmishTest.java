@@ -93,7 +93,9 @@ final class FirstSkirmishTest {
         assertThat(manifest.startSlots())
                 .containsExactlyElementsOf(team.startSlots())
                 .hasSize(4);
-        assertThat(manifest.startSlots().subList(0, 2)).containsExactlyElementsOf(map.startSlots());
+        assertThat(manifest.sizeZ()).isEqualTo(256);
+        assertThat(manifest.sizeX()).isEqualTo(FirstSkirmish.SIZE);
+        assertThat(manifest.startSlots()).extracting(slot -> slot.z()).containsExactly(76, 179, 202, 53);
         assertThat(manifest.waypoints()).isEqualTo(team.waypoints());
         assertThat(manifest.terrainJobs()).isEqualTo(team.terrainJobs());
         assertThat(scenario.slots()).hasSize(4);

@@ -102,9 +102,11 @@ public final class FirstSkirmish {
     private final Map<String, MapWaypoint> waypoints = new TreeMap<>();
     private final List<StartSlot> startSlots;
     private final List<Integer> townOffsets;
+    private final int cropZ;
 
-    private FirstSkirmish(List<Integer> townOffsets) {
+    private FirstSkirmish(List<Integer> townOffsets, int cropZ) {
         this.townOffsets = townOffsets;
+        this.cropZ = cropZ;
         for (int x = 0; x < SIZE; x++) {
             for (int z = 0; z < SIZE; z++) {
                 int h = height(x, z, townOffsets);
@@ -149,12 +151,12 @@ public final class FirstSkirmish {
     }
 
     public static FirstSkirmish generate() {
-        return new FirstSkirmish(List.of(0));
+        return new FirstSkirmish(List.of(0), 0);
     }
 
     /** Two towns on each side, using the same mirrored terrain design as the solo map. */
     public static FirstSkirmish generateTeamSkirmish() {
-        return new FirstSkirmish(List.of(0, 126));
+        return new FirstSkirmish(List.of(0, 126), 64);
     }
 
     public static int mirror(int c) {
@@ -186,16 +188,36 @@ public final class FirstSkirmish {
         return highest;
     }
 
+    public int sizeZ() {
+        return SIZE - 2 * cropZ;
+    }
+
+    public byte mapBlock(int x, int y, int z) {
+        return block(x, y, z + cropZ);
+    }
+
+    public int mapTop(int x, int z) {
+        return top(x, z + cropZ);
+    }
+
+    public int mapLowestStored(int x, int z) {
+        return lowestStored(x, z + cropZ);
+    }
+
     public List<StartSlot> startSlots() {
-        return startSlots;
+        return startSlots.stream()
+                .map(start -> new StartSlot(start.x(), start.y(), start.z() - cropZ, start.yaw()))
+                .toList();
     }
 
     public Map<String, MapWaypoint> waypoints() {
-        return Map.copyOf(waypoints);
+        Map<String, MapWaypoint> mapped = new TreeMap<>();
+        waypoints.forEach((name, at) -> mapped.put(name, new MapWaypoint(at.x(), at.y(), at.z() - cropZ)));
+        return Map.copyOf(mapped);
     }
 
     public String terrainHash() {
-        return TerrainHash.of(SIZE, SIZE, HEIGHT, (x, y, z) -> block(x, y, z) & 0xFF);
+        return TerrainHash.of(SIZE, sizeZ(), HEIGHT, (x, y, z) -> mapBlock(x, y, z) & 0xFF);
     }
 
     /** The jobs the manifest documents and the checker verifies. */
@@ -222,7 +244,22 @@ public final class FirstSkirmish {
             jobs.add(TerrainJob.room(
                     mirror(ROOM[2]), mirror(ROOM[3] + offset), mirror(ROOM[0]), mirror(ROOM[1] + offset), 6, 9));
         }
-        return jobs;
+        if (cropZ == 0) return jobs;
+        return jobs.stream()
+                .map(job -> new TerrainJob(
+                        job.kind(),
+                        job.resource(),
+                        job.x0(),
+                        mapZ(job.z0()),
+                        job.x1(),
+                        mapZ(job.z1()),
+                        job.count(),
+                        job.size()))
+                .toList();
+    }
+
+    private int mapZ(int raw) {
+        return Math.clamp(raw - cropZ, 0, sizeZ() - 1);
     }
 
     private static TerrainJob river(int[] r, int fords) {
@@ -231,11 +268,11 @@ public final class FirstSkirmish {
 
     /** The terrain as block classes, as the mod's table classifies these blocks: for L1. */
     public VoxelWorld voxels() {
-        VoxelWorld world = new VoxelWorld(SIZE, HEIGHT, SIZE);
+        VoxelWorld world = new VoxelWorld(SIZE, HEIGHT, sizeZ());
         for (int x = 0; x < SIZE; x++) {
-            for (int z = 0; z < SIZE; z++) {
-                for (int y = 0; y <= top(x, z); y++) {
-                    byte b = block(x, y, z);
+            for (int z = 0; z < sizeZ(); z++) {
+                for (int y = 0; y <= mapTop(x, z); y++) {
+                    byte b = mapBlock(x, y, z);
                     if (b != AIR) {
                         world.set(x, y, z, classOf(b));
                     }
@@ -261,10 +298,10 @@ public final class FirstSkirmish {
         }
         List<MapChecker.Site> resources = new ArrayList<>(extra);
         for (int x = 0; x < SIZE; x++) {
-            for (int z = 0; z < SIZE; z++) {
+            for (int z = 0; z < sizeZ(); z++) {
                 int logs = 0;
-                for (int y = groundTop(x, z) + 1; y <= top(x, z); y++) {
-                    byte b = block(x, y, z);
+                for (int y = groundTop(x, z + cropZ) + 1; y <= mapTop(x, z); y++) {
+                    byte b = mapBlock(x, y, z);
                     if (b == LOG) {
                         logs++;
                     } else if (b == BUSH) {
@@ -276,26 +313,27 @@ public final class FirstSkirmish {
                 }
             }
         }
+        Map<String, MapWaypoint> mapWaypoints = waypoints();
         List<Map<String, MapWaypoint>> dropsites = new ArrayList<>();
         for (int k = 0; k < startSlots.size(); k++) {
             Map<String, MapWaypoint> sites = new TreeMap<>();
             for (String kind : List.of("wood", "stone", "iron", "food")) {
-                sites.put(kind, waypoints.get("dropsite_" + kind + "_" + k));
+                sites.put(kind, mapWaypoints.get("dropsite_" + kind + "_" + k));
             }
             dropsites.add(sites);
         }
         MapChecker.Columns columns = new MapChecker.Columns() {
             @Override
             public int groundTop(int x, int z) {
-                return FirstSkirmish.this.groundTop(x, z);
+                return FirstSkirmish.this.groundTop(x, z + cropZ);
             }
 
             @Override
             public boolean clear(int x, int z) {
-                return top(x, z) == groundTop(x, z);
+                return mapTop(x, z) == groundTop(x, z);
             }
         };
-        return new MapChecker.Input(startSlots, grids, columns, resources, dropsites, terrainJobs());
+        return new MapChecker.Input(startSlots(), grids, columns, resources, dropsites, terrainJobs());
     }
 
     private static short classOf(byte b) {
