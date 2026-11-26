@@ -167,7 +167,7 @@ public final class CoopReplicationTests {
                             new CommandBatch(
                                     1, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(16, 13)))));
                 })
-                .thenWaitUntil(() -> check(feedback(kit, 1, CommandOutcome.ACCEPTED), "delegated move was refused"))
+                .thenWaitUntil(() -> checkFeedback(kit, 1, CommandOutcome.ACCEPTED))
                 .thenExecute(() -> kit.sendCommands(0, new CommandBatch(1, List.of(new SetControl(p2, false)))))
                 .thenWaitUntil(() -> check(!authority(kit, 2).controlsFaction(0), "revoke did not reach its recipient"))
                 .thenExecute(() -> {
@@ -179,7 +179,7 @@ public final class CoopReplicationTests {
                             new CommandBatch(
                                     2, List.of(Move.replace(UnitSet.of(delegatedUnit[0]), new Vec2d(20, 13)))));
                 })
-                .thenWaitUntil(() -> check(feedback(kit, 2, CommandOutcome.REJECTED), "revoked move was accepted"))
+                .thenWaitUntil(() -> checkFeedback(kit, 2, CommandOutcome.REJECTED))
                 .thenExecute(() -> kit.sendCommands(1, new CommandBatch(1, List.of(new SetControl(p2, true)))))
                 .thenWaitUntil(() -> check(
                         authority(kit, 2).controlsFaction(0)
@@ -204,11 +204,14 @@ public final class CoopReplicationTests {
                 .thenSucceed();
     }
 
-    private static boolean feedback(MultiplayerHarness kit, int sequence, CommandOutcome outcome) {
-        return kit.payloads(2, FeedbackPayload.class).stream()
-                .anyMatch(payload -> payload.message() instanceof Feedback result
-                        && result.clientSeq() == sequence
-                        && result.outcome() == outcome);
+    private static void checkFeedback(MultiplayerHarness kit, int sequence, CommandOutcome outcome) {
+        for (var payload : kit.payloads(2, FeedbackPayload.class)) {
+            if (payload.message() instanceof Feedback result && result.clientSeq() == sequence) {
+                check(result.outcome() == outcome, "expected " + outcome + " but received " + result);
+                return;
+            }
+        }
+        check(false, "no feedback for allied player command " + sequence);
     }
 
     private static PlayerAuthority authority(MultiplayerHarness kit, int player) {

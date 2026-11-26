@@ -3,123 +3,123 @@
     "dropsite_food_0": {
       "x": 54,
       "y": 16,
-      "z": 156
+      "z": 92
     },
     "dropsite_food_1": {
       "x": 329,
       "y": 16,
-      "z": 227
+      "z": 163
     },
     "dropsite_food_2": {
       "x": 54,
       "y": 16,
-      "z": 282
+      "z": 218
     },
     "dropsite_food_3": {
       "x": 329,
       "y": 16,
-      "z": 101
+      "z": 37
     },
     "dropsite_iron_0": {
       "x": 52,
       "y": 16,
-      "z": 122
+      "z": 58
     },
     "dropsite_iron_1": {
       "x": 331,
       "y": 16,
-      "z": 261
+      "z": 197
     },
     "dropsite_iron_2": {
       "x": 52,
       "y": 16,
-      "z": 248
+      "z": 184
     },
     "dropsite_iron_3": {
       "x": 331,
       "y": 16,
-      "z": 135
+      "z": 71
     },
     "dropsite_stone_0": {
       "x": 36,
       "y": 16,
-      "z": 126
+      "z": 62
     },
     "dropsite_stone_1": {
       "x": 347,
       "y": 16,
-      "z": 257
+      "z": 193
     },
     "dropsite_stone_2": {
       "x": 36,
       "y": 16,
-      "z": 252
+      "z": 188
     },
     "dropsite_stone_3": {
       "x": 347,
       "y": 16,
-      "z": 131
+      "z": 67
     },
     "dropsite_wood_0": {
       "x": 56,
       "y": 16,
-      "z": 126
+      "z": 62
     },
     "dropsite_wood_1": {
       "x": 327,
       "y": 16,
-      "z": 257
+      "z": 193
     },
     "dropsite_wood_2": {
       "x": 56,
       "y": 16,
-      "z": 252
+      "z": 188
     },
     "dropsite_wood_3": {
       "x": 327,
       "y": 16,
-      "z": 131
+      "z": 67
     },
     "east": {
       "x": 339,
       "y": 16,
-      "z": 243
+      "z": 179
     },
     "ford_east": {
       "x": 220,
       "y": 11,
-      "z": 184
+      "z": 120
     },
     "ford_west": {
       "x": 163,
       "y": 11,
-      "z": 199
+      "z": 135
     },
     "hill": {
       "x": 191,
       "y": 21,
-      "z": 191
+      "z": 127
     },
     "west": {
       "x": 44,
       "y": 16,
-      "z": 140
+      "z": 76
     }
   },
   "version": 1,
-  "terrainHash": "71f9c8aa566bda3225d8bfd188c7aedd57509ec28f975ef1dab1d0862b1817aa",
+  "terrainHash": "43e3ae66c34467eeb1dbdee30a7cba60077dca416a6f07d00ff7ba991c2c9c6d",
   "terrainJobs": [
     {
       "x1": 172,
-      "z1": 199,
+      "z1": 135,
       "size": 6,
       "kind": "hill",
       "x0": 191,
-      "z0": 191
+      "z0": 127
     },
     {
       "x1": 112,
-      "z1": 383,
+      "z1": 255,
       "count": 3,
       "size": 4,
       "kind": "forest_line",
@@ -128,7 +128,7 @@
     },
     {
       "x1": 275,
-      "z1": 383,
+      "z1": 255,
       "count": 3,
       "size": 4,
       "kind": "forest_line",
@@ -137,7 +137,7 @@
     },
     {
       "x1": 195,
-      "z1": 135,
+      "z1": 71,
       "size": 4,
       "kind": "river",
       "x0": 188,
@@ -145,45 +145,45 @@
     },
     {
       "x1": 223,
-      "z1": 143,
+      "z1": 79,
       "size": 4,
       "kind": "river",
       "x0": 160,
-      "z0": 136
+      "z0": 72
     },
     {
       "x1": 167,
-      "z1": 239,
+      "z1": 175,
       "count": 1,
       "size": 4,
       "kind": "river",
       "x0": 160,
-      "z0": 144
+      "z0": 80
     },
     {
       "x1": 223,
-      "z1": 239,
+      "z1": 175,
       "count": 1,
       "size": 4,
       "kind": "river",
       "x0": 216,
-      "z0": 144
+      "z0": 80
     },
     {
       "x1": 223,
-      "z1": 247,
+      "z1": 183,
       "size": 4,
       "kind": "river",
       "x0": 160,
-      "z0": 240
+      "z0": 176
     },
     {
       "x1": 195,
-      "z1": 383,
+      "z1": 255,
       "size": 4,
       "kind": "river",
       "x0": 188,
-      "z0": 248
+      "z0": 184
     },
     {
       "count": 5000,
@@ -191,7 +191,7 @@
       "kind": "resource",
       "resource": "iron",
       "x0": 192,
-      "z0": 192
+      "z0": 128
     },
     {
       "count": 1000,
@@ -199,7 +199,7 @@
       "kind": "resource",
       "resource": "wood",
       "x0": 44,
-      "z0": 140
+      "z0": 76
     },
     {
       "count": 600,
@@ -207,7 +207,7 @@
       "kind": "resource",
       "resource": "food",
       "x0": 44,
-      "z0": 140
+      "z0": 76
     },
     {
       "count": 1000,
@@ -215,7 +215,7 @@
       "kind": "resource",
       "resource": "stone",
       "x0": 44,
-      "z0": 140
+      "z0": 76
     },
     {
       "count": 1000,
@@ -223,7 +223,7 @@
       "kind": "resource",
       "resource": "iron",
       "x0": 44,
-      "z0": 140
+      "z0": 76
     },
     {
       "count": 1000,
@@ -231,7 +231,7 @@
       "kind": "resource",
       "resource": "wood",
       "x0": 339,
-      "z0": 243
+      "z0": 179
     },
     {
       "count": 600,
@@ -239,7 +239,7 @@
       "kind": "resource",
       "resource": "food",
       "x0": 339,
-      "z0": 243
+      "z0": 179
     },
     {
       "count": 1000,
@@ -247,7 +247,7 @@
       "kind": "resource",
       "resource": "stone",
       "x0": 339,
-      "z0": 243
+      "z0": 179
     },
     {
       "count": 1000,
@@ -255,7 +255,7 @@
       "kind": "resource",
       "resource": "iron",
       "x0": 339,
-      "z0": 243
+      "z0": 179
     },
     {
       "count": 1000,
@@ -263,7 +263,7 @@
       "kind": "resource",
       "resource": "wood",
       "x0": 44,
-      "z0": 266
+      "z0": 202
     },
     {
       "count": 600,
@@ -271,7 +271,7 @@
       "kind": "resource",
       "resource": "food",
       "x0": 44,
-      "z0": 266
+      "z0": 202
     },
     {
       "count": 1000,
@@ -279,7 +279,7 @@
       "kind": "resource",
       "resource": "stone",
       "x0": 44,
-      "z0": 266
+      "z0": 202
     },
     {
       "count": 1000,
@@ -287,7 +287,7 @@
       "kind": "resource",
       "resource": "iron",
       "x0": 44,
-      "z0": 266
+      "z0": 202
     },
     {
       "count": 1000,
@@ -295,7 +295,7 @@
       "kind": "resource",
       "resource": "wood",
       "x0": 339,
-      "z0": 117
+      "z0": 53
     },
     {
       "count": 600,
@@ -303,7 +303,7 @@
       "kind": "resource",
       "resource": "food",
       "x0": 339,
-      "z0": 117
+      "z0": 53
     },
     {
       "count": 1000,
@@ -311,7 +311,7 @@
       "kind": "resource",
       "resource": "stone",
       "x0": 339,
-      "z0": 117
+      "z0": 53
     },
     {
       "count": 1000,
@@ -319,43 +319,43 @@
       "kind": "resource",
       "resource": "iron",
       "x0": 339,
-      "z0": 117
+      "z0": 53
     },
     {
       "x1": 84,
-      "z1": 184,
+      "z1": 120,
       "count": 6,
       "size": 9,
       "kind": "room",
       "x0": 52,
-      "z0": 160
+      "z0": 96
     },
     {
       "x1": 331,
-      "z1": 223,
+      "z1": 159,
       "count": 6,
       "size": 9,
       "kind": "room",
       "x0": 299,
-      "z0": 199
+      "z0": 135
     },
     {
       "x1": 84,
-      "z1": 310,
+      "z1": 246,
       "count": 6,
       "size": 9,
       "kind": "room",
       "x0": 52,
-      "z0": 286
+      "z0": 222
     },
     {
       "x1": 331,
-      "z1": 97,
+      "z1": 33,
       "count": 6,
       "size": 9,
       "kind": "room",
       "x0": 299,
-      "z0": 73
+      "z0": 9
     }
   ],
   "tileSize": 32,
@@ -374,25 +374,25 @@
     {
       "x": 44,
       "y": 16,
-      "z": 140,
+      "z": 76,
       "yaw": 270.0
     },
     {
       "x": 339,
       "y": 16,
-      "z": 243,
+      "z": 179,
       "yaw": 90.0
     },
     {
       "x": 44,
       "y": 16,
-      "z": 266,
+      "z": 202,
       "yaw": 270.0
     },
     {
       "x": 339,
       "y": 16,
-      "z": 117,
+      "z": 53,
       "yaw": 90.0
     }
   ],
@@ -401,5 +401,5 @@
   "baseBlock": "minecraft:stone",
   "id": "strategos:team_skirmish",
   "sizeX": 384,
-  "sizeZ": 384
+  "sizeZ": 256
 }
