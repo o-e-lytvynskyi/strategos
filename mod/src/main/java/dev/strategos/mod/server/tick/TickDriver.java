@@ -31,6 +31,7 @@ public final class TickDriver {
             }
             server.mapImports().tick();
             server.skirmishes().tick(server);
+            server.lobby().tick();
         }
     }
 

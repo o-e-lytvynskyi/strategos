@@ -147,3 +147,35 @@ that same column twice. Retain the reference calculation on every key change.
 The attempted early-exit spatial probes did not improve the accepted workload and were
 removed entirely. The original ordered query is retained; do not infer that those historical
 experiments are part of the final candidate.
+
+## Distinguish the workflow clock from a measured performance failure
+
+M7 standard L6 run 44296716682 exhausted its outer 90-minute job limit after 21
+of the actual 24 scenes had passed. M6 added a full 36,000-tick MVP soak; unlike
+the shorter CI crowd/first-loop options, it still needs thirty paced minutes,
+plus preflight and warm-up. An interrupted scene has no accepted report. A
+cancelled job is not a failed latency or foreign-load measurement.
+
+Keep completed JSON bytes and their SHA-256 hashes. A one-time trusted completion
+may execute only the missing scenes at the exact original commit, with unchanged
+CI factor, per-scene baselines, gates and full measurement windows. Require the
+original producer identity and passing progress, exact disjoint inventories, new
+passing XML, all 24 verdicts and full soak tick counts before declaring acceptance.
+Never rerun the accepted 21 to seek green, drop the interrupted scene, infer its
+verdict, or shorten the thirty-minute soak. The T7 evidence is guarded by
+`tools/t7_perf_completion.py` and `perf/t7-l6-completion.json`.
+
+For future full suites, allow the workflow to outlive the existing 150-minute
+`runGameTestPerf` process bound plus build/upload overhead. This orchestration
+limit does not change any measured wall-time, percentile or CPU-validity gate.
+
+## A branch's read-only cache never primes itself
+
+The basic setup-gradle provider found no matching setup-java cache in M7 while
+all manual development jobs inherited cache-read-only=true. Successful branch
+runs therefore refetched formatter dependencies, eventually receiving Central
+HTTP 429. Existing old gradle-home-v2 entries on main use a different key format.
+Allow manually dispatched verify jobs to save their branch-scoped cache; keep PR
+runs read-only. A nightly module archive can lack formatter artifacts because
+verifySlow does not run Spotless. An official Central host alias remains opt-in,
+with the pinned formatter POM/JAR hashes checked before the unchanged full verify.

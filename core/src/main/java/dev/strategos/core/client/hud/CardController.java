@@ -116,6 +116,16 @@ public final class CardController {
                 send.accept(new Research(building.handle(), tech.id()));
                 yield new Click(Effect.SENT, -1);
             }
+            case CANCEL_NEXT -> {
+                if (building == null) yield Click.NONE;
+                send.accept(new CancelTrain(building.handle(), 0));
+                yield new Click(Effect.SENT, -1);
+            }
+            case AUTO_RESEED_ENABLE, AUTO_RESEED_DISABLE -> {
+                if (building == null) yield Click.NONE;
+                send.accept(new SetAutoReseed(building.handle(), button.kind() == CommandCard.Kind.AUTO_RESEED_ENABLE));
+                yield new Click(Effect.SENT, button.template());
+            }
             case AUTO_RESEED -> {
                 if (building == null) {
                     yield Click.NONE;

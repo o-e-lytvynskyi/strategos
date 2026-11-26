@@ -2,6 +2,7 @@ package dev.strategos.mod.server.content;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
@@ -98,7 +99,11 @@ public final class TemplateLint {
      */
     static List<TemplateProblem> palette(Blueprint bp, String file) {
         List<TemplateProblem> problems = new ArrayList<>();
+        var materials = new java.util.LinkedHashSet<>(bp.palette());
         for (String text : bp.palette()) {
+            materials.add(CivilisationArt.material(CivilisationArt.ROMAN, bp.id(), text));
+        }
+        for (String text : materials) {
             BlockState state;
             try {
                 state = BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK.asLookup(), text, false)

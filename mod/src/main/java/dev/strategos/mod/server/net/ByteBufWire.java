@@ -4,8 +4,10 @@ import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.protocol.WireException;
 import io.netty.buffer.ByteBuf;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A payload's {@link StreamCodec} over a core {@link WireCodec} (ADR-0016): a payload's bytes are its record's, so
@@ -19,6 +21,25 @@ public final class ByteBufWire {
         return StreamCodec.of(
                 (buf, payload) -> buf.writeBytes(WireCodec.encode(wire, unwrap.apply(payload))),
                 buf -> wrap.apply(read(wire, buf)));
+    }
+
+    /** Malformed client input is a consumed refusal, so the server's common violation policy decides its effect. */
+    public static <T, P> StreamCodec<RegistryFriendlyByteBuf, P> serverCodec(
+            WireCodec<T> wire, Function<T, P> wrap, Function<P, @Nullable T> unwrap, Supplier<P> refused) {
+        return StreamCodec.of(
+                (buf, payload) -> {
+                    var value = unwrap.apply(payload);
+                    if (value == null) throw new IllegalStateException("a refused inbound payload is never sent");
+                    buf.writeBytes(WireCodec.encode(wire, value));
+                },
+                buf -> {
+                    try {
+                        return wrap.apply(read(wire, buf));
+                    } catch (WireException | IllegalArgumentException invalid) {
+                        buf.skipBytes(buf.readableBytes());
+                        return refused.get();
+                    }
+                });
     }
 
     /** Exactly one record from the rest of {@code buf}, at most the codec's bound. */

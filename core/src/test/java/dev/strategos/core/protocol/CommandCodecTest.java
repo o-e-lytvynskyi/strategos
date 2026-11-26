@@ -9,6 +9,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
@@ -53,7 +54,8 @@ class CommandCodecTest {
                 new RingBell(0x80003),
                 new AllClear(0x80003),
                 new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE),
-                new Research(524_294, new TechId("strategos:gather_wood_1")));
+                new Research(524_294, new TechId("strategos:gather_wood_1")),
+                new SetControl(new PlayerSlot(2), true));
     }
 
     @Test

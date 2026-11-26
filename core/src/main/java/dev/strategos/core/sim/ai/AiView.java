@@ -10,6 +10,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.NodeView;
@@ -26,9 +27,17 @@ import org.jspecify.annotations.Nullable;
  * budget per entry, once a think: the list is kept for the rest of it.
  */
 public final class AiView {
+    /** Bounded timing from another bot's own wave schedule. Zero means it has no matching wave. */
+    @FunctionalInterface
+    public interface WaveForecast {
+        long launch(int faction, long wave);
+    }
+
     private final MatchQueries q;
     private final int faction;
+    private final int hostileFactions;
     private final AiBudget budget;
+    private final WaveForecast waves;
     private @Nullable List<UnitView> units;
     private @Nullable List<UnitView> enemies;
     private @Nullable List<BuildingView> all;
@@ -46,13 +55,43 @@ public final class AiView {
     public static final int ROLE_HORSE = 3;
 
     public AiView(MatchQueries q, int faction, AiBudget budget) {
+        this(q, faction, budget, (other, wave) -> 0);
+    }
+
+    public AiView(MatchQueries q, int faction, AiBudget budget, WaveForecast waves) {
         this.q = q;
         this.faction = faction;
         this.budget = budget;
+        this.waves = waves;
+        var diplomacy = q.diplomacy();
+        int team = diplomacy.teamOf(new FactionSlot(faction));
+        int hostile = 0;
+        for (int candidate = 0; candidate < diplomacy.factions(); candidate++) {
+            if (diplomacy.teamOf(new FactionSlot(candidate)) != team) hostile |= 1 << candidate;
+        }
+        hostileFactions = hostile;
     }
 
     public int faction() {
         return faction;
+    }
+
+    boolean hostileFaction(int candidate) {
+        return candidate >= 0 && candidate <= FactionSlot.MAX && (hostileFactions & (1 << candidate)) != 0;
+    }
+
+    boolean hasAlliedFaction() {
+        return Integer.bitCount(hostileFactions) < q.config().factions() - 1;
+    }
+
+    long latestAlliedLaunch(long wave) {
+        long latest = 0;
+        for (int ally = 0; ally < q.config().factions(); ally++) {
+            if (ally != faction && !hostileFaction(ally)) {
+                latest = Math.max(latest, waves.launch(ally, wave));
+            }
+        }
+        return latest;
     }
 
     public long tick() {
@@ -135,9 +174,7 @@ public final class AiView {
                 read += u == null ? 0 : 1;
                 if (u != null && u.faction().value() == faction) {
                     own.add(u);
-                } else if (u != null
-                        && u.faction().value() < q.config().factions() // Gaia's animals are no enemy
-                        && q.visibleUnit(faction, h)) {
+                } else if (u != null && hostileFaction(u.faction().value()) && q.visibleUnit(faction, h)) {
                     others.add(u);
                 }
             }
@@ -148,7 +185,7 @@ public final class AiView {
         return units;
     }
 
-    /** The other factions' units this faction can see (AI-18). */
+    /** Opposing units this faction can see (AI-06, AI-18). */
     public List<UnitView> enemyUnits() {
         units();
         return enemies == null ? List.of() : enemies;
@@ -159,19 +196,43 @@ public final class AiView {
         return buildingsOf(true);
     }
 
-    /** The other factions' buildings this faction can see (AI-18). */
+    /** Opposing buildings this faction can see (AI-06, AI-18). */
     public List<BuildingView> enemyBuildings() {
         return buildingsOf(false);
     }
 
-    private List<BuildingView> buildingsOf(boolean own) {
+    /** Finished allied civic centres within this faction's own building visibility. */
+    List<BuildingView> alliedCentres() {
+        List<BuildingView> centres = new ArrayList<>();
+        for (BuildingView building : allBuildings()) {
+            if (building.faction() >= 0
+                    && building.faction() != faction
+                    && !hostileFaction(building.faction())
+                    && building.state() == 2
+                    && is(building.template(), Base.CENTRE)
+                    && q.visibleBuilding(faction, building)) {
+                centres.add(building);
+            }
+        }
+        return centres;
+    }
+
+    boolean idle(UnitView unit) {
+        return unit.state() == UnitState.IDLE && q.orders(unit.handle()).isEmpty();
+    }
+
+    private List<BuildingView> allBuildings() {
         if (all == null) {
             all = q.buildings();
             budget.spend(all.size());
         }
+        return all;
+    }
+
+    private List<BuildingView> buildingsOf(boolean own) {
         List<BuildingView> out = new ArrayList<>();
-        for (BuildingView b : all) {
-            if ((b.faction() == faction) == own && (own || q.visibleBuilding(faction, b))) {
+        for (BuildingView b : allBuildings()) {
+            if (own ? b.faction() == faction : hostileFaction(b.faction()) && q.visibleBuilding(faction, b)) {
                 out.add(b);
             }
         }

@@ -16,6 +16,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.CorePorts;
+import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
@@ -64,7 +65,13 @@ class PaymentTest {
     @Test
     void anUnpayableCommandNamesTheMissingAmounts() {
         CommandEnvelope envelope = new CommandEnvelope(new PlayerSlot(0), 12, 3, new Stop(UnitSet.of(5)));
-        CommandResult r = Tally.unaffordable(envelope, CommandKinds.STOP, 1, new long[] {0, 35 * Amount.UNIT, 0, 0});
+        CommandResult r = Tally.unaffordable(
+                envelope,
+                CommandKinds.STOP,
+                1,
+                new long[] {0, 35 * Amount.UNIT, 0, 0},
+                KernelAccess.state(SimHarness.builder().build().core()),
+                0);
 
         assertThat(r.outcome()).isEqualTo(CommandOutcome.REJECTED);
         assertThat(r.firstReason()).isEqualTo(RejectReason.NOT_ENOUGH_RESOURCES);

@@ -59,8 +59,8 @@ final class AiRules {
 
         @Override
         public CommandResult apply(CommandEnvelope envelope, AnnounceWave wave, MatchState state) {
-            int faction = envelope.issuer().value();
-            if (envelope.issuer().isAdmin() || state.aiSlots().get(faction) == null) {
+            int faction = state.diplomacy().primaryFaction(envelope.issuer());
+            if (faction < 0 || state.aiSlots().get(faction) == null) {
                 return Tally.rejectAll(envelope, kind(), 0, RejectReason.NOT_PERMITTED);
             }
             if (wave.ticks() < AnnounceWave.LEAST) {

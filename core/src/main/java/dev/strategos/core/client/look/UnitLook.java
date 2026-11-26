@@ -66,6 +66,11 @@ public record UnitLook(
         return new UnitLook("", TUNIC, "", "", "", "", dye, shieldDye); // a worker has no tiers
     }
 
+    /** Replace only faction colouring; role, tier, equipment and rest pose remain unchanged. */
+    public UnitLook tinted(int rgb, String dyeName) {
+        return new UnitLook(head, chest, legs, feet, rest, shield, rgb & 0xFFFFFF, dyeName);
+    }
+
     /** The vanilla dye nearest faction {@code faction}'s colour, by name: the banner's base on its shields. */
     public static String dyeName(int faction) {
         return switch (faction) {

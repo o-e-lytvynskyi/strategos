@@ -70,6 +70,7 @@ neoForge {
         testedMod = mods.strategos
     }
 
+    def s11Native = providers.gradleProperty('s11.live').map { it == 'true' }.getOrElse(false)
     runs {
         configureEach {
             systemProperty 'neoforge.enabledGameTestNamespaces', 'strategos'
@@ -86,9 +87,10 @@ neoForge {
         }
         client2 {
             client()
-            gameDirectory = file('run/client2')
+            gameDirectory = file(s11Native ? 'build/s11-live/client2' : 'run/client2')
             // The second client of the multiplayer launch (QA-09.1): joins the dev server by Quick Play.
-            programArguments.addAll('--username', 'Dev2', '--quickPlayMultiplayer', 'localhost:25565')
+            programArguments.addAll('--username', 'Dev2', '--quickPlayMultiplayer', (s11Native ? '127.0.0.1:25576' : 'localhost:25565'))
+            if (s11Native) systemProperty 'strategos.s11.client', 'true'
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
@@ -96,14 +98,16 @@ neoForge {
         // It shares client's game directory, so Dev1 keeps one set of options and worlds.
         clientJoin {
             client()
-            gameDirectory = file('run/client')
-            programArguments.addAll('--username', 'Dev1', '--quickPlayMultiplayer', 'localhost:25565')
+            gameDirectory = file(s11Native ? 'build/s11-live/client' : 'run/client')
+            programArguments.addAll('--username', 'Dev1', '--quickPlayMultiplayer', (s11Native ? '127.0.0.1:25576' : 'localhost:25565'))
+            if (s11Native) systemProperty 'strategos.s11.client', 'true'
             jvmArgument('-Xmx4G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
         server {
             server()
-            gameDirectory = file('run/server')
+            gameDirectory = file(s11Native ? 'build/s11-live/server' : 'run/server')
+            systemProperty 'strategos.s11.live', providers.gradleProperty('s11.live').getOrElse('false')
             programArgument('--nogui')
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'
@@ -142,6 +146,7 @@ neoForge {
             systemProperty 'strategos.faults.rethrow', 'true'
             systemProperty 'strategos.gametest.filter', '^aisoak[.]'
             systemProperty 'strategos.aisoak.seeds', providers.gradleProperty('aisoak.seeds').getOrElse('20')
+            systemProperty 'strategos.aisoak.firstSeed', providers.gradleProperty('aisoak.firstSeed').getOrElse('1')
         }
         // [T3]
         serverSmoke {
@@ -163,7 +168,7 @@ neoForge {
             systemProperty 'strategos.gametest.report', file('build/test-results/gametest-perf/TEST-gametest-perf.xml').absolutePath
             systemProperty 'strategos.gametest.perf', 'true'
             // no backslash: MDG writes it doubled into the VM-args file, and the regex then never matches
-            systemProperty 'strategos.gametest.filter', '^perftests[.]' + providers.gradleProperty('perf.filter').getOrElse('')
+            systemProperty 'strategos.gametest.filter', '^perftests[.]' + providers.gradleProperty('perf.filter').getOrElse('(?!m_7_)')
             systemProperty 'strategos.perf.out', file('build/reports/perf').absolutePath
             systemProperty 'strategos.perf.ciFactor', providers.gradleProperty('perf.ciFactor').getOrElse('1')
             // [M1 T26] the crowd soak's length; CI's nightly run shortens it to fit its job
@@ -246,7 +251,7 @@ neoForge {
             gameDirectory = file('build/mapgen')
             programArgument('--nogui')
             systemProperty 'strategos.mapgen', mapgenName
-            systemProperty 'strategos.mapgen.out', file(mapgenName == 'first_skirmish' ? 'src/main/resources' : 'src/devtools/resources').absolutePath
+            systemProperty 'strategos.mapgen.out', file(mapgenName in ['first_skirmish', 'team_skirmish'] ? 'src/main/resources' : 'src/devtools/resources').absolutePath
             systemProperty 'strategos.mapgen.marker', file('build/mapgen/mapgen-result.json').absolutePath
         }
         // [M6 T28] QA-13.4: the dedicated server with only the built production jar, in mods/: no source set of the
@@ -348,6 +353,7 @@ dependencies {
     testImplementation libs.assertj
     testRuntimeOnly libs.junit.platform.launcher
     testImplementation sourceSets.devtools.output   // the demo's catalog (DemoCatalogTest)
+    testImplementation sourceSets.gametest.output   // pure soak shard selection contracts
 
     gametestImplementation sourceSets.main.output
     gametestImplementation core
@@ -445,17 +451,22 @@ tasks.register('checkJarContents') {
         if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
         // [M1 T6] the proving ground's package lives in the devtools resources: dev runs load it, the jar never does
         // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship
-        // [M6 T12.2] the first skirmish map ships (MAP-02), and no other map package
+        // Only the solo and team skirmish packages ship. The proving ground remains dev-only.
+        def shippedMaps = ['first_skirmish', 'team_skirmish']
         def shipped = { String n ->
-            n.endsWith('/') || n == 'data/strategos/strategos/maps/first_skirmish.json' ||
-                    n.startsWith('data/strategos/structure/strategos/maps/first_skirmish/')
+            n.endsWith('/') || shippedMaps.any { map ->
+                n == "data/strategos/strategos/maps/${map}.json" ||
+                        n.startsWith("data/strategos/structure/strategos/maps/${map}/")
+            }
         }
         def maps = names.findAll {
             (it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')) && !shipped(it)
         }
         if (maps) throw new GradleException("Map packages in the jar: ${maps.take(10)}")
-        if (!names.contains('data/strategos/strategos/maps/first_skirmish.json')) {
-            throw new GradleException('the first skirmish map is missing from the jar')
+        shippedMaps.each { map ->
+            if (!names.contains("data/strategos/strategos/maps/${map}.json".toString())) {
+                throw new GradleException("the ${map} map is missing from the jar")
+            }
         }
         if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
     }
@@ -600,9 +611,8 @@ def prepareMapgen = tasks.register('prepareMapgen', Sync) {
 }
 neoForge.runs.mapgen.taskBefore prepareMapgen
 def mapgenMarker = file('build/mapgen/mapgen-result.json')
-def mapgenManifest = file(mapgenName == 'first_skirmish'
-        ? 'src/main/resources/data/strategos/strategos/maps/first_skirmish.json'
-        : 'src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
+def mapgenResources = mapgenName in ['first_skirmish', 'team_skirmish'] ? 'src/main/resources' : 'src/devtools/resources'
+def mapgenManifest = file("${mapgenResources}/data/strategos/strategos/maps/${mapgenName}.json")
 tasks.matching { it.name == 'runMapgen' }.configureEach {
     timeout = Duration.ofMinutes(5)
     doLast {

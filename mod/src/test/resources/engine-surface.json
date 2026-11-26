@@ -1,9 +1,21 @@
 {
   "milestone": "M1",
   "entityTypes": ["strategos:unit_fauna", "strategos:unit_humanoid", "strategos:unit_large", "strategos:unit_mount"],
+  "attachmentTypes": [],
   "savedData": ["strategos_registry", "strategos_match_<id>"],
   "commands": ["strategos"],
   "mixinConfigs": ["strategos.mixins.json"],
+  "mixins": [
+    "dev.strategos.mod.mixin.LevelChunkMixin",
+    "dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin",
+    "dev.strategos.mod.mixin.ServerPlayerMixin"
+  ],
+  "mixinHooks": [
+    "dev.strategos.mod.mixin.LevelChunkMixin#setBlockState",
+    "dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin#handleTeleportToEntityPacket",
+    "dev.strategos.mod.mixin.ServerPlayerMixin#attack",
+    "dev.strategos.mod.mixin.ServerPlayerMixin#broadcastToPlayer"
+  ],
   "accessTransformers": [],
   "payloads": [
     "strategos:building_state",
@@ -15,12 +27,20 @@
     "strategos:deposit_state",
     "strategos:feedback",
     "strategos:fx",
+    "strategos:group_restore",
+    "strategos:lobby_action",
+    "strategos:lobby_reply",
+    "strategos:lobby_state",
     "strategos:match_control",
     "strategos:match_event",
     "strategos:match_join",
+    "strategos:match_presentation",
     "strategos:match_state",
     "strategos:mode_switch",
+    "strategos:ping",
+    "strategos:player_authority",
     "strategos:skirmish",
+    "strategos:team_ping",
     "strategos:template_ack",
     "strategos:template_set",
     "strategos:ui_query",

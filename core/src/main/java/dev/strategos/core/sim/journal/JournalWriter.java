@@ -45,11 +45,12 @@ public final class JournalWriter {
     public JournalWriter(MatchSnapshot start, SliceSource startSlices, int checkpointEvery, int maxTicks) {
         this(start, checkpointEvery, maxTicks, Math.min(Journal.SEGMENT_TICKS, maxTicks));
         for (PageRef ref : start.pages()) {
+            pages.put(key(ref.x(), ref.z()), ref.slice());
+            if (ref.pending()) continue;
             byte[] slice = startSlices.slice(ref.slice());
             if (slice == null) {
                 throw new IllegalArgumentException("no slice for page (" + ref.x() + ", " + ref.z() + ") of the start");
             }
-            pages.put(key(ref.x(), ref.z()), ref.slice());
             slices.put(ref.slice(), slice);
             segmentSlices.put(ref.slice(), slice);
         }
@@ -124,6 +125,7 @@ public final class JournalWriter {
         slices.keySet().retainAll(pages.values());
         segmentSlices.clear();
         for (PageRef ref : next.pages()) {
+            if (ref.pending()) continue;
             byte[] slice = slices.get(ref.slice());
             if (slice == null) {
                 throw new IllegalStateException(

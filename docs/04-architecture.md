@@ -424,7 +424,7 @@ Test source sets use `dev.strategos.gametest`, `dev.strategos.devtools` and `dev
 | B9 | Hot paths | Classes annotated `@HotPath` use no `java.util.stream` and no boxed collections | ArchUnit |
 | B10 | Mixins only route | Classes in `mod.mixin` call only `BlockChangeRouter`, `FogGate` and `CommanderGuard` and contain no game logic | ArchUnit |
 | B11 | Dev code never ships | `main` never depends on `gametest`, `devtools` or `testFixtures` | Gradle; ArchUnit; jar check |
-| B12 | Engine surface | Mixin config entries, access-transformer lines, entity types, payload types and data registrations equal the inventory in §2.5 | L2 test |
+| B12 | Engine surface | Mixin config entries, access-transformer lines, entity types, attachment types, payload types and data registrations equal the inventory in §2.5 | L2 test |
 | B13 | Null safety | `@NullMarked` in every `package-info.java`; NullAway in JSpecify mode at error level on main sources | Compiler |
 
 ### 2.5 Engine-surface inventory
@@ -435,9 +435,11 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 
 | Kind | Item | Purpose | Lands in |
 |---|---|---|---|
-| Mixin | `LevelChunkMixin` (config `strategos.mixins.json`): RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
-| Mixin | `ServerPlayerMixin`: HEAD of `ServerPlayer#broadcastToPlayer(ServerPlayer)` (ServerPlayer.java:957) and HEAD of `ServerPlayer#attack(Entity)` (1767) | Hides enemy commanders always and enemy first-person bodies in fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
-| Mixin | `ServerGamePacketListenerImplMixin`: HEAD of `handleTeleportToEntityPacket` (ServerGamePacketListenerImpl.java:1204) | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
+| Attachment types | None registered; future server-only types must be inventoried | Client synchronization is forbidden by NET-03/B6; private match fields use recipient projections through the gateway | M7 |
+| Mixin | `dev.strategos.mod.mixin.LevelChunkMixin#setBlockState` (config `strategos.mixins.json`): RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
+| Mixin | `dev.strategos.mod.mixin.ServerPlayerMixin#attack`: HEAD of `ServerPlayer#attack(Entity)` (1767); `dev.strategos.mod.mixin.ServerPlayerMixin#broadcastToPlayer`: RETURN of `broadcastToPlayer(ServerPlayer)` (957), only reduces vanilla eligibility | Hides enemy commanders always and enemy first-person bodies in current fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
+| Mixin | `dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin#handleTeleportToEntityPacket`: immediately after `PacketUtils.ensureRunningOnSameThread` (ServerGamePacketListenerImpl.java:1205), before entity lookup | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
+| Event | `PlayerTickEvent.Post` to `CommanderGuard.onPlayerTick` (Player.java:335; PlayerTickEvent.java:52), with the existing `StrategosServer.onTickPost` backstop | Current authenticated commanders only: clamp finite body coordinates to the existing camera margin and restore the match dimension within one server tick, including the unloaded-chunk branch that skips Player.tick/Post; retain ordinary first-person and non-match behavior | M7 |
 | Access transformer | `public net.minecraft.server.level.ChunkMap entityMap` (ChunkMap.java:150) and `public net.minecraft.server.level.ChunkMap$TrackedEntity` (1278) | Targeted `TrackedEntity#updatePlayer` (1327) for flipped pairs and chunk-sent re-pairs | M8 |
 | Entity types | `strategos:unit_humanoid` (M0), `strategos:unit_fauna` (M4, ECO-16's animals), `strategos:unit_mount` (M5), `strategos:unit_large` (M6); reserve: `*_streamed` variants | Unit bodies (§6.1) | M0–M6 |
 | Damage types (data) | `strategos:unit_hack`, `unit_pierce`, `unit_crush`, tagged `minecraft:bypasses_cooldown` | Units hitting players and vanilla mobs (§6.7) | Deferred with CMB-08 (D-08 chose the observer avatar) |
@@ -446,7 +448,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), `strategos:vision_delta` and `strategos:skirmish` (M6), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), `strategos:vision_delta` and `strategos:skirmish` (M6), `strategos:lobby_action`, `strategos:lobby_state`, `strategos:lobby_reply`, `strategos:player_authority`, `strategos:match_presentation`, `strategos:group_restore`, `strategos:ping` and `strategos:team_ping` (M7), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
 | Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05), `key.strategos.controls` (M6, UI-14); the command card's cells `key.strategos.card_1`, `key.strategos.card_2`, `key.strategos.card_3`, `key.strategos.card_4`, `key.strategos.card_5`, `key.strategos.card_6`, `key.strategos.card_7`, `key.strategos.card_8`, `key.strategos.card_9`, `key.strategos.card_10`, `key.strategos.card_11`, `key.strategos.card_12`, `key.strategos.card_13`, `key.strategos.card_14`, `key.strategos.card_15` (M4, UI-08: Alt and the grid); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |
@@ -910,6 +912,28 @@ DimensionDataStorage.java:43):
   is tested in L1 with JSON fixtures and in L2 with NBT fixture files of every released schema
   (`mod/src/test/resources/fixtures/`). A template that the snapshot references but the current
   set lacks fails the load with a named error, unless the operator allows a lossy upgrade.
+- **Coalition results (M7).** [ADR-0031](adr/0031-coalition-terminal-results.md) extends both
+  victory rules after all defeats are evaluated. Locked teams win as the ascending surviving
+  allied faction set; no survivors is a draw. Schema 6 stores the full terminal mask and
+  migrates legacy individual/draw results without changing their hashes. Match-end news and
+  terminal state carry the same bounded set; registration version 2 rejects older readers.
+  Restored terminal state overrides a stale paused registry and cannot resume.
+- **Public faction presentation (M7 T8.4a; functional gate passed).**
+  [ADR-0032](adr/0032-faction-presentation-persistence.md) defines schema 7's required
+  `play.presentation`: bounded civilisation/colour values in faction order, installed only by
+  trusted first-tick journal tag 11. Migration 6→7 retains explicit legacy appearance; default
+  values contribute nothing to released hashes. Non-default configuration has a cached canonical
+  hash. Authority, human names and private economy remain separate. Client palette and recipient-only human-name
+  teams are installed in T8.4b; visual and full slow/performance acceptance remain parent T8 gates.
+- **Adapter sessions (M7).** [ADR-0029](adr/0029-roster-session-persistence.md) versions only
+  the outer match blob to 2. Its explicit UUID/player roster stores remaining monotonic reclaim
+  duration, never a live connection or clock origin. Valid blob-1 membership migrates with the
+  full configured window; all restored seats are disconnected. Core schema-4 authority remains
+  canonical and unchanged. Validate the original roster types, duplicate/cross-match UUIDs and
+  primary bindings before publishing membership; malformed current metadata cannot fall back
+  to legacy defaults. A durable `launchPending` flag brackets production setup/admission;
+  interrupted launches fail closed on restore. Existing authenticated connection events mark
+  session metadata dirty even while paused. T10 owns rejoin authorization, revocation and expiry actions.
 - **Quarantine: a bad save must never reset a match.** Vanilla logs any read exception and
   returns null; `computeIfAbsent` then creates an empty object that overwrites the file at the next
   save (DimensionDataStorage.java:43–76). Two guards:
@@ -934,6 +958,9 @@ DimensionDataStorage.java:43):
   - **Every other difference** enters the first tick as a `WorldChange(EXTERNAL)` input, like any
     block edit.
 - **Bodies are never saved** (§6.4), so a chunk reload or a restart cannot duplicate a unit.
+
+
+M7 authority foundation ([ADR-0028](adr/0028-diplomacy-authority-persistence.md)): schema 4 stores an immutable diplomacy value in `MatchSnapshot.Play`. A current save requires it; schemas 1–3 migrate to explicit identity bindings. `DiplomacySetup` is a bounded, trusted first-tick input (journal tag 9), installed once with teams locked. Player grant/revoke commands and private audience routing remain separate T8/T9 integrations. Exact legacy identity keeps released state hashes; non-default authority is hashed in slot order without allocation. `MatchRuntime.initializeDiplomacy` queues this trusted setup only for a fresh, unseated runtime; admission waits until the journaled first tick installs it. The registry then validates primary player bindings, allowing several player seats per economy faction. The transient setup queue is not a persisted launch transaction; production preparation must cancel it on server stop until M7 T5 covers restoration.
 
 ### 5.7 Staying open to an open world
 
@@ -2041,20 +2068,27 @@ placing; the events are the second line of defence.
 
 | Payload | Content | Caps | Lands in |
 |---|---|---|---|
-| `strategos:commands` | Client sequence number; up to 32 commands | ≤ 4 KiB; ≤ 300 handles per command; 40 commands/s with bursts of 80; 3,000 handles/s | M1 |
+| `strategos:commands` | One shared client sequence stream; up to 32 commands; protocol 6 rejects replayed/overlapping ranges | ≤ 4 KiB; ≤ 300 handles per command; 40 commands/s with bursts of 80; 3,000 handles/s | M1 |
 | `strategos:camera_jump` | Target X and Z (match-local), zoom | 4/s; inside the match space + 32 blocks; commanders only | M2 |
 | `strategos:mode_switch` | RTS or first person, with a drop point | 1/s; match rules | M2 |
 | `strategos:ui_query` | Detail subscription: selected own units, one visible entity, an own building | ≤ 32 handles; 4/s | M2 |
 | `strategos:match_control` | Ready, pause and resume (singleplayer), surrender | 1/s | M3 |
-| `strategos:ping` | Minimap ping | 1 per 2 s | M7 |
+| `strategos:lobby_action` | Open/edit configuration, join own seat or request a vacant human seat, ready revision, leave, start and idempotent own-request cancellation; sender from connection | ≤ 687 bytes; 4 seats; shared command ingress budget (40/s, burst 80); malformed bytes become bounded refusals | M7 T3b.2 |
+| `strategos:ping` | Match-local minimap coordinates, with the sender's current epoch | 16 B; one accepted ping per player seat per 40 server ticks | M7 |
+| `strategos:team_ping` | Server-projected marker with the receiving ally's current view epoch | 21 B; connected primary allies only, including co-op and the sender | M7 |
 | `strategos:debug_subscribe` | Overlay layers and area | Operators only, dev builds; optional | M1 |
 
 **Server to client (state):**
 
 | Payload | Content | Audience | Cadence | Lands in |
 |---|---|---|---|---|
+| `strategos:lobby_state` | Detached configuration, public display names/seat flags, recipient seat, revisions and bounded reason; no UUIDs | One admitted player only | On configuration/readiness/lifecycle change; ≤ 1,057 bytes | M7 T3b.2 |
+| `strategos:lobby_reply` | Bounded refusal/invalid/error/rate-limit code; no roster or exception detail | Requesting player only, including before admission | Rejected request; 2 bytes | M7 T4.1 |
 | `strategos:template_set` | Compiled client view, id table, hash | Player | Login, `/reload` | M1 |
-| `strategos:match_join` | Match id, space, factions, colours, your slot, rules, minimap base | Player | Join, rejoin | M1 |
+| `strategos:match_join` | Match id, space, faction count, authenticated player slot, rules, minimap base and recipient authority | Player | Join, rejoin; protocol 6 retains initial authority, ≤ 3,142 bytes under the existing 4 KiB cap | M1, M7 |
+| `strategos:group_restore` | Live-view epoch, match id and up to 2,048 exact controlled unit handles within the primary visibility floor; observers receive none | Authenticated recipient only | Once per full private view, before cached groups can restore; protocol 7, maximum 8,207 bytes; no periodic-summary layout change | M7 |
+| `strategos:player_authority` | Match/player identity, core tick, primary faction, 16-bit control and ally masks; no private economy or grant lists | Authenticated recipient only | Initial join and changed authority, ≤ 22 bytes; stale or wrong-context updates ignored | M7 T8 |
+| `strategos:match_presentation` | Match id, adapter publication revision, core civilisation/colour choices and bounded authenticated human names, team ids and connection status; no UUIDs or grants | Admitted recipient only | Join/rejoin and changed public view, protocol 8, ≤ 3,216 bytes; revision advances independently while paused | M7 T8.4b/T14 |
 | `strategos:match_state` | Lifecycle, clock sync every 5 s, results, and `looks`: each faction's equipment tiers (`Look/weapon`, `Look/armour`; one byte per faction appended after the results; TECH-03) | Match | On change of lifecycle or tiers, at join | M1, M6 |
 | `strategos:feedback` | Command results and notices | Player or faction | Event | M1 |
 | `strategos:unit_summary` | Handle, template index, faction, X and Z quantised to 1/8 block, state; about 6 B per unit | Each player: own units and visible enemies | 2 Hz | M2 |

@@ -51,7 +51,7 @@ public final class WorldClaims {
                         at.worldX(bp.x(k), bp.z(k)),
                         baseY + bp.y(k),
                         at.worldZ(bp.x(k), bp.z(k)),
-                        fallen[k] ? WorldEffect.AIR : bp.palette().get(bp.state(k)),
+                        fallen[k] ? WorldEffect.AIR : s.buildingMaterial(handle, bp, k),
                         fallen[k] ? 0 : handle));
             }
         }

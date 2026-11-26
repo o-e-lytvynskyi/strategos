@@ -1,0 +1,17 @@
+// Optional CI recovery of one byte-verified existing coordinate, never an alternate formatter version.
+def formatterRepository = System.getenv('STRATEGOS_FORMATTER_REPOSITORY')
+if (!formatterRepository) throw new GradleException('Pinned formatter repository must be explicit')
+gradle.beforeProject { project ->
+    // build-logic obtains repositories from settings; adding a project repository would shadow those.
+    if (project.rootProject.name != 'strategos') return
+    project.repositories.exclusiveContent {
+        forRepository {
+            project.repositories.maven {
+                name = 'checksumApprovedFormatter'
+                url = project.uri(formatterRepository)
+                metadataSources { mavenPom() }
+            }
+        }
+        filter { includeVersion('com.palantir.javaformat', 'palantir-java-format', '2.102.0') }
+    }
+}

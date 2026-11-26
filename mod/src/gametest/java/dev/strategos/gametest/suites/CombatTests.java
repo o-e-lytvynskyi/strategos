@@ -26,11 +26,13 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.core.sim.order.OrderKind;
@@ -44,7 +46,9 @@ import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
+import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
@@ -80,6 +84,82 @@ import org.slf4j.LoggerFactory;
  */
 public final class CombatTests {
     private CombatTests() {}
+
+    /** T7.1: actual bodies trust same-match actor ownership, never an observer or an unseated player's blow. */
+    @StrategosTest(timeoutTicks = 120)
+    public static void lockedTeamBodyDamageUsesAuthenticatedProvenance(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(
+                h,
+                new MatchOptions(
+                        SimHarness.DEFAULT_SEED,
+                        3,
+                        false,
+                        MatchSource.GAMETEST,
+                        null,
+                        dev.strategos.core.port.MetricsSink.none(),
+                        Math.floor(h.getBounds().minY) + 1,
+                        null,
+                        MatchOptions.GAMETEST_PLAY));
+        rt.initializeDiplomacy(new DiplomacySetup(DiplomacyState.identity(3)
+                .withTeam(new FactionSlot(1), 0)
+                .lockTeams()
+                .snapshot()));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(5, 5), 1, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(14, 5), 1, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(2), new Vec2d(25, 25), 1, 0));
+        BlockPos at = h.absolutePos(new BlockPos(8, 20, 8));
+        MockViewer source = MockViewer.join(h.getLevel(), "m7-damage-src", at.getX(), at.getY(), at.getZ(), 2);
+        MockViewer observer = MockViewer.join(h.getLevel(), "m7-damage-obs", at.getX(), at.getY(), at.getZ(), 2);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "m7-damage-out", at.getX(), at.getY(), at.getZ(), 2);
+        int[] units = new int[3];
+        double[] before = new double[3];
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().diplomacy().teamsLocked(), "authority not installed"))
+                .thenExecute(() -> {
+                    var server = StrategosServer.get();
+                    server.matches().join(rt, source.player().getUUID(), new PlayerSlot(0));
+                    server.matches().join(rt, observer.player().getUUID(), PlayerSlot.ADMIN);
+                    server.net().joined(rt, source.player(), new PlayerSlot(0));
+                    server.net().joined(rt, observer.player(), PlayerSlot.ADMIN);
+                })
+                .thenWaitUntil(() -> {
+                    check(core(rt).queries().unitHandles().length == 3, "body damage fixture has no units");
+                    for (int faction = 0; faction < 3; faction++) {
+                        units[faction] = core(rt).queries().unitHandlesOf(new FactionSlot(faction))[0];
+                        body(rt, units[faction]);
+                    }
+                })
+                .thenExecute(() -> {
+                    for (int faction = 0; faction < 3; faction++)
+                        before[faction] = core(rt).queries().hitPoints(units[faction]);
+                    body(rt, units[0]).hurt(h.getLevel().damageSources().playerAttack(source.player()), 10);
+                    body(rt, units[1]).hurt(h.getLevel().damageSources().playerAttack(source.player()), 10);
+                    body(rt, units[1]).hurt(h.getLevel().damageSources().mobAttack(body(rt, units[0])), 10);
+                    body(rt, units[2]).hurt(h.getLevel().damageSources().playerAttack(observer.player()), 10);
+                    body(rt, units[2]).hurt(h.getLevel().damageSources().playerAttack(outsider.player()), 10);
+                })
+                .thenExecuteAfter(2, () -> {
+                    for (int faction = 0; faction < 3; faction++) {
+                        check(
+                                core(rt).queries().hitPoints(units[faction]) == before[faction],
+                                "friendly or unauthenticated body damage reached the core health");
+                    }
+                    body(rt, units[2]).hurt(h.getLevel().damageSources().playerAttack(source.player()), 10);
+                    body(rt, units[1]).hurt(h.getLevel().damageSources().generic(), 10);
+                })
+                .thenExecuteAfter(2, () -> {
+                    check(core(rt).queries().hitPoints(units[2]) < before[2], "valid hostile player damage was lost");
+                    check(core(rt).queries().hitPoints(units[1]) < before[1], "world damage was incorrectly blocked");
+                    source.close();
+                    observer.close();
+                    outsider.close();
+                })
+                .thenSucceed();
+    }
 
     /**
      * CMB-01.4: a player's blow, an arrow, an explosion and {@code /kill} reach the core as hack, pierce, crush and

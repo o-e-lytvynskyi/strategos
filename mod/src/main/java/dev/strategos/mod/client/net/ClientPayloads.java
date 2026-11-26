@@ -5,16 +5,25 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.menu.ClientLobby;
+import dev.strategos.mod.server.net.MatchScopedPayload;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
+import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
+import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
@@ -39,7 +48,13 @@ public final class ClientPayloads {
 
     public static void onPayload(PayloadArrived event) {
         switch (event.payload()) {
-            case MatchJoinPayload p -> StrategosClient.match(p.join());
+            case MatchJoinPayload p -> StrategosClient.match(p.epoch(), p.join());
+            case GroupRestorePayload p -> StrategosClient.rts().restoreGroups(p.frame());
+            case TeamPingPayload p -> StrategosClient.teamPings().accept(p);
+            case MatchPresentationPayload p -> StrategosClient.presentation(p.presentation());
+            case PlayerAuthorityPayload p -> StrategosClient.authority(p.authority());
+            case LobbyStatePayload p -> ClientLobby.accept(p.state());
+            case LobbyReplyPayload p -> ClientLobby.reply(p.reply());
             case MatchStatePayload p -> StrategosClient.state(p.state());
             case FeedbackPayload p -> {
                 LOG.info("feedback: {}", p.message());
@@ -126,6 +141,11 @@ public final class ClientPayloads {
 
     /** Sends {@code payload} to the server if the connection has its channel; false when it has none. */
     public static boolean toServer(CustomPacketPayload payload) {
+        if (payload instanceof MatchScopedPayload scoped && scoped.epoch() == 0) {
+            long epoch = StrategosClient.epoch();
+            if (epoch == 0 && !(payload instanceof DebugSubscribePayload)) return false;
+            if (epoch != 0) payload = scoped.withEpoch(epoch);
+        }
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         if (connection == null || !connection.hasChannel(payload)) {
             return false;

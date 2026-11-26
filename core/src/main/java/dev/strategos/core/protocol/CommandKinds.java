@@ -69,6 +69,8 @@ public final class CommandKinds {
             "strategos:attack_spread", 30, AttackSpread.class, AttackSpread.CODEC, AttackSpread.WIRE, false);
     public static final CommandKind<Research> RESEARCH =
             new CommandKind<>("strategos:research", 31, Research.class, Research.CODEC, Research.WIRE, false);
+    public static final CommandKind<SetControl> SET_CONTROL =
+            new CommandKind<>("strategos:set_control", 32, SetControl.class, SetControl.CODEC, SetControl.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -100,7 +102,8 @@ public final class CommandKinds {
             RING_BELL,
             ALL_CLEAR,
             ATTACK_SPREAD,
-            RESEARCH));
+            RESEARCH,
+            SET_CONTROL));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

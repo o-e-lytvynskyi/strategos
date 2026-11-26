@@ -30,6 +30,7 @@ import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.JournalFiles;
+import dev.strategos.core.testkit.MultiplayerScene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
@@ -116,6 +117,24 @@ final class CrowdSoak {
             return new Config(name, 0, scene.units() / 2, ticks, true, 2, lane, false, scene, speed);
         }
 
+        static Config multiplayer(String name, MultiplayerScene.Config scene, int measured, int lane) {
+            return new Config(
+                    name,
+                    0,
+                    scene.units() / MultiplayerScene.FACTIONS,
+                    measured + WARM_UP,
+                    true,
+                    MultiplayerScene.FACTIONS,
+                    lane,
+                    false,
+                    scene,
+                    1);
+        }
+
+        int expectedUnits() {
+            return scene == null ? 2 * perFaction : scene.units();
+        }
+
         boolean firstLoop() {
             return scene != null;
         }
@@ -174,6 +193,10 @@ final class CrowdSoak {
     private final @Nullable SoakScene scene;
     private final boolean battle;
     private final boolean mvp;
+    private final boolean multiplayer;
+    private final SoakResult.@Nullable MultiplayerLoad multiplayerLoad;
+    private long unitReplacementsBefore;
+    private long buildingReplacementsBefore;
     private final long[] trackers;
     private long trackersBefore;
     private final long[][] combat;
@@ -199,9 +222,13 @@ final class CrowdSoak {
         this.config = config;
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
         boolean skirmish = config.scene() instanceof MvpScene.Config; // PERF-09 plays MAP-02, not the proving ground
-        this.rt = skirmish
-                ? MapTests.firstSkirmish(h, config.lane(), true)
-                : MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
+        this.multiplayer = config.scene() instanceof MultiplayerScene.Config;
+        this.multiplayerLoad = multiplayer ? new SoakResult.MultiplayerLoad() : null;
+        this.rt = multiplayer
+                ? MapTests.multiplayerPerfGround(h, config.lane(), MultiplayerScene.FACTIONS)
+                : skirmish
+                        ? MapTests.firstSkirmish(h, config.lane(), true)
+                        : MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
         this.manifest = skirmish ? MapTests.firstSkirmishManifest(h) : MapTests.manifest(h);
         this.orders = new SoakOrders(seed, ProvingGround.generate());
         this.done = done;
@@ -215,7 +242,7 @@ final class CrowdSoak {
         SoakScene.Spec sc = config.scene();
         this.scene = sc == null ? null : sc.create(manifest.startSlots());
         this.battle = scene instanceof BattleScene;
-        this.mvp = scene instanceof MvpScene;
+        this.mvp = scene instanceof MvpScene || multiplayer;
         this.trackers = new long[mvp ? samples : 0];
         this.combat = new long[4][battle ? samples : 0];
         this.writer = new long[sc == null ? 0 : samples];
@@ -301,6 +328,7 @@ final class CrowdSoak {
                 if (mvp
                         ? alive >= units && rt.bodies().count() == alive
                         : alive == units && rt.bodies().count() == units) {
+                    validateMultiplayerStart();
                     longest = new int[maxIndex() + 1];
                     next(Phase.SOAK);
                 }
@@ -308,6 +336,21 @@ final class CrowdSoak {
             case SOAK -> soak();
             case DONE -> {}
             default -> throw new IllegalStateException("phase " + phase);
+        }
+    }
+
+    private void validateMultiplayerStart() {
+        if (!(config.scene() instanceof MultiplayerScene.Config sceneConfig)) return;
+        MatchQueries queries = core(rt).queries();
+        for (int faction = 0; faction < MultiplayerScene.FACTIONS; faction++) {
+            int f = faction;
+            long buildings =
+                    queries.buildings().stream().filter(b -> b.faction() == f).count();
+            check(buildings == sceneConfig.scale().buildings(), "PERF-10 faction " + f + " buildings: " + buildings);
+            int population = queries.populationUsed(new FactionSlot(f));
+            check(
+                    population == sceneConfig.scale().population(),
+                    "PERF-10 faction " + f + " population: " + population);
         }
     }
 
@@ -328,6 +371,10 @@ final class CrowdSoak {
             shotsBefore = shots;
             hitsBefore = hits;
             deathsBefore = deaths;
+            if (scene instanceof MultiplayerScene loadScene) {
+                unitReplacementsBefore = loadScene.unitReplacements();
+                buildingReplacementsBefore = loadScene.buildingReplacements();
+            }
             windowStarts.run();
         }
         if (t >= WARM_UP) {
@@ -363,6 +410,7 @@ final class CrowdSoak {
             }
             sampled++;
             if (sampled % 20 == 0) {
+                if (multiplayerLoad != null) multiplayerLoad.sample(q);
                 everySecond.run();
                 for (MockViewer viewer : viewers) {
                     int seen = StrategosServer.get()
@@ -439,8 +487,16 @@ final class CrowdSoak {
             }
             histogram[rung]++;
         }
-        long[] bytes = viewers.stream().mapToLong(v -> v.bytes().bytes()).toArray();
+        long[] bytes = viewers.stream()
+                .mapToLong(v -> v.bytes().bytes() - (multiplayer ? S11Bandwidth.terrainBytes(v.bytes()) : 0))
+                .toArray();
+        if (multiplayer) viewers.forEach(v -> check(v.bytes().failures().isEmpty(), "PERF-10 unencodable packet"));
         viewers.forEach(MockViewer::close);
+        if (multiplayerLoad != null && scene instanceof MultiplayerScene loadScene) {
+            multiplayerLoad.replacements(
+                    loadScene.unitReplacements() - unitReplacementsBefore,
+                    loadScene.buildingReplacements() - buildingReplacementsBefore);
+        }
         done.accept(new SoakResult(
                 config,
                 seed,
@@ -463,7 +519,8 @@ final class CrowdSoak {
                 q.unitCount(),
                 exportJournal(),
                 fights(),
-                costs(q)));
+                costs(q),
+                multiplayerLoad));
     }
 
     private @Nullable SoakCosts costs(MatchQueries q) {
@@ -540,7 +597,10 @@ final class CrowdSoak {
         StartSlot west = manifest.startSlots().get(0);
         var at = rt.space().origin().getCenter().add(cx, west.y() + 2, cz);
         for (int k = 0; k < config.viewers(); k++) {
-            if (mvp) { // under fog a viewer sees what its faction does: it stands at its own start
+            if (multiplayer) {
+                var own = MultiplayerScene.viewer(k);
+                at = rt.space().origin().getCenter().add(own.x(), west.y() + 22, own.z());
+            } else if (mvp) { // under fog a viewer sees what its faction does: it stands at its own start
                 StartSlot own = manifest.startSlots().get(k);
                 at = rt.space().origin().getCenter().add(own.x(), own.y() + 2, own.z());
             }

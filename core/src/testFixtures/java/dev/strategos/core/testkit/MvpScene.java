@@ -196,16 +196,18 @@ public final class MvpScene implements SoakScene {
     }
 
     private void units(List<Issue> out, FactionSlot faction, boolean east) {
-        Vec2d soldiers = at(SOLDIER_YARD, east);
+        spawnRoster(out, config, faction, at(SOLDIER_YARD, east), at(WORKER_YARD, east));
+    }
+
+    static void spawnRoster(List<Issue> out, Config config, FactionSlot faction, Vec2d soldiers, Vec2d workers) {
         spawn(out, TemplateSet.INFANTRY, faction, soldiers, config.spearmen(), SOLDIER_SPREAD);
         spawn(out, BattleScene.ARCHER, faction, soldiers, config.archers(), SOLDIER_SPREAD);
         spawn(out, BattleScene.HORSEMAN, faction, soldiers, config.horsemen(), SOLDIER_SPREAD);
         spawn(out, RAM, faction, soldiers, config.rams(), SOLDIER_SPREAD);
-        spawn(out, TemplateSet.WORKER, faction, at(WORKER_YARD, east), config.workers(), WORKER_SPREAD);
+        spawn(out, TemplateSet.WORKER, faction, workers, config.workers(), WORKER_SPREAD);
     }
 
-    private static void spawn(
-            List<Issue> out, TemplateId template, FactionSlot faction, Vec2d at, int count, double r) {
+    static void spawn(List<Issue> out, TemplateId template, FactionSlot faction, Vec2d at, int count, double r) {
         for (int left = count; left > 0; left -= 300) { // a spawn takes at most 300
             out.add(admin(new SpawnUnits(template, faction, at, Math.min(left, 300), r)));
         }

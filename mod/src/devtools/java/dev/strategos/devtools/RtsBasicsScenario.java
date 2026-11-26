@@ -97,7 +97,10 @@ final class RtsBasicsScenario implements Scenario {
                 mc.setScreen(null);
             } else if (tick == 145) {
                 chatBack = rts.active() && mc.screen != null && !mc.mouseHandler.isMouseGrabbed();
-                mc.pauseGame(false);
+                screen(mc).keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE, 0, 0);
+                require(
+                        mc.screen instanceof net.minecraft.client.gui.screens.PauseScreen,
+                        "RTS Escape did not open pause");
             } else if (tick == 148) {
                 mc.setScreen(null);
             } else if (tick == 151) {

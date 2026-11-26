@@ -496,3 +496,15 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 |---|---|---|
 | UNIT-05 | `perftests.idle_300_costs_a_third` steps the standing and the walking match together, tick by tick, in two rounds that swap which match steps first (200 warm-up ticks and 300 samples per mode a round, 600 a mode in all); the walking match stands in a copy of the arena 52 blocks east. Replaces 2026-10-27's sequential measurement after a disposable precondition. The 300 units, the orders and the 30 % limit are unchanged | Measured one after the other, the two modes saw different background load on a desktop Mac and the ratio failed on main itself (0.31–0.35 at foreign CPU 0.11–0.13, 0.155 on a quiet machine); stepped together both see the same load. The first-stepped match pays the cold caches, hence the swap. Interleaved: 0.297 and 0.294 under foreign CPU 0.11–0.18 |
 
+
+### 2026-11-15 — Complete QA-12 cloud execution
+
+| Card | Change | Why |
+|---|---|---|
+| QA-12.4 / M7 verification prerequisite | On CI, execute seeds 1–20 in separate isolated server jobs, each to the same conquest/45-game-minute boundary with the same fault and replay/hash assertions. Require successful XML, completed replay logs and manifests from one commit for every distinct seed. Local `verifySoak` still runs the original full 20-seed set with its existing match window. | M6's complete soak took 3 h 13 min; the inherited 25-minute full-ci job cancelled its first M7 invocation. The existing slow/core job keeps its bound; separate AI jobs have a 90-minute orchestration bound. This is functional soak execution, not a performance measurement or a change to AI acceptance criteria. No seed, assertion, duration or performance budget is removed. |
+
+### 2026-11-18 — Complete interrupted T7 L6 evidence
+
+| Card | Change | Why |
+|---|---|---|
+| PERF-10 / T7 hot-path gate | Preserve 21 completed scene reports from standard run 44296716682, then execute only battle_soak, group_paths_budget_d and the full 36,000-tick mvp_soak on the same immutable production source 4dd51afa. Require exact disjoint 21+3 inventory, original report hashes, passing completion XML and unchanged verdicts/windows. Future standard workflow orchestration permits the existing 150-minute process bound plus build/upload overhead. | The outer 90-minute workflow limit interrupted the 24-scene suite before completion. No performance threshold, CI factor, per-scene baseline, foreign-load rule or measurement duration changes; same-host ratio cases remain in their original run. |

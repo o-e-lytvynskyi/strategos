@@ -7,6 +7,7 @@ import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
+import dev.strategos.core.testkit.MultiplayerScene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
 import dev.strategos.mod.server.content.Scenarios;
@@ -164,6 +165,16 @@ final class PerfSoaks {
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);
+    }
+
+    static void multiplayer(GameTestHelper h, boolean stress) {
+        Window window = new Window();
+        var scale = stress ? MvpScene.Config.STRESS : MvpScene.Config.SOAK;
+        var scene = new MultiplayerScene.Config(mvp(h, scale));
+        var config = CrowdSoak.Config.multiplayer(
+                stress ? "m7_multiplayer_stress" : "m7_multiplayer", scene, stress ? 6_000 : 24_000, stress ? 46 : 45);
+        CrowdSoak.start(
+                h, config, result -> judgeSoak(h, result, window, stress), window::start, window::sampleForeignLoad);
     }
 
     static void firstLoopFast(GameTestHelper h) {

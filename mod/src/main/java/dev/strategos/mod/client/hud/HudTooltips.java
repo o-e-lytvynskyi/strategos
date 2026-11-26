@@ -69,7 +69,7 @@ final class HudTooltips {
                     r.y() + pad + 1,
                     r.x() + pad + swatch,
                     r.y() + pad + 1 + swatch,
-                    theme.faction(t.faction()));
+                    StrategosClient.colour(t.faction()));
             g.drawString(font, t.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
         }
     }
@@ -94,7 +94,7 @@ final class HudTooltips {
                 r.y() + pad + 1,
                 r.x() + pad + swatch,
                 r.y() + pad + 1 + swatch,
-                theme.faction(i.faction()));
+                StrategosClient.colour(i.faction()));
         g.drawString(font, i.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
         g.drawString(font, i.detail(), r.x() + pad, r.y() + pad + 2 + font.lineHeight, theme.text(), false);
     }

@@ -9,6 +9,12 @@ import dev.strategos.core.shared.CoreApi;
  */
 @CoreApi
 public record ModeSwitch(boolean firstPerson, double x, double z) {
+    public ModeSwitch {
+        if (!Double.isFinite(x) || !Double.isFinite(z)) {
+            throw new IllegalArgumentException("non-finite mode-switch column");
+        }
+    }
+
     public static final ModeSwitch BACK = new ModeSwitch(false, 0, 0);
 
     public static final WireCodec<ModeSwitch> WIRE = new WireCodec<>() {
@@ -19,7 +25,11 @@ public record ModeSwitch(boolean firstPerson, double x, double z) {
 
         @Override
         public ModeSwitch read(WireReader in) {
-            return new ModeSwitch(in.readBoolean(), in.readDouble(), in.readDouble());
+            try {
+                return new ModeSwitch(in.readBoolean(), in.readDouble(), in.readDouble());
+            } catch (IllegalArgumentException invalid) {
+                throw new WireException("non-finite mode-switch column");
+            }
         }
 
         @Override

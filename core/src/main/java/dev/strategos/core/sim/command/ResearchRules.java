@@ -69,7 +69,7 @@ final class ResearchRules {
             long[] cost = state.costs().ofTech(tech);
             long @Nullable [] missing = state.treasury().missing(faction, cost);
             if (missing != null) {
-                return Tally.unaffordable(envelope, kind(), 1, missing);
+                return Tally.unaffordable(envelope, kind(), 1, missing, state, faction);
             }
             state.treasury().pay(faction, cost);
             b.enqueue(research.building(), QueueEntry.techEntry(tech.netIndex()));

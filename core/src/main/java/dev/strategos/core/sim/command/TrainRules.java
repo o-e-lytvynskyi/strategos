@@ -29,14 +29,7 @@ final class TrainRules {
 
     /** Why the issuer may not use building {@code handle}, or null. */
     static @Nullable RejectReason own(CommandEnvelope envelope, int handle, MatchState state) {
-        if (!state.buildings().alive(handle)) {
-            return RejectReason.UNKNOWN_TARGET;
-        }
-        if (!envelope.issuer().isAdmin()
-                && envelope.issuer().value() != state.buildings().faction(handle)) {
-            return RejectReason.NOT_OWNER;
-        }
-        return null;
+        return Ownership.building(envelope.issuer(), handle, state);
     }
 
     static final class TrainRule implements CommandRule<Train> {
@@ -67,7 +60,7 @@ final class TrainRules {
             long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
             long[] missing = state.treasury().missing(faction, cost);
             if (missing != null) {
-                return Tally.unaffordable(envelope, kind(), 1, missing);
+                return Tally.unaffordable(envelope, kind(), 1, missing, state, faction);
             }
             state.treasury().pay(faction, cost);
             b.enqueue(train.building(), template.netIndex());
@@ -113,7 +106,7 @@ final class TrainRules {
             }
             long[] missing = state.treasury().missing(faction, cost);
             if (missing != null) {
-                return Tally.unaffordable(envelope, kind(), 1, missing);
+                return Tally.unaffordable(envelope, kind(), 1, missing, state, faction);
             }
             state.treasury().pay(faction, cost);
             b.enqueue(train.building(), template.netIndex(), train.count());
@@ -185,7 +178,7 @@ final class TrainRules {
             long[] cost = Fields.reseedCost(state, reseed.field());
             long[] missing = state.treasury().missing(faction, cost);
             if (missing != null) {
-                return Tally.unaffordable(envelope, kind(), 1, missing);
+                return Tally.unaffordable(envelope, kind(), 1, missing, state, faction);
             }
             state.treasury().pay(faction, cost);
             Fields.reseed(state, reseed.field());

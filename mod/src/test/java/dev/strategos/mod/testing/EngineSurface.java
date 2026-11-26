@@ -28,9 +28,12 @@ public record EngineSurface(Map<String, List<String>> kinds) {
     /** Every kind, in the inventory's order. */
     public static final List<String> KINDS = List.of(
             "entityTypes",
+            "attachmentTypes",
             "savedData",
             "commands",
             "mixinConfigs",
+            "mixins",
+            "mixinHooks",
             "accessTransformers",
             "payloads",
             "dataMaps",
@@ -45,9 +48,12 @@ public record EngineSurface(Map<String, List<String>> kinds) {
     /** The kinds the code side reads. */
     public static final List<String> PROBED = List.of(
             "entityTypes",
+            "attachmentTypes",
             "savedData",
             "commands",
             "mixinConfigs",
+            "mixins",
+            "mixinHooks",
             "accessTransformers",
             "payloads",
             "dataMaps",
@@ -68,6 +74,11 @@ public record EngineSurface(Map<String, List<String>> kinds) {
         return kinds.getOrDefault(kind, List.of());
     }
 
+    /** Actual declared mixin configurations; class/hook probes read their own resources. */
+    public static List<String> mixinConfigs(String modsToml) {
+        return tomlEntries(modsToml, "mixins", "config");
+    }
+
     /** The inventory file: {@code {"milestone": …, "<kind>": [ids]}}. */
     public static EngineSurface read(Path json) {
         try (Reader reader = Files.newBufferedReader(json, StandardCharsets.UTF_8)) {
@@ -77,6 +88,8 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             kinds.put("savedData", inventory.savedData);
             kinds.put("commands", inventory.commands);
             kinds.put("mixinConfigs", inventory.mixinConfigs);
+            kinds.put("mixins", inventory.mixins);
+            kinds.put("mixinHooks", inventory.mixinHooks);
             kinds.put("accessTransformers", inventory.accessTransformers);
             kinds.put("payloads", inventory.payloads);
             kinds.put("dataMaps", inventory.dataMaps);
@@ -102,6 +115,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
      */
     public static EngineSurface ofCode(
             Collection<String> entityTypeIds,
+            Collection<String> attachmentTypeIds,
             List<String> savedData,
             Collection<String> commandRoots,
             Collection<String> dataMapIds,
@@ -112,14 +126,23 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             Collection<String> reloadListenerNames,
             Collection<String> configFiles,
             Collection<String> payloadIds,
+            Collection<String> mixinClasses,
+            Collection<String> mixinHooks,
             EngineSurface inventory) {
         Map<String, List<String>> kinds = new LinkedHashMap<>();
         kinds.put(
                 "entityTypes",
                 entityTypeIds.stream().filter(id -> id.startsWith("strategos:")).toList());
+        kinds.put(
+                "attachmentTypes",
+                attachmentTypeIds.stream()
+                        .filter(id -> id.startsWith("strategos:"))
+                        .toList());
         kinds.put("savedData", savedData);
         kinds.put("commands", List.copyOf(commandRoots));
         kinds.put("mixinConfigs", tomlEntries(modsToml, "mixins", "config"));
+        kinds.put("mixins", List.copyOf(mixinClasses));
+        kinds.put("mixinHooks", List.copyOf(mixinHooks));
         List<String> transformers = new ArrayList<>(tomlEntries(modsToml, "accessTransformers", "file"));
         if (accessTransformerCfg != null) {
             accessTransformerCfg
@@ -196,6 +219,8 @@ public record EngineSurface(Map<String, List<String>> kinds) {
         List<String> savedData = List.of();
         List<String> commands = List.of();
         List<String> mixinConfigs = List.of();
+        List<String> mixins = List.of();
+        List<String> mixinHooks = List.of();
         List<String> accessTransformers = List.of();
         List<String> payloads = List.of();
         List<String> dataMaps = List.of();

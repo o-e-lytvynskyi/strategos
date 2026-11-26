@@ -16,6 +16,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.lang.ArchRule;
+import dev.strategos.mod.archfixture.AttachmentFixtures;
 import dev.strategos.mod.archfixture.BlockWriteFixtures;
 import dev.strategos.mod.archfixture.ClientReferenceFixture;
 import dev.strategos.mod.archfixture.CoreInternalsFixture;
@@ -60,6 +61,12 @@ class ModArchitectureTest {
             .dependOnClassesThat()
             .resideInAPackage("dev.strategos.mod.client..")
             .because("the mod's client code loads on clients only (B5)");
+
+    private static final ArchRule ATTACHMENTS_NEVER_SYNC_MATCH_STATE = noClasses()
+            .should()
+            .callMethodWhere(callTo("net.neoforged.neoforge.attachment.AttachmentType$Builder", "sync"))
+            .because(
+                    "match state leaves through explicit recipient projections, never attachment synchronization (NET-03/B6)");
 
     private static final ArchRule ONLY_NET_GATEWAY_SENDS = noClasses()
             .that()
@@ -204,6 +211,13 @@ class ModArchitectureTest {
     void commonCodeNeverReferencesModClient() {
         COMMON_CODE_NEVER_REFERENCES_MOD_CLIENT.check(SHIPPED);
         assertBites(COMMON_CODE_NEVER_REFERENCES_MOD_CLIENT, ModClientReferenceFixture.class);
+    }
+
+    @Test
+    void attachmentsNeverBypassRecipientProjection() {
+        ATTACHMENTS_NEVER_SYNC_MATCH_STATE.check(SHIPPED);
+        ATTACHMENTS_NEVER_SYNC_MATCH_STATE.check(ArchClasses.fixtures(AttachmentFixtures.LocalOnly.class));
+        assertBites(ATTACHMENTS_NEVER_SYNC_MATCH_STATE, AttachmentFixtures.ClientSynced.class);
     }
 
     @Test

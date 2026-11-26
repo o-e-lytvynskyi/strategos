@@ -2,6 +2,7 @@ package dev.strategos.mod;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.JsonParser;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import dev.strategos.core.shared.MatchId;
@@ -13,6 +14,7 @@ import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.RegistryData;
 import dev.strategos.mod.testing.EngineSurface;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,9 +29,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.RegistryManager;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  * QA-17.3, rule B12: the engine surface the code registers equals {@code engine-surface.json}, and every listed id
@@ -46,6 +54,12 @@ class EngineSurfaceInventoryTest {
 
     private static List<String> entityTypes() {
         return BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+                .map(ResourceLocation::toString)
+                .toList();
+    }
+
+    private static List<String> attachmentTypes() {
+        return NeoForgeRegistries.ATTACHMENT_TYPES.keySet().stream()
                 .map(ResourceLocation::toString)
                 .toList();
     }
@@ -123,6 +137,71 @@ class EngineSurfaceInventoryTest {
         return ModList.get().getModFileById(Strategos.MOD_ID).getFile().findResource(path);
     }
 
+    /** Declared classes, including optional side lists, without loading a mixin class through the game loader. */
+    private static List<String> mixinClasses() {
+        List<String> names = new ArrayList<>();
+        try {
+            for (String config : EngineSurface.mixinConfigs(modsToml())) {
+                var json = JsonParser.parseString(Files.readString(modFile(config), StandardCharsets.UTF_8))
+                        .getAsJsonObject();
+                String prefix = json.has("package") ? json.get("package").getAsString() + "." : "";
+                for (String side : List.of("mixins", "client", "server")) {
+                    if (json.has(side))
+                        for (var name : json.getAsJsonArray(side)) names.add(prefix + name.getAsString());
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot probe declared mixin classes", e);
+        }
+        return List.copyOf(names);
+    }
+
+    /** Read actual injection targets from original class bytes, never by defining a mixin class. */
+    private static List<String> mixinHooks(List<String> mixins) {
+        List<String> hooks = new ArrayList<>();
+        try {
+            for (String mixin : mixins) {
+                var reader = new ClassReader(Files.readAllBytes(modFile(mixin.replace('.', '/') + ".class")));
+                reader.accept(
+                        new ClassVisitor(Opcodes.ASM9) {
+                            @Override
+                            public MethodVisitor visitMethod(
+                                    int access,
+                                    String name,
+                                    String descriptor,
+                                    @Nullable String signature,
+                                    String @Nullable [] exceptions) {
+                                return new MethodVisitor(Opcodes.ASM9) {
+                                    @Override
+                                    public @Nullable AnnotationVisitor visitAnnotation(
+                                            String descriptor, boolean visible) {
+                                        if (!descriptor.startsWith("Lorg/spongepowered/asm/mixin/injection/"))
+                                            return null;
+                                        return new AnnotationVisitor(Opcodes.ASM9) {
+                                            @Override
+                                            public @Nullable AnnotationVisitor visitArray(String name) {
+                                                if (!name.equals("method")) return null;
+                                                return new AnnotationVisitor(Opcodes.ASM9) {
+                                                    @Override
+                                                    public void visit(@Nullable String name, @Nullable Object value) {
+                                                        if (value instanceof String target)
+                                                            hooks.add(mixin + "#" + target);
+                                                    }
+                                                };
+                                            }
+                                        };
+                                    }
+                                };
+                            }
+                        },
+                        ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot probe mixin injection targets", e);
+        }
+        return List.copyOf(hooks);
+    }
+
     private static String modsToml() throws IOException {
         return Files.readString(modFile("META-INF", "neoforge.mods.toml"), StandardCharsets.UTF_8);
     }
@@ -139,8 +218,30 @@ class EngineSurfaceInventoryTest {
 
     private static EngineSurface code(
             List<String> entityTypes, String modsToml, @Nullable String transformers, List<String> worldgen) {
+        return code(entityTypes, modsToml, transformers, worldgen, attachmentTypes());
+    }
+
+    private static EngineSurface code(
+            List<String> entityTypes,
+            String modsToml,
+            @Nullable String transformers,
+            List<String> worldgen,
+            List<String> attachments) {
+        List<String> mixins = mixinClasses();
+        return code(entityTypes, modsToml, transformers, worldgen, attachments, mixins, mixinHooks(mixins));
+    }
+
+    private static EngineSurface code(
+            List<String> entityTypes,
+            String modsToml,
+            @Nullable String transformers,
+            List<String> worldgen,
+            List<String> attachments,
+            List<String> mixins,
+            List<String> hooks) {
         return EngineSurface.ofCode(
                 entityTypes,
+                attachments,
                 savedData(),
                 commandRoots(),
                 dataMaps(),
@@ -151,7 +252,47 @@ class EngineSurfaceInventoryTest {
                 reloadListeners(),
                 StrategosConfig.files(),
                 payloads(),
+                mixins,
+                hooks,
                 inventory());
+    }
+
+    @Test
+    void anUnlistedMixinClassIsReported() throws IOException {
+        List<String> mixins = new ArrayList<>(mixinClasses());
+        List<String> hooks = mixinHooks(mixins);
+        mixins.add("dev.strategos.mod.mixin.UnlistedMixin");
+        assertThat(EngineSurface.diff(
+                        inventory(),
+                        code(
+                                entityTypes(),
+                                modsToml(),
+                                accessTransformers(),
+                                worldgen(),
+                                attachmentTypes(),
+                                mixins,
+                                hooks)))
+                .containsExactly(
+                        "mixins: dev.strategos.mod.mixin.UnlistedMixin is in the code but not in the inventory");
+    }
+
+    @Test
+    void anUnlistedMixinInjectionIsReported() throws IOException {
+        List<String> mixins = mixinClasses();
+        List<String> hooks = new ArrayList<>(mixinHooks(mixins));
+        hooks.add("dev.strategos.mod.mixin.ServerPlayerMixin#unlistedTarget");
+        assertThat(EngineSurface.diff(
+                        inventory(),
+                        code(
+                                entityTypes(),
+                                modsToml(),
+                                accessTransformers(),
+                                worldgen(),
+                                attachmentTypes(),
+                                mixins,
+                                hooks)))
+                .containsExactly(
+                        "mixinHooks: dev.strategos.mod.mixin.ServerPlayerMixin#unlistedTarget is in the code but not in the inventory");
     }
 
     @Test
@@ -188,6 +329,16 @@ class EngineSurfaceInventoryTest {
 
         assertThat(EngineSurface.diff(inventory(), code(types, modsToml(), accessTransformers())))
                 .containsExactly("entityTypes: strategos:unit_spy is in the code but not in the inventory");
+    }
+
+    @Test
+    void anUnlistedAttachmentTypeIsReported() throws IOException {
+        List<String> attachments = new ArrayList<>(attachmentTypes());
+        attachments.add("strategos:unlisted_attachment");
+        assertThat(EngineSurface.diff(
+                        inventory(), code(entityTypes(), modsToml(), accessTransformers(), worldgen(), attachments)))
+                .containsExactly(
+                        "attachmentTypes: strategos:unlisted_attachment is in the code but not in the inventory");
     }
 
     @Test

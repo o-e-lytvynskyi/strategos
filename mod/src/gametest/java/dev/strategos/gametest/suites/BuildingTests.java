@@ -8,12 +8,18 @@ import static dev.strategos.gametest.suites.Units.move;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.client.hud.CommandCard;
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.sim.DiplomacySetup;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -21,9 +27,12 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -33,6 +42,58 @@ public final class BuildingTests {
     private static final TemplateId HOUSE = new TemplateId("strategos:building/house");
 
     private BuildingTests() {}
+
+    @StrategosTest(batch = "buildings", arena = "arena_flat_48", timeoutTicks = 400)
+    public static void romanTownUsesItsPaletteForEveryBuilding(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        var styles = new FactionPresentation(List.of(
+                new FactionPresentation.Style(CivilisationArt.ROMAN, 0),
+                new FactionPresentation.Style(CivilisationArt.PLACEHOLDER, 1)));
+        rt.initializeDiplomacy(
+                new DiplomacySetup(DiplomacyState.identity(2).lockTeams().snapshot()), new PresentationSetup(styles));
+        List<String> buildings =
+                List.of("civic_centre", "house", "barracks", "farmstead", "storehouse", "tower", "arsenal");
+        for (int i = 0; i < buildings.size(); i++) {
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnBuilding(
+                            new TemplateId("strategos:building/" + buildings.get(i)),
+                            new FactionSlot(0),
+                            2 + i % 3 * 14,
+                            2 + i / 3 * 14,
+                            i % 4));
+        }
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(core(rt).queries().buildings().size() == buildings.size(), "missing building"))
+                .thenWaitUntil(() -> {
+                    for (BuildingView building : core(rt).queries().buildings()) {
+                        ConstructionTests.equalsBlueprint(h, rt, building);
+                    }
+                })
+                .thenSucceed();
+    }
+
+    @StrategosTest(batch = "buildings", timeoutTicks = 60)
+    public static void selectableCommandIconsResolveToItems(GameTestHelper h) {
+        var templates = core(match(h)).queries().templates();
+        var entries = new TreeSet<>(CommandCard.buildings(templates));
+        for (int building : CommandCard.buildings(templates)) {
+            entries.addAll(CommandCard.trains(templates, building));
+        }
+        for (int entry : entries) {
+            String icon = CommandCard.icon(templates, entry);
+            ResourceLocation id = icon == null ? null : ResourceLocation.tryParse(icon);
+            check(
+                    id != null && BuiltInRegistries.ITEM.containsKey(id),
+                    templates.byIndex(entry).id() + " has no registered command icon");
+        }
+        for (var tech : templates.techs()) {
+            ResourceLocation id = ResourceLocation.tryParse(tech.icon());
+            check(id != null && BuiltInRegistries.ITEM.containsKey(id), tech.id() + " has no registered research icon");
+        }
+        h.succeed();
+    }
 
     /**
      * BLD-01.3: a civic centre placed for a scenario takes every resource and houses twenty, and the writer raises its

@@ -5,8 +5,10 @@ and the status of every card (the source of truth); the statuses below mirror it
 MVP are coarser by design and are refined at the review that opens their milestone.
 
 Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
-It defines tasks and contracts for review; card statuses remain `proposed` and implementation
-is not opened by this document.
+It defines tasks and contracts for review; it did not itself approve implementation.
+Runtime cards are complete for hand-in. On 2026-11-26 the owner accepted the combined
+[native and cloud evidence](../testing/m7-multiplayer.md#acceptance-record) in place of a repeat
+two-client round. QA-14 follows its separate schedule.
 
 ## Milestone
 
@@ -57,6 +59,10 @@ F-R18 for the first art set.
 dedicated server; one match per server in M7, several later (the match container already allows
 it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
 
+**Decision (owner, M7 operator session, 2026-10-30):** dedicated servers and Open to LAN
+through the same service, one active match per server. Dedicated-server tests remain authoritative.
+Multiple-match discovery is outside M7. Recorded in the M7 branch pending maintainer reconciliation of STATE.
+
 ---
 
 ## Cards
@@ -93,7 +99,8 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   4. Lobby goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5 · **Depends on:** MATCH-02, MATCH-06, NET-01, D-20 ·
   **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Done:** T3b server/start acceptance passed 2026-11-18: verify 44148921127 and complete slow/20-seed full-ci 44148929120 on e382f7b6; four-player case 4.710 s, no relaxed deadline. T4 full verify 44202558089 on 7c17da65 passed 2,682 canonical cases with zero failures/errors/skips. Cloud L4 44203471758 on 5f7d18be passed seven inspected goldens (all NMSE 0), real five-click production start/RTS admission, enabled-state/bounds assertions and the altered-golden negative guard. The three cloud candidate sets agree; private DTO presentation is distinguished from actual transport and dedicated-server acceptance.
+- **Status:** done
 
 #### NET-03 · Per-player and per-faction state through the gateway
 - **Value:** Each player sees their own economy and queues, allies see what allies should, and
@@ -108,7 +115,12 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   2. Allies receive the shared data of the rules table and nothing more (L3).
   3. No Strategos attachment type syncs to clients (L2, inventory).
 - **Tests:** L0, L2, L3 · **Depends on:** NET-08, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-22 — T9 supplies the treasury, queue, research, attachment and recipient
+  matrix. T14 supplies the gateway's allied pings and markers. Cloud verify
+  [45032045463](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45032045463)
+  passes 3,076 cases, including actual sender, co-op, allied, enemy and observer controls
+  at the exact rate boundary, recipient epochs and the expanded ingress corpus.
 
 #### NET-04 · Spike S11: bandwidth and per-channel byte budgets
 - **Value:** Smooth games over home internet with whole armies on the move.
@@ -126,7 +138,12 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   3. Two real clients confirm the mock counts (R, consent).
   4. The report decides on the tier-4 reserve (R).
 - **Tests:** L1, L6, R · **Depends on:** NET-03, QA-19, PERF-01 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** T16 passes [verify 45058126895](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45058126895)
+  with independent recipient credits, current summary reconstruction and removals under pressure,
+  stale-epoch rejection and FX drop accounting. [S11](../spikes/S11-bandwidth.md) records
+  four passing mock scenes and the two dedicated client comparisons on 2026-11-23.
+  The maximum real gameplay mean is 62,639.93 B/s and tier 4 stays in reserve.
 
 #### NET-05 · Reconnect and rejoin
 - **Value:** A dropped connection doesn't end your game.
@@ -141,7 +158,10 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   4. In a real two-client session, a client that drops its connection rejoins mid-fight (L7,
      acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** NET-02, CORE-07 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-26. The owner confirmed a native reconnect within 219 seconds. The
+  [recipient and reconnect inventory](../testing/m7-multiplayer.md#recipient-and-reconnect-regression-inventory)
+  records the automated order, expiry, camera, group and private-view checks accepted for hand-in.
 
 #### NET-06 · Command validation hardening and fuzzing
 - **Value:** A modified client cannot cheat with forged or flooded commands.
@@ -157,7 +177,8 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   4. The corpus and the crash fixtures run in every build (L2).
 - **Tests:** L0, L2, L3 · **Fixtures:** fuzz corpus and crash inputs (append-only) ·
   **Depends on:** CORE-03, NET-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** T11 full verify 44786479783 (2,927 cases) and T12 full verify 44791164065 (2,966 cases), with zero failures/errors/skips. Seeded L2 covers 100,008 generated probes and 27 permanent vectors; the actual paused-match L3 corpus preserves state/full journal and live accepted owner/peer controls. See the M7 specification sections 3.6 and T11/T12 branch evidence.
 
 #### NET-09 · Commander hardening against modified clients
 - **Value:** A modified client cannot use the vanilla spectator's powers to scout, teleport or leave
@@ -178,7 +199,13 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   5. The inventory lists both mixins, and the movement and fog GameTests pass under `-Pcompat`
      (L2).
 - **Tests:** L0, L2, L3, L5 · **Depends on:** NET-02, QA-15 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-22 — [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09)
+  covers actual teleport/attack denials with vanilla controls, commander and first-person pairing
+  with visible/own controls, and one-tick repair including an unloaded neighbour. The strict
+  inventory and movement/fog cases pass normal and compatibility verify (3,063 cases each);
+  full S and actual Sodium movement/fog pass, with inspected captures. Cross-feature compatibility
+  remains T21, and formal QA-15/native acceptance remains T19/T25.
 
 #### MATCH-06 · Teams, diplomacy and shared control
 - **Value:** Play with friends against others, or two humans in one faction: one commands from the
@@ -194,7 +221,8 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   3. Two mock players controlling one faction both have their commands accepted (L3).
   4. No unit is ever added to a scoreboard team, while player names are coloured (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** MATCH-03, CORE-01 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** T8 acceptance is recorded in the M7 specification section 3.1: full verify, slow/soak and two-controller transport/scoreboard controls, inspected cloud client evidence, and final matched JMH 44616013773 (all 30 configurations; unchanged 15% and allocation gates). T2/T5/T7 authority, allied damage/victory and persistence evidence is retained there. Human L7 remains T19/T25.
 
 #### UI-15 · Multiplayer HUD and pings
 - **Value:** Coordinate with allies: see who is playing and point at places on the map.
@@ -207,7 +235,11 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   3. The owner's two-client session uses pings (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** UI-20, NET-02 · **Size:** M ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-26. T14 server and client checks pass, and the proposed
+  llvmpipe frames compare at zero difference. See [T14 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
+  The owner approved the three Linux/llvmpipe goldens on 2026-11-22. Cloud 45059965221 passes
+  the approved comparison and all altered-frame controls. The owner accepted the cloud ping evidence for hand-in.
 
 #### AI-06 · AI in team games
 - **Value:** AI allies and opponents behave sensibly in team games.
@@ -219,7 +251,13 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   2. With an idle army, the AI joins the defence of an allied base within 30 s (L1).
   3. Allied AIs launch their waves within 60 s of each other (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-05, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-22 — [T15 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
+  The AI excludes allied units, buildings and indexed starts from hostile selection. An idle
+  army reaches an observed threat at a visible allied base within 600 ticks in L1 and L3,
+  while active and unobserved controls issue no assistance order. Allied waves launch
+  within 1,200 ticks in the staggered-schedule contract. Functional verification, exact
+  replay, full slow/soak and paired JMH all pass on 8313bfb5.
 
 #### QA-15 · Multiplayer test kit
 - **Value:** Multiplayer behaviour is tested on every change, not only in sessions with friends.
@@ -232,7 +270,9 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   2. Captured payloads can be asserted per player (L3).
   3. The extended protocol is used at the M7 acceptance (L7, acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** QA-19, NET-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Engine evidence (2026-11-18):** T6 cloud verify 44300748747, 2,734 cases without failures/errors/skips; four acknowledging players/private captures/actual byte counters/owned cleanup 1.099 s under 30 s, plus atomic admission and hostile ingress with positive controls. The owner accepted the recorded [T25 protocol results](../testing/m7-multiplayer.md#acceptance-record) for hand-in.
+- **Status:** done
+- **Done:** 2026-11-26. The multiplayer kit and protocol evidence passed T6, T19 and T25.
 
 #### PERF-10 · Multiplayer perf and bandwidth gate
 - **Value:** Four-player matches stay smooth for every player.
@@ -245,7 +285,9 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report is archived as the multiplayer baseline (R).
 - **Tests:** L6, R · **Depends on:** NET-04, QA-15, PERF-09 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-25. The owner accepted the [PERF-10 reference reports](../../perf/m7/README.md)
+  from run 45088024574. Sustained four-faction census, A–E, 2× stress and order latency all passed.
 
 ### Beside M7
 
@@ -266,4 +308,7 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   4. The owner approves the look and finds the silhouettes distinct (L7, acceptance).
 - **Tests:** L2, L3, L4 (consent), L7 · **Depends on:** QA-13, D-03, D-04 · **Size:** L ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** done
+- **Done:** 2026-11-22 — Roman style and all three 60-block frames approved by the owner.
+  Verify 45062739294 passes lint, construction, damage/restore/repair and command-card icons.
+  Scenario 45063579435 passes the approved frames and rejects all three inverted controls.

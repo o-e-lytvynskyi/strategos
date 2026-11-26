@@ -768,6 +768,7 @@ public final class NetTests {
     @StrategosTest(timeoutTicks = 200)
     public static void shotFxAudience(GameTestHelper h) {
         MatchRuntime rt = match(h);
+        spawn(rt, 10, 10, 1, 0);
         Vec3 at = h.absoluteVec(new Vec3(12.5, 2, 12.5));
         MockViewer member = MockViewer.join(h.getLevel(), "strat-shotin", at.x, at.y, at.z, 4);
         MockViewer outsider = MockViewer.join(h.getLevel(), "strat-shotout", at.x + 1, at.y, at.z, 4);
@@ -784,7 +785,9 @@ public final class NetTests {
         h.onEachTick(() -> {
             member.poll();
             outsider.poll();
-            if (!state.sent) {
+            var matchCore = rt.core();
+            var vision = matchCore == null ? null : matchCore.vision();
+            if (!state.sent && vision != null && vision.grid(0).count(2, 2) > 0) {
                 FxSender.send(
                         rt,
                         new TickOutputs(1, BodyFrame.EMPTY, volley),

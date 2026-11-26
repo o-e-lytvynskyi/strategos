@@ -100,7 +100,10 @@ public final class RtsScreen extends Screen {
                 mode.placement().cancel();
                 in.context(ActionContext.RTS);
             }
-            case PAUSE -> mc.pauseGame(false);
+            case PAUSE -> {
+                mc.setScreen(null);
+                mc.pauseGame(false);
+            }
             case ACTIONS -> {
                 return actionKey(mc, in, keyCode, scanCode, modifiers);
             }

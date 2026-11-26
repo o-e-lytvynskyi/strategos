@@ -6,7 +6,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 /**
  * The first victory rule (MATCH-01, M3 spec §1.6 row 18), each FINAL under {@link PlayRules.Victory#CIVIC_CENTRE}: a
  * faction that holds a finished civic centre is in play; one in play that holds none any more is defeated, as one that
- * resigned is; once someone was defeated and at most one in play stands, the match ends, that one the winner. A centre
+ * resigned is; once someone was defeated, the last faction or locked allied coalition wins; no survivors is a draw. A centre
  * still a foundation or a site counts as none. The same tick its last centre falls, so well within 20 ticks.
  */
 final class VictoryCheck {
@@ -30,7 +30,6 @@ final class VictoryCheck {
         }
         boolean anyDefeated = false;
         int standing = 0;
-        int last = Outcome.NONE;
         for (int f = 0; f < factions; f++) {
             boolean holds = (holding & (1L << f)) != 0;
             if (holds) {
@@ -42,14 +41,9 @@ final class VictoryCheck {
             }
             anyDefeated |= o.defeated(f);
             if (o.held(f) && !o.defeated(f)) {
-                standing++;
-                last = f;
+                standing |= 1 << f;
             }
         }
-        if (anyDefeated && standing <= 1) {
-            int winner = standing == 1 ? last : Outcome.NONE;
-            o.end(winner, s.tick());
-            s.outputs().add(new MatchEnded(winner, s.tick()));
-        }
+        VictoryResolution.finish(s, anyDefeated, standing);
     }
 }

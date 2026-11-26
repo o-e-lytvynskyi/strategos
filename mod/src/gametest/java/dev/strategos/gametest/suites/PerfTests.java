@@ -955,6 +955,36 @@ public final class PerfTests {
         PerfSoaks.economyStress(h);
     }
 
+    @StrategosTest(batch = "perf_m7_multiplayer", arena = "arena_flat_48", timeoutTicks = 45_000)
+    public static void m7Multiplayer(GameTestHelper h) {
+        PerfSoaks.multiplayer(h, false);
+    }
+
+    @StrategosTest(batch = "perf_m7_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void m7MultiplayerStress(GameTestHelper h) {
+        PerfSoaks.multiplayer(h, true);
+    }
+
+    @StrategosTest(batch = "perf_s11_battle", arena = "arena_flat_48", timeoutTicks = 8_000)
+    public static void s11Battle(GameTestHelper h) {
+        S11Bandwidth.start(h, S11Bandwidth.Scene.BATTLE);
+    }
+
+    @StrategosTest(batch = "perf_s11_pan", arena = "arena_flat_48", timeoutTicks = 8_000)
+    public static void s11Pan(GameTestHelper h) {
+        S11Bandwidth.start(h, S11Bandwidth.Scene.PAN);
+    }
+
+    @StrategosTest(batch = "perf_s11_fog", arena = "arena_flat_48", timeoutTicks = 8_000)
+    public static void s11Fog(GameTestHelper h) {
+        S11Bandwidth.start(h, S11Bandwidth.Scene.FOG);
+    }
+
+    @StrategosTest(batch = "perf_s11_construction", arena = "arena_flat_48", timeoutTicks = 8_000)
+    public static void s11Construction(GameTestHelper h) {
+        S11Bandwidth.start(h, S11Bandwidth.Scene.CONSTRUCTION);
+    }
+
     /**
      * PERF-08 (M5 spec §6): the battle on the proving ground for {@code strategos.battle.ticks} ticks (6,000, 5 game
      * minutes, paced at 20 a second): two factions of 150 spearmen, archers and horsemen in waves across the fords to

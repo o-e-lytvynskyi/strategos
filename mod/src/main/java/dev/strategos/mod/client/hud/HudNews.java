@@ -60,9 +60,7 @@ final class HudNews {
         MatchJoin joined = StrategosClient.match();
         if (announced > wavesHeard) { // AI-17: an enemy's wave, for those it comes for
             wavesHeard = announced;
-            if (wave != null
-                    && joined != null
-                    && wave.faction() != joined.slot().value()) {
+            if (wave != null && joined != null && !joined.alliedFaction(wave.faction())) {
                 offer(
                         clientTicks,
                         NotificationFeed.Kind.WAVE,
@@ -90,7 +88,7 @@ final class HudNews {
         if (phases > phasesHeard) { // TECH-02's notice, to every participant
             phasesHeard = phases;
             if (phase != null && joined != null) {
-                boolean own = phase.faction() == joined.slot().value();
+                boolean own = phase.faction() == joined.primaryFaction();
                 offer(
                         clientTicks,
                         NotificationFeed.Kind.PHASE,

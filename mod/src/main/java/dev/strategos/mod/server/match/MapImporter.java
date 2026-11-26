@@ -150,35 +150,51 @@ public final class MapImporter {
             int column = b.x() * size + b.z();
             lowest[column] = Math.min(lowest[column], b.y());
         }
-        List<MapTile.Placed> writes = new ArrayList<>();
+        List<MapTile.Placed> solids = new ArrayList<>();
+        for (MapTile.Placed block : stored) {
+            if (block.state().getFluidState().isEmpty()) {
+                solids.add(block);
+            } else {
+                fluids.add(new MapTile.Placed(i * size + block.x(), block.y(), j * size + block.z(), block.state()));
+            }
+        }
+        solids.sort(Y_THEN_X_THEN_Z);
+        WriteSite site = new WriteSite(match, SITE_BASE + t);
+        BlockPos corner = origin.offset(i * size, 0, j * size);
         BlockState base = pkg.base();
+        int solid = 0;
         if (!base.isAir()) {
-            for (int x = 0; x < size; x++) {
-                for (int z = 0; z < size; z++) {
-                    int top = lowest[x * size + z];
-                    for (int y = 0; y < top && top != Integer.MAX_VALUE; y++) {
-                        writes.add(new MapTile.Placed(x, y, z, base));
+            int depth = 0;
+            for (int floor : lowest) {
+                if (floor != Integer.MAX_VALUE) depth = Math.max(depth, floor);
+            }
+            // Merge the column fill with the stored solids in Y/X/Z order without allocating and sorting the fill.
+            for (int y = 0; y < depth; y++) {
+                for (int x = 0; x < size; x++) {
+                    for (int z = 0; z < size; z++) {
+                        if (y >= lowest[x * size + z] || lowest[x * size + z] == Integer.MAX_VALUE) continue;
+                        while (solid < solids.size() && before(solids.get(solid), x, y, z)) {
+                            MapTile.Placed block = solids.get(solid++);
+                            enqueue(site, corner, block.x(), block.y(), block.z(), block.state());
+                        }
+                        enqueue(site, corner, x, y, z, base);
                     }
                 }
             }
         }
-        for (MapTile.Placed b : stored) {
-            if (b.state().getFluidState().isEmpty()) {
-                writes.add(b);
-            } else {
-                fluids.add(new MapTile.Placed(i * size + b.x(), b.y(), j * size + b.z(), b.state()));
-            }
+        while (solid < solids.size()) {
+            MapTile.Placed block = solids.get(solid++);
+            enqueue(site, corner, block.x(), block.y(), block.z(), block.state());
         }
-        writes.sort(Y_THEN_X_THEN_Z);
-        WriteSite site = new WriteSite(match, SITE_BASE + t);
-        for (MapTile.Placed b : writes) {
-            writer.enqueue(
-                    level,
-                    site,
-                    WritePriority.IMPORT,
-                    origin.offset(i * size + b.x(), b.y(), j * size + b.z()),
-                    b.state(),
-                    0);
-        }
+    }
+
+    private static boolean before(MapTile.Placed block, int x, int y, int z) {
+        if (block.y() != y) return block.y() < y;
+        if (block.x() != x) return block.x() < x;
+        return block.z() < z;
+    }
+
+    private void enqueue(WriteSite site, BlockPos corner, int x, int y, int z, BlockState state) {
+        writer.enqueue(level, site, WritePriority.IMPORT, corner.offset(x, y, z), state, 0);
     }
 }

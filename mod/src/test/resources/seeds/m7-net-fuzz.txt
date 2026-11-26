@@ -1,0 +1,4 @@
+# Stable decoder corpus seeds; use strategos.seed to reproduce a seed.
+31
+20261120
+914527

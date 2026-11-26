@@ -6,7 +6,6 @@ import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Ungarrison;
 import dev.strategos.core.protocol.UnitSet;
-import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
@@ -23,14 +22,7 @@ final class GarrisonRules {
 
     /** The refusal that stops a command naming building {@code handle} for every unit, or null: it is the issuer's own. */
     static @Nullable RejectReason building(CommandEnvelope envelope, MatchState state, int handle) {
-        BuildingStore buildings = state.buildings();
-        if (!BuildingStore.isBuilding(handle) || !buildings.alive(handle)) {
-            return RejectReason.UNKNOWN_TARGET;
-        }
-        if (!envelope.issuer().controls(new FactionSlot(buildings.faction(handle)))) {
-            return RejectReason.NOT_OWNER;
-        }
-        return null;
+        return Ownership.building(envelope.issuer(), handle, state);
     }
 
     /**

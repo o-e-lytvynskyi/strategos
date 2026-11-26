@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.mod.client.StrategosClient;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -32,7 +33,8 @@ final class HudBuildingCard {
     /** One building: its name and state, then its queue with the head's progress, or a field's crop. */
     void building(GuiGraphics g, Font font, TemplateSet templates, HudRect r, int pad, BuildingState.Entry b) {
         cardPresentation.icon(g, font, templates, b.template(), SelectionPanel.icon(r, pad));
-        paint.text(g, font, r, 0, HudCardPresentation.name(templates, b.template()), theme.faction(b.faction()));
+        paint.text(
+                g, font, r, 0, HudCardPresentation.name(templates, b.template()), StrategosClient.colour(b.faction()));
         String state = switch (b.state()) {
             case 0 -> "Foundation";
             case 1 -> "Building " + b.progress() / 10 + " %";

@@ -107,7 +107,7 @@ public final class DamageStages {
             int k = ranks[r];
             int x = at.worldX(b.x(k), b.z(k));
             int z = at.worldZ(b.x(k), b.z(k));
-            String state = b.palette().get(b.state(k));
+            String state = s.buildingMaterial(handle, b, k);
             s.outputs()
                     .add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
             s.outputs().add(new BlockFell(x, baseY + b.y(k), z, state));
@@ -121,7 +121,7 @@ public final class DamageStages {
                             at.worldX(b.x(k), b.z(k)),
                             baseY + b.y(k),
                             at.worldZ(b.x(k), b.z(k)),
-                            b.palette().get(b.state(k)),
+                            s.buildingMaterial(handle, b, k),
                             handle));
         }
         buildings.setStage(handle, want);

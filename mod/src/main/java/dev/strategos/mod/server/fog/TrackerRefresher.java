@@ -4,12 +4,16 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.vision.VisionSystem;
+import dev.strategos.mod.server.commander.CommanderGuard;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
+import net.minecraft.network.Connection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -25,7 +29,10 @@ public final class TrackerRefresher {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final Map<Long, Integer> seen = new HashMap<>();
+    private final Map<UUID, PlayerView> playerViews = new HashMap<>();
     private long nanos;
+
+    private record PlayerView(int match, long generation, int primary, Connection connection, Set<UUID> denied) {}
 
     public TrackerRefresher(MinecraftServer server, Supplier<MatchRegistry> matches) {
         this.server = server;
@@ -56,6 +63,7 @@ public final class TrackerRefresher {
 
     private void refresh() {
         MatchRegistry registry = matches.get();
+        Set<UUID> refresh = new HashSet<>();
         seen.keySet().removeIf(key -> registry.get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : registry.all()) {
             MatchCore core = rt.core();
@@ -72,15 +80,47 @@ public final class TrackerRefresher {
                 changed[f] = last == null || last != version;
             }
             for (UUID member : rt.roster().members()) {
-                var slot = rt.roster().slotOf(member);
-                if (slot == null || slot.value() < 0 || slot.value() >= factions || !changed[slot.value()]) {
+                var seat = registry.seatOf(member);
+                int primary = seat == null
+                        ? -1
+                        : seat.primaryFaction().map(f -> f.value()).orElse(-1);
+                if (primary < 0 || primary >= factions || !changed[primary]) {
                     continue;
                 }
                 ServerPlayer player = server.getPlayerList().getPlayer(member);
                 if (player != null) {
-                    player.serverLevel().getChunkSource().move(player);
+                    refresh.add(member);
                 }
             }
+        }
+        // A player can leave a visible cell without changing any core-unit visibility bit.
+        // Compare denied subjects, so enrolling a previously public body also revokes its old pairing.
+        Set<UUID> online = new HashSet<>();
+        var players = server.getPlayerList().getPlayers();
+        for (ServerPlayer viewer : players) {
+            UUID id = viewer.getUUID();
+            online.add(id);
+            Set<UUID> denied = new HashSet<>();
+            for (ServerPlayer subject : players) {
+                if (!subject.getUUID().equals(id) && !CommanderGuard.allowsBody(subject, viewer)) {
+                    denied.add(subject.getUUID());
+                }
+            }
+            var seat = registry.seatOf(id);
+            var view = new PlayerView(
+                    seat == null ? 0 : seat.match().id().value(),
+                    seat == null ? 0 : seat.match().roster().generationOf(id),
+                    seat == null
+                            ? -1
+                            : seat.primaryFaction().map(f -> f.value()).orElse(-1),
+                    viewer.connection.getConnection(),
+                    Set.copyOf(denied));
+            if (!view.equals(playerViews.put(id, view))) refresh.add(id);
+        }
+        playerViews.keySet().retainAll(online);
+        for (UUID id : refresh) {
+            ServerPlayer viewer = server.getPlayerList().getPlayer(id);
+            if (viewer != null) viewer.serverLevel().getChunkSource().move(viewer);
         }
     }
 }

@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.combat;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import java.util.List;
 
@@ -18,7 +19,22 @@ public record Damage(
         float crush,
         float fire,
         List<Bonus> bonuses,
-        boolean lethal) {
+        boolean lethal,
+        int sourceFaction) {
+    public static final int UNATTRIBUTED = -1;
+
+    /** Compatibility/world or trusted structural damage; hostile producers capture the actual source owner. */
+    public Damage(
+            int target,
+            int attacker,
+            float hack,
+            float pierce,
+            float crush,
+            float fire,
+            List<Bonus> bonuses,
+            boolean lethal) {
+        this(target, attacker, hack, pierce, crush, fire, bonuses, lethal, UNATTRIBUTED);
+    }
     /** {@code multiplier} on the whole packet when the target has class {@code token}. */
     @CoreApi
     public record Bonus(String token, float multiplier) {
@@ -30,12 +46,21 @@ public record Damage(
     }
 
     public Damage {
+        if (sourceFaction < UNATTRIBUTED || sourceFaction > FactionSlot.MAX + 1) {
+            throw new IllegalArgumentException("source faction outside the supported range");
+        }
         for (float a : new float[] {hack, pierce, crush, fire}) {
             if (!(a >= 0) || Float.isInfinite(a)) {
                 throw new IllegalArgumentException("damage " + a + " is not a finite amount");
             }
         }
         bonuses = List.copyOf(bonuses);
+    }
+
+    public Damage withSourceFaction(int faction) {
+        return faction == sourceFaction
+                ? this
+                : new Damage(target, attacker, hack, pierce, crush, fire, bonuses, lethal, faction);
     }
 
     /** A packet of one type, with no bonuses. */

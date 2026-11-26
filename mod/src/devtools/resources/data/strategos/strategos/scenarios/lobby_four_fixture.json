@@ -1,0 +1,62 @@
+{
+  "map": "strategos:lobby_four_fixture",
+  "victory": "conquest",
+  "slots": [
+    {
+      "player": "human",
+      "resources": {
+        "food": 300,
+        "wood": 200,
+        "stone": 100,
+        "iron": 100
+      },
+      "entities": [
+        {
+          "template": "strategos:unit/worker"
+        }
+      ]
+    },
+    {
+      "player": "human",
+      "resources": {
+        "food": 300,
+        "wood": 200,
+        "stone": 100,
+        "iron": 100
+      },
+      "entities": [
+        {
+          "template": "strategos:unit/worker"
+        }
+      ]
+    },
+    {
+      "player": "human",
+      "resources": {
+        "food": 300,
+        "wood": 200,
+        "stone": 100,
+        "iron": 100
+      },
+      "entities": [
+        {
+          "template": "strategos:unit/worker"
+        }
+      ]
+    },
+    {
+      "player": "human",
+      "resources": {
+        "food": 300,
+        "wood": 200,
+        "stone": 100,
+        "iron": 100
+      },
+      "entities": [
+        {
+          "template": "strategos:unit/worker"
+        }
+      ]
+    }
+  ]
+}

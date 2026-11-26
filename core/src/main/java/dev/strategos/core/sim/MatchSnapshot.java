@@ -1,19 +1,23 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.ShotStore;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.StanceStore;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A match at a completed tick: everything a restore needs, its terrain pages as references to the slices they were
- * built from, path requests in flight with their results computed, and stable template bindings (schema 3).
+ * built from, path requests in flight with their results computed, stable template bindings (schema 3),
+ * and immutable diplomacy authority (schema 4).
  * The schema version is not a field: the snapshot codec writes and migrates {@code "v"} (M0 spec 5.8).
  */
 @CoreApi
@@ -50,7 +54,9 @@ public record MatchSnapshot(
             List<Long> vision,
             ShotStore.Snapshot shots,
             List<StanceStore.Saved> stances,
-            List<GarrisonStore.Saved> garrisons) {
+            List<GarrisonStore.Saved> garrisons,
+            @Nullable DiplomacyState diplomacy,
+            @Nullable FactionPresentation presentation) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -62,6 +68,81 @@ public record MatchSnapshot(
                 ShotStore.Snapshot.EMPTY,
                 List.of(),
                 List.of());
+
+        /** Compatibility construction through schema 6; the enclosing snapshot supplies legacy presentation. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                @Nullable DiplomacyState diplomacy) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, diplomacy, null);
+        }
+
+        public Play withPresentation(FactionPresentation saved) {
+            return new Play(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    diplomacy,
+                    saved);
+        }
+
+        /** Compatibility construction before schema 4; the enclosing snapshot supplies explicit identity. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, null);
+        }
+
+        /** A play before M6 introduced research, statistics and vision state. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, stances, garrisons, null);
+        }
+
+        public Play withDiplomacy(DiplomacyState saved) {
+            return new Play(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    saved,
+                    presentation);
+        }
 
         /** A play without garrisons, as before BLD-16 saved them. */
         public Play(
@@ -201,7 +282,32 @@ public record MatchSnapshot(
     @CoreApi
     public record TemplateBinding(int index, TemplateId id) {}
 
+    /** Authority is non-null on every enclosing snapshot, including compatibility constructors. */
+    public DiplomacyState diplomacy() {
+        return java.util.Objects.requireNonNull(play.diplomacy());
+    }
+
+    public FactionPresentation presentation() {
+        return java.util.Objects.requireNonNull(play.presentation());
+    }
+
     public MatchSnapshot {
+        var savedDiplomacy = play.diplomacy();
+        if (savedDiplomacy == null) {
+            savedDiplomacy = DiplomacyState.identity(config.factions());
+            play = play.withDiplomacy(savedDiplomacy);
+        }
+        if (savedDiplomacy.factions() != config.factions()) {
+            throw new IllegalArgumentException("saved diplomacy faction count differs from match config");
+        }
+        var savedPresentation = play.presentation();
+        if (savedPresentation == null) {
+            savedPresentation = FactionPresentation.legacy(config.factions());
+            play = play.withPresentation(savedPresentation);
+        }
+        if (savedPresentation.styles().size() != config.factions()) {
+            throw new IllegalArgumentException("saved presentation faction count differs from match config");
+        }
         templateBindings = List.copyOf(templateBindings);
         buildings = List.copyOf(buildings);
         ledger = List.copyOf(ledger);

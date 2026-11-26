@@ -48,13 +48,10 @@ final class RtsPlacement {
     private static final int OK = 0x6040E040;
     private static final int REFUSED = 0x60E04040;
     private static final float INSET = 0.04F;
-    /** Client sequence numbers of placements, apart from the orders' own. */
-    private static final int SEQ_BASE = 1 << 30;
 
     private final RtsMode mode;
     private int armed = -1;
     private int rotation;
-    private int seq = SEQ_BASE;
     private @Nullable Ghost ghost;
     private long checkedAt;
 
@@ -105,7 +102,7 @@ final class RtsPlacement {
     void tick(Minecraft mc, long ticks) {
         MatchJoin join = StrategosClient.match();
         ClientLevel level = mc.level;
-        if (!armed() || join == null || level == null) {
+        if (!armed() || join == null || level == null || !join.controlsFaction(join.primaryFaction())) {
             ghost = null;
             return;
         }
@@ -130,8 +127,7 @@ final class RtsPlacement {
         FactionState faction = StrategosClient.model().faction();
         PlacementRules.Params params = ClientPlacement.params(
                 templates, armed, StrategosClient.resources(), faction == null ? null : faction.stock());
-        PlacementRules.Verdict verdict =
-                PlacementRules.check(world, b, at, join.slot().value(), params);
+        PlacementRules.Verdict verdict = PlacementRules.check(world, b, at, join.primaryFaction(), params);
         double stand = Double.NEGATIVE_INFINITY;
         for (int cell : verdict.cells()) {
             double f = world.floor(cell >>> 16, cell & 0xFFFF);
@@ -161,7 +157,8 @@ final class RtsPlacement {
                         .mapToInt(Integer::intValue)
                         .toArray()),
                 shift ? QueueMode.QUEUE : QueueMode.REPLACE);
-        ClientPayloads.toServer(new CommandsPayload(new CommandBatch(seq++, List.of(command)), ""));
+        ClientPayloads.toServer(
+                new CommandsPayload(new CommandBatch(mode.nextCommandSequence(), List.of(command)), ""));
         if (!shift) {
             cancel();
         }

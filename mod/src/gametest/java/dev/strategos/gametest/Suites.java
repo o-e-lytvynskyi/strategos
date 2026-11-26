@@ -10,18 +10,36 @@ import dev.strategos.gametest.suites.BuildingTests;
 import dev.strategos.gametest.suites.CameraTests;
 import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
+import dev.strategos.gametest.suites.CommanderBoundsTests;
+import dev.strategos.gametest.suites.CommanderPairingTests;
+import dev.strategos.gametest.suites.CommanderPowerTests;
 import dev.strategos.gametest.suites.ConstructionTests;
 import dev.strategos.gametest.suites.ContentTests;
+import dev.strategos.gametest.suites.CoopAuthorityTransportTests;
+import dev.strategos.gametest.suites.CoopReplicationTests;
 import dev.strategos.gametest.suites.DebugTests;
 import dev.strategos.gametest.suites.EcoTests;
+import dev.strategos.gametest.suites.ExpiryPolicyTests;
 import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
 import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
+import dev.strategos.gametest.suites.IngressAuditTests;
+import dev.strategos.gametest.suites.IngressCorpusTests;
+import dev.strategos.gametest.suites.IngressDecodeTests;
+import dev.strategos.gametest.suites.IngressIdentityTests;
+import dev.strategos.gametest.suites.IngressOriginTests;
+import dev.strategos.gametest.suites.IngressRateTests;
+import dev.strategos.gametest.suites.IngressTypeRateTests;
 import dev.strategos.gametest.suites.JournalTests;
+import dev.strategos.gametest.suites.LobbyAdmissionTests;
+import dev.strategos.gametest.suites.LobbyNetworkTests;
+import dev.strategos.gametest.suites.LobbyPreparationTests;
 import dev.strategos.gametest.suites.MapTests;
+import dev.strategos.gametest.suites.MatchEpochTests;
 import dev.strategos.gametest.suites.MatchTests;
+import dev.strategos.gametest.suites.MultiplayerKitTests;
 import dev.strategos.gametest.suites.NavTests;
 import dev.strategos.gametest.suites.NetTests;
 import dev.strategos.gametest.suites.OrderTests;
@@ -31,11 +49,19 @@ import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.ProdTests;
 import dev.strategos.gametest.suites.ProtectionTests;
+import dev.strategos.gametest.suites.RecipientAccessTests;
+import dev.strategos.gametest.suites.RecipientFxTests;
+import dev.strategos.gametest.suites.RecipientQueueTests;
+import dev.strategos.gametest.suites.RecipientRejoinTests;
+import dev.strategos.gametest.suites.RecipientTransferTests;
+import dev.strategos.gametest.suites.ReconnectLifecycleTests;
+import dev.strategos.gametest.suites.ReconnectRestoreTests;
 import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
 import dev.strategos.gametest.suites.SkirmishTests;
+import dev.strategos.gametest.suites.TeamPingTests;
 import dev.strategos.gametest.suites.TechTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import dev.strategos.gametest.suites.WriterTests;
@@ -64,6 +90,9 @@ public final class Suites {
                         BuildingTests.class,
                         BodyTests.class,
                         CameraTests.class,
+                        CommanderPowerTests.class,
+                        CommanderBoundsTests.class,
+                        CommanderPairingTests.class,
                         ReplicationTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
@@ -83,11 +112,34 @@ public final class Suites {
                         MapTests.class,
                         NavTests.class,
                         NetTests.class,
+                        MultiplayerKitTests.class,
+                        CoopReplicationTests.class,
+                        IngressIdentityTests.class,
+                        IngressOriginTests.class,
+                        IngressRateTests.class,
+                        IngressTypeRateTests.class,
+                        TeamPingTests.class,
+                        IngressDecodeTests.class,
+                        IngressAuditTests.class,
+                        IngressCorpusTests.class,
+                        RecipientAccessTests.class,
+                        RecipientFxTests.class,
+                        RecipientQueueTests.class,
+                        RecipientRejoinTests.class,
+                        MatchEpochTests.class,
+                        ReconnectLifecycleTests.class,
+                        ReconnectRestoreTests.class,
+                        ExpiryPolicyTests.class,
+                        RecipientTransferTests.class,
+                        CoopAuthorityTransportTests.class,
                         OrderTests.class,
                         PathTests.class,
                         PacingTests.class,
                         ProtectionTests.class,
                         SkirmishTests.class,
+                        LobbyAdmissionTests.class,
+                        LobbyPreparationTests.class,
+                        LobbyNetworkTests.class,
                         TechTests.class,
                         WriterTests.class);
         };

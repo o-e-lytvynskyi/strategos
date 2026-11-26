@@ -37,6 +37,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -69,8 +70,9 @@ public final class RtsMode {
 
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
-    private final ClientResume resume = new ClientResume(); // MATCH-04: each match's camera and groups, as left
+    private final ClientResumeSession resume = new ClientResumeSession();
     private int groupsMatch = -1; // the match the groups are of
+    private long commandSequence = 1;
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
     private final RallyMarker rally = new RallyMarker(this);
@@ -82,6 +84,7 @@ public final class RtsMode {
 
     private int pendingIdleTicks;
     private Selection selection = new Selection(-1);
+    private int selectionMatch = -1;
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
     private @Nullable View view;
@@ -148,6 +151,13 @@ public final class RtsMode {
         return orders.attackMoveArmed();
     }
 
+    /** All command producers share one ordered stream; never wrap into a negative wire sequence. */
+    int nextCommandSequence() {
+        int next = Math.toIntExact(commandSequence);
+        commandSequence++;
+        return next;
+    }
+
     /** Placement mode (BLD-02). */
     RtsPlacement placement() {
         return placement;
@@ -173,7 +183,7 @@ public final class RtsMode {
             return;
         }
         UnitSummary.Entry e =
-                idle.next(StrategosClient.model().units(), join.slot().value(), StrategosClient.templates());
+                idle.next(StrategosClient.model().units(), join.primaryFaction(), StrategosClient.templates());
         if (e == null) {
             return;
         }
@@ -280,13 +290,23 @@ public final class RtsMode {
         return orders.crosshairUnit();
     }
 
-    /** The player's selection; the faction it may select follows the seat. */
+    /** The player's command selection within the current authenticated match and control rights. */
     public Selection selection() {
         MatchJoin join = StrategosClient.match();
-        int faction = join == null ? -1 : join.slot().value();
-        if (selection.faction() != faction) {
-            selection = new Selection(faction);
+        int faction = join == null ? -1 : join.primaryFaction();
+        int matchId = join == null ? -1 : join.matchId();
+        if (selection.faction() != faction || selectionMatch != matchId) {
+            selection = new Selection(faction, controlled -> {
+                MatchJoin current = StrategosClient.match();
+                return current != null && current.controlsFaction(controlled);
+            });
+            selectionMatch = matchId;
         }
+        if (join != null)
+            selection.pruneControlled(handle -> {
+                UnitSummary.Entry known = StrategosClient.model().unit(Handle.index(handle));
+                return known != null && join.controlsFaction(known.faction());
+            });
         return selection;
     }
 
@@ -397,18 +417,68 @@ public final class RtsMode {
         MatchJoin join = StrategosClient.match();
         CameraRig r = rig;
         if (join != null && r != null) {
-            resume.save(
+            resume.remember(
                     join.matchId(),
                     new ClientResume.Pose(r.focusX(), r.focusZ(), r.yaw(), r.height()),
                     groups.snapshot());
         }
     }
 
+    /** A delivered private handshake confirms the cache scope before any restoration. */
+    public void confirmed(long epoch, MatchJoin join) {
+        leave();
+        Minecraft mc = Minecraft.getInstance();
+        var local = mc.getSingleplayerServer();
+        var remote = mc.getCurrentServer();
+        String realm = local != null
+                ? "local:"
+                        + local.getWorldPath(LevelResource.ROOT)
+                                .toAbsolutePath()
+                                .normalize()
+                : remote != null ? "remote:" + remote.ip : null;
+        resume.joined(
+                realm == null
+                        ? null
+                        : new ClientResumeSession.Scope(realm, mc.getUser().getProfileId()),
+                join.matchId(),
+                epoch);
+        resetView();
+    }
+
+    /** Accept only the first exact epoch/match validation frame of the fresh view. */
+    public void restoreGroups(dev.strategos.mod.server.net.GroupRestoreFrame frame) {
+        resume.accept(frame);
+    }
+
+    /** Save once while the old confirmed identity is still available, then revoke restoration until confirmation. */
+    public void disconnected() {
+        leave();
+        resume.disconnected();
+        resetView();
+    }
+
+    private void resetView() {
+        autoEntered = 0;
+        groupsMatch = -1;
+        groups.restore(java.util.List.of());
+        selection = new Selection(-1);
+        selectionMatch = -1;
+        firstPerson = false;
+        lastMode = null;
+        pendingIdle = -1;
+        pendingIdleTicks = 0;
+        pendingJump = null;
+        zoom = 0;
+        view = null;
+        lastPick = null;
+        placement.cancel();
+    }
+
     /** Turns RTS mode on above the player, a spectator, or says why not. */
     public void enter() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || rig != null) {
+        if (player == null || rig != null || (StrategosClient.match() != null && !resume.ready())) {
             return;
         }
         if (!player.isSpectator()) {
@@ -424,9 +494,13 @@ public final class RtsMode {
         ClientResume.Saved saved = join == null ? null : resume.of(join.matchId());
         if (saved != null) { // back in a match left before: the camera where it was, the groups as they were
             ClientResume.Pose p = saved.pose();
-            rig = new CameraRig(
-                    limits(player), p.focusX(), p.focusZ(), ground(p.focusX(), p.focusZ(), player.getY()), p.yaw());
-            rig.zoomTo(p.height());
+            rig = ClientResumeSession.camera(p, limits(player), ground(p.focusX(), p.focusZ(), player.getY()));
+            CameraPose eye = rig.pose();
+            if (ClientPayloads.toServer(new CameraJumpPayload(
+                    new CameraJump(eye.x(), eye.y(), eye.z(), (float) eye.yaw(), (float) eye.pitch())))) {
+                followCamera(player, eye);
+                pendingJump = null;
+            }
         }
         if (join != null && join.matchId() != groupsMatch) {
             groups.restore(saved == null ? java.util.List.of() : saved.groups());
@@ -501,7 +575,7 @@ public final class RtsMode {
                 }
             }
             MatchJoin join = StrategosClient.match();
-            if (join != null && join.matchId() != autoEntered && mc.player.isSpectator()) {
+            if (join != null && resume.ready() && join.matchId() != autoEntered && mc.player.isSpectator()) {
                 autoEntered = join.matchId(); // a seat makes a commander: RTS mode, once per match joined
                 enter();
             }
@@ -555,6 +629,13 @@ public final class RtsMode {
         for (Entity e : mc.level.entitiesForRendering()) {
             if (e instanceof UnitEntity body) {
                 UnitSpawnData data = body.spawnData();
+                if (data != null) {
+                    var palette = StrategosClient.palette(data.matchId());
+                    body.factionColourOnClient(
+                            palette.hasExplicitColour(data.faction())
+                                    ? (palette.colour(data.faction()) & 0xFFFFFF)
+                                    : -1);
+                }
                 body.selectedOnClient(data != null
                         && rig != null
                         && (join == null || data.matchId() == join.matchId())
@@ -599,7 +680,11 @@ public final class RtsMode {
                         options.rotateSpeed.get()),
                 (x, z) -> ground(x, z, r.pose().y()));
         zoom = 0;
-        CameraPose eye = r.pose();
+        followCamera(player, r.pose());
+    }
+
+    /** Keep the local body at its rig before the next tick can mistake restoration for an external teleport. */
+    private static void followCamera(LocalPlayer player, CameraPose eye) {
         player.setPos(eye.x(), eye.y() - player.getEyeHeight(), eye.z());
         player.setYRot((float) eye.yaw());
         player.setXRot((float) eye.pitch());

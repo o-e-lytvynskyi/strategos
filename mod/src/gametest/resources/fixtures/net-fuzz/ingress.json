@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "commands-empty",
+      "payload": "strategos:commands",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "commands-unfinished-varint",
+      "payload": "strategos:commands",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "commands-overflow-varint",
+      "payload": "strategos:commands",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "lobby_action-empty",
+      "payload": "strategos:lobby_action",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "lobby_action-unfinished-varint",
+      "payload": "strategos:lobby_action",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "lobby_action-overflow-varint",
+      "payload": "strategos:lobby_action",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "camera_jump-empty",
+      "payload": "strategos:camera_jump",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "camera_jump-unfinished-varint",
+      "payload": "strategos:camera_jump",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "camera_jump-overflow-varint",
+      "payload": "strategos:camera_jump",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "mode_switch-empty",
+      "payload": "strategos:mode_switch",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "mode_switch-unfinished-varint",
+      "payload": "strategos:mode_switch",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "mode_switch-overflow-varint",
+      "payload": "strategos:mode_switch",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "match_control-empty",
+      "payload": "strategos:match_control",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "match_control-unfinished-varint",
+      "payload": "strategos:match_control",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "match_control-overflow-varint",
+      "payload": "strategos:match_control",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "skirmish-empty",
+      "payload": "strategos:skirmish",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "skirmish-unfinished-varint",
+      "payload": "strategos:skirmish",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "skirmish-overflow-varint",
+      "payload": "strategos:skirmish",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "template_ack-empty",
+      "payload": "strategos:template_ack",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "template_ack-unfinished-varint",
+      "payload": "strategos:template_ack",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "template_ack-overflow-varint",
+      "payload": "strategos:template_ack",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "ui_query-empty",
+      "payload": "strategos:ui_query",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "ui_query-unfinished-varint",
+      "payload": "strategos:ui_query",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "ui_query-overflow-varint",
+      "payload": "strategos:ui_query",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "debug_subscribe-empty",
+      "payload": "strategos:debug_subscribe",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "debug_subscribe-unfinished-varint",
+      "payload": "strategos:debug_subscribe",
+      "hex": "80",
+      "refused": true
+    },
+    {
+      "id": "debug_subscribe-overflow-varint",
+      "payload": "strategos:debug_subscribe",
+      "hex": "ffffffffffffffffffff",
+      "refused": true
+    },
+    {
+      "id": "ping-empty",
+      "payload": "strategos:ping",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "ping-truncated-point",
+      "payload": "strategos:ping",
+      "hex": "000000000000000100000003000000",
+      "refused": true
+    },
+    {
+      "id": "ping-trailing-byte",
+      "payload": "strategos:ping",
+      "hex": "0000000000000001000000030000000400",
+      "refused": true
+    }
+  ]
+}

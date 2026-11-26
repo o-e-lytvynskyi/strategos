@@ -7,6 +7,10 @@ name: scenario
 on:
   workflow_dispatch:
     inputs:
+      compatibility:
+        description: Load the pinned client compatibility mods in the actual client
+        type: boolean
+        default: false
       scenario:
         description: 'smoke, world_switch, s4_units, s10_steps, rts_basics, rts_select, rts_goldens, overlay_goldens or stall'
         required: true
@@ -25,6 +29,7 @@ permissions:
 
 jobs:
   scenario:
+    if: inputs.scenario != 'team-skirmish-mapgen'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -42,22 +47,37 @@ jobs:
         env:
           SCENARIO: ${{ inputs.scenario }}
           GOLDENS: ${{ inputs.goldens }}
-        run: >-
-          xvfb-run -a -s "-screen 0 1920x1080x24 +extension GLX +render -noreset"
-          ./gradlew --console=plain :mod:runScenario -Pscenario="$SCENARIO" -Pgoldens.root="$PWD/$GOLDENS"
+          COMPATIBILITY: ${{ inputs.compatibility }}
+        run: |
+          timeout=180
+          if [ "$SCENARIO" = m7-reconnect ]; then timeout=360; fi
+          options=()
+          if [ "$COMPATIBILITY" = true ]; then options+=(-Pcompat); fi
+          xvfb-run -a -s "-screen 0 1920x1080x24 +extension GLX +render -noreset" \
+            ./gradlew --console=plain "${options[@]}" :mod:runScenario -Pscenario="$SCENARIO" \
+            -Pscenario.timeoutSeconds="$timeout" -Pgoldens.root="$PWD/$GOLDENS"
+      - name: Preserve normal comparison evidence
+        if: always()
+        run: |
+          report=mod/build/scenario/diff/report.json
+          if [ -f "$report" ]; then cp "$report" mod/build/scenario/diff/normal-report.json; fi
       - name: An altered golden fails the diff
         env:
           SCENARIO: ${{ inputs.scenario }}
           GOLDENS: ${{ inputs.goldens }}
+          COMPATIBILITY: ${{ inputs.compatibility }}
         run: |
-          goldens="$GOLDENS/linux-llvmpipe/$SCENARIO"
-          if [ ! -d "$goldens" ]; then echo "no linux-llvmpipe goldens for $SCENARIO"; exit 0; fi
+          platform=linux-llvmpipe
+          if [ "$COMPATIBILITY" = true ]; then platform=linux-llvmpipe-sodium; fi
+          goldens="$GOLDENS/$platform/$SCENARIO"
+          if [ ! -d "$goldens" ]; then echo "no $platform goldens for $SCENARIO"; exit 0; fi
           altered="$RUNNER_TEMP/altered"
-          mkdir -p "$altered/linux-llvmpipe" && cp -R "$goldens" "$altered/linux-llvmpipe/"
+          mkdir -p "$altered/$platform" && cp -R "$goldens" "$altered/$platform/"
           python3 tools/alter_golden.py "$altered"
           if ./gradlew --console=plain :mod:scenarioDiff -Pscenario="$SCENARIO" -Pgoldens.root="$altered"; then
             echo "scenarioDiff passed an altered golden"; exit 1
           fi
+          cp mod/build/scenario/diff/report.json mod/build/scenario/diff/altered-report.json
       - name: Screenshots and logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -70,3 +90,26 @@ jobs:
             mod/build/scenario/diff/
             mod/build/scenario/logs/
             mod/build/scenario/crash-reports/
+
+  team-skirmish-mapgen:
+    if: inputs.scenario == 'team-skirmish-mapgen'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Generate the team arena
+        run: ./gradlew --console=plain --max-workers=2 :mod:runMapgen -Pmapgen=team_skirmish
+      - name: Archive the generated package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: team-skirmish-map
+          if-no-files-found: error
+          path: |
+            mod/src/main/resources/data/strategos/strategos/maps/team_skirmish.json
+            mod/src/main/resources/data/strategos/structure/strategos/maps/team_skirmish/
+            mod/build/mapgen/mapgen-result.json

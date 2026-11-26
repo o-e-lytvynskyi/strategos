@@ -5,6 +5,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.PlayerAuthority;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CorePorts;
@@ -144,7 +146,8 @@ public final class MatchRegistry {
         }
         MatchData data = null;
         if (saved != null) {
-            data = MatchData.live(id, core::snapshot, saved::epoch);
+            data = MatchData.live(
+                    id, core::snapshot, saved::epoch, settings.reconnect().timeoutNanos());
             level.getDataStorage().set(MatchData.name(id), data);
             data.setDirty();
             saved.put(new MatchRecord(
@@ -157,8 +160,17 @@ public final class MatchRegistry {
                     Optional.empty(),
                     Optional.ofNullable(mapId).map(ResourceLocation::toString)));
         }
-        MatchRuntime rt =
-                new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget, mapId);
+        MatchRuntime rt = new MatchRuntime(
+                id,
+                space,
+                options.source(),
+                policy,
+                saved != null,
+                core,
+                data,
+                spawnBudget,
+                mapId,
+                settings.reconnect().timeoutNanos());
         rt.onLifecycleChange(() -> recordChanged(rt));
         rt.transition(MatchLifecycle.PREPARING);
         if (holdsTickets(rt)) {
@@ -272,7 +284,7 @@ public final class MatchRegistry {
         }
         MapManifest m;
         try {
-            m = MapPackageLoader.load(server, map).manifest();
+            m = MapPackageLoader.manifest(server, map);
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
@@ -435,6 +447,8 @@ public final class MatchRegistry {
             reason = "the server stopped while it was importing its map";
         } else if (data.state() != MatchData.State.LOADED || snapshot == null) {
             reason = "its blob is " + data.state();
+        } else if (!rosterAvailable(record.id(), data.roster())) {
+            reason = "its roster conflicts with a member of another match";
         } else {
             if (data.loadedEpoch() != record.lastEpoch()) {
                 log.warn(
@@ -458,7 +472,8 @@ public final class MatchRegistry {
                 core,
                 data,
                 spawnBudget,
-                record.map().map(ResourceLocation::parse).orElse(null));
+                record.map().map(ResourceLocation::parse).orElse(null),
+                settings.reconnect().timeoutNanos());
         rt.onLifecycleChange(() -> recordChanged(rt));
         if (core == null) {
             rt.restoredFaulted(String.valueOf(reason));
@@ -517,7 +532,8 @@ public final class MatchRegistry {
         if (level == null) {
             return registerFaulted(record, "its level " + record.space().level().location() + " is gone");
         }
-        return switch (Quarantine.loadMatch(level, record.id(), epoch)) {
+        return switch (Quarantine.loadMatch(
+                level, record.id(), epoch, settings.reconnect().timeoutNanos())) {
             case Quarantine.Missing missing ->
                 registerFaulted(record, "its blob " + MatchData.name(record.id()) + " is missing");
             case Quarantine.CorruptFile corrupt ->
@@ -569,7 +585,8 @@ public final class MatchRegistry {
                 null,
                 null,
                 spawnBudget,
-                record.map().map(ResourceLocation::parse).orElse(null));
+                record.map().map(ResourceLocation::parse).orElse(null),
+                settings.reconnect().timeoutNanos());
         rt.restoredFaulted(reason);
         rt.onLifecycleChange(() -> recordChanged(rt));
         recordChanged(rt);
@@ -653,9 +670,19 @@ public final class MatchRegistry {
         return settings.faultsRethrow() ? FaultPolicy.RETHROW : FaultPolicy.CONTAIN;
     }
 
+    private boolean rosterAvailable(MatchId id, MatchRoster roster) {
+        for (UUID player : roster.members()) {
+            MatchId occupied = seated.get(player);
+            if (occupied != null && !occupied.equals(id)) return false;
+        }
+        return true;
+    }
+
     private void register(MatchRuntime rt) {
         matches.put(rt.id().value(), rt);
         regionsOf(rt.space().level()).add(rt.id(), rt.space());
+        // A refused restore retains its diagnostic runtime, never publishes its untrusted membership.
+        if (rt.core() == null || rt.lifecycle() == MatchLifecycle.FAULTED) return;
         for (UUID player : rt.roster().members()) {
             seated.put(player, rt.id());
         }
@@ -678,21 +705,53 @@ public final class MatchRegistry {
     }
 
     /** Where a player sits: its match and slot. */
-    public record Seat(MatchRuntime match, PlayerSlot slot) {}
+    public record Seat(MatchRuntime match, PlayerSlot slot) {
+        /** Current primary identity; an observer or an absent binding has none. */
+        public Optional<FactionSlot> primaryFaction() {
+            MatchCore core = match.core();
+            return core == null ? Optional.empty() : core.queries().diplomacy().factionOf(slot);
+        }
+
+        /** A bounded recipient view, derived after authoritative commands; no received grant changes private identity. */
+        public Optional<PlayerAuthority> authority() {
+            MatchCore core = match.core();
+            if (core == null) return Optional.empty();
+            long tick = core.queries().tick();
+            if (slot.isAdmin())
+                return Optional.of(new PlayerAuthority(match.id().value(), slot, tick, -1, 0, 0));
+            var diplomacy = core.queries().diplomacy();
+            var primary = diplomacy.factionOf(slot);
+            if (primary.isEmpty()) return Optional.empty();
+            FactionSlot own = primary.orElseThrow();
+            int controls = 0, allies = 0;
+            for (int f = 0; f < diplomacy.factions(); f++) {
+                FactionSlot faction = new FactionSlot(f);
+                if (diplomacy.controls(slot, faction)) controls |= 1 << f;
+                if (diplomacy.allied(own, faction)) allies |= 1 << f;
+            }
+            return Optional.of(new PlayerAuthority(match.id().value(), slot, tick, own.value(), controls, allies));
+        }
+
+        /** Only an explicit ADMIN seat is an observer; an unbound player is never promoted to one. */
+        public boolean hasPerspective() {
+            return match.core() != null && (slot.isAdmin() || primaryFaction().isPresent());
+        }
+    }
 
     /**
      * Seats {@code player} in {@code rt} at {@code slot}, out of any match it sat in; a saved match's blob is marked to
-     * save it. Refused for a slot the match has no faction for, or one someone else holds.
+     * save it. Refused while authority initializes, for an unbound player slot, or one someone else holds.
      */
     public void join(MatchRuntime rt, UUID player, PlayerSlot slot) {
         MatchCore core = rt.core();
         if (core == null) {
             throw new MatchRefusedException("match " + rt.id() + " is " + rt.lifecycle() + " and seats no one");
         }
-        int factions = core.queries().config().factions();
-        if (slot.value() >= factions) {
-            throw new MatchRefusedException(
-                    "match " + rt.id() + " has " + factions + " factions, so no slot " + slot.value());
+        if (rt.initializingDiplomacy()) {
+            throw new MatchRefusedException("match " + rt.id() + " is initializing its authority");
+        }
+        if (!slot.isAdmin() && core.queries().diplomacy().factionOf(slot).isEmpty()) {
+            throw new MatchRefusedException("match " + rt.id() + " has no bound player slot " + slot.value());
         }
         rt.roster().seat(player, slot); // refused before anything changes if the slot is taken
         MatchId before = seated.put(player, rt.id());
@@ -711,6 +770,22 @@ public final class MatchRegistry {
         MatchRuntime rt = id == null ? null : matches.get(id.value());
         PlayerSlot slot = rt == null ? null : rt.roster().slotOf(player);
         return rt == null || slot == null ? null : new Seat(rt, slot);
+    }
+
+    /** Invalidates the previous private view without changing a live member's seat or persisted reservation. */
+    public void renewRecipient(UUID player) {
+        Seat seat = seatOf(player);
+        if (seat != null) seat.match().roster().renew(player);
+    }
+
+    /** Authenticated lifecycle metadata; expired reservations cannot reconnect or renew their saved duration. */
+    public boolean connection(UUID player, boolean connected) {
+        Seat seat = seatOf(player);
+        if (seat == null) return false;
+        if (connected && !seat.match().roster().connect(player)) return false;
+        if (!connected) seat.match().roster().disconnect(player);
+        markRoster(seat.match()); // also while the simulation is paused
+        return true;
     }
 
     /** The id of the match {@code player} sits in, or 0: what the fog gate asks for every pairing. */

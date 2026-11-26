@@ -48,6 +48,9 @@ final class HudCardPresentation {
             case ALL_CLEAR -> Component.translatable("strategos.card.all_clear").getString();
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
             case RESEARCH -> research(templates, b.template());
+            case CANCEL_NEXT -> "Cancel next production item";
+            case AUTO_RESEED_ENABLE -> "Enable auto-reseed";
+            case AUTO_RESEED_DISABLE -> "Disable auto-reseed";
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);

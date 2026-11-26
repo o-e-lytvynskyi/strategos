@@ -227,6 +227,36 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_economy_stress");
     }
 
+    @AfterBatch(batch = "perf_m7_multiplayer")
+    public static void afterPerfM7Multiplayer(ServerLevel level) {
+        afterBatch(level, "perf_m7_multiplayer");
+    }
+
+    @AfterBatch(batch = "perf_m7_stress")
+    public static void afterPerfM7Stress(ServerLevel level) {
+        afterBatch(level, "perf_m7_stress");
+    }
+
+    @AfterBatch(batch = "perf_s11_battle")
+    public static void afterPerfS11Battle(ServerLevel level) {
+        afterBatch(level, "perf_s11_battle");
+    }
+
+    @AfterBatch(batch = "perf_s11_pan")
+    public static void afterPerfS11Pan(ServerLevel level) {
+        afterBatch(level, "perf_s11_pan");
+    }
+
+    @AfterBatch(batch = "perf_s11_fog")
+    public static void afterPerfS11Fog(ServerLevel level) {
+        afterBatch(level, "perf_s11_fog");
+    }
+
+    @AfterBatch(batch = "perf_s11_construction")
+    public static void afterPerfS11Construction(ServerLevel level) {
+        afterBatch(level, "perf_s11_construction");
+    }
+
     @AfterBatch(batch = "perf_battle")
     public static void afterPerfBattle(ServerLevel level) {
         afterBatch(level, "perf_battle");
@@ -385,6 +415,51 @@ public final class StrategosGameTests {
     @AfterBatch(batch = "map_horsemen")
     public static void afterMapHorsemen(ServerLevel level) {
         afterBatch(level, "map_horsemen");
+    }
+
+    @AfterBatch(batch = "ingress_aux_rate")
+    public static void afterIngressAuxiliaryRate(ServerLevel level) {
+        afterBatch(level, "ingress_aux_rate");
+    }
+
+    @AfterBatch(batch = "ingress_lobby_origin")
+    public static void afterIngressLobbyOrigin(ServerLevel level) {
+        afterBatch(level, "ingress_lobby_origin");
+    }
+
+    @AfterBatch(batch = "lobby_network")
+    public static void afterLobbyNetwork(ServerLevel level) {
+        afterBatch(level, "lobby_network");
+    }
+
+    @AfterBatch(batch = "lobby_preflight")
+    public static void afterLobbyPreflight(ServerLevel level) {
+        afterBatch(level, "lobby_preflight");
+    }
+
+    @AfterBatch(batch = "map_lobby_four")
+    public static void afterMapLobbyFour(ServerLevel level) {
+        afterBatch(level, "map_lobby_four");
+    }
+
+    @AfterBatch(batch = "map_lobby_coop")
+    public static void afterMapLobbyCoop(ServerLevel level) {
+        afterBatch(level, "map_lobby_coop");
+    }
+
+    @AfterBatch(batch = "map_team_skirmish")
+    public static void afterMapTeamSkirmish(ServerLevel level) {
+        afterBatch(level, "map_team_skirmish");
+    }
+
+    @AfterBatch(batch = "map_lobby_start")
+    public static void afterMapLobbyStart(ServerLevel level) {
+        afterBatch(level, "map_lobby_start");
+    }
+
+    @AfterBatch(batch = "map_lobby_cancel")
+    public static void afterMapLobbyCancel(ServerLevel level) {
+        afterBatch(level, "map_lobby_cancel");
     }
 
     @AfterBatch(batch = "map_skirmish_setup")

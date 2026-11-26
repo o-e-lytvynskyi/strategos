@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.MatchState;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -31,36 +32,35 @@ final class Tally {
         CommandOutcome outcome = accepted > 0 && rejected == 0
                 ? CommandOutcome.ACCEPTED
                 : accepted > 0 ? CommandOutcome.PARTIAL : CommandOutcome.REJECTED;
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), outcome, accepted, rejected, firstReason);
+        return new CommandResult(envelope, kind.id(), outcome, accepted, rejected, firstReason, List.of());
     }
 
     /** A command that applied to all its {@code units}. */
     static CommandResult acceptAll(CommandEnvelope envelope, CommandKind<?> kind, int units) {
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), CommandOutcome.ACCEPTED, units, 0, null);
+        return new CommandResult(envelope, kind.id(), CommandOutcome.ACCEPTED, units, 0, null, List.of());
     }
 
-    /** A refusal for want of resources: what the faction lacks per resource, in thousandths (ECO-01). */
-    static CommandResult unaffordable(CommandEnvelope envelope, CommandKind<?> kind, int units, long[] missing) {
+    /** A resource refusal: exact amounts only for primary controllers or trusted ADMIN, never a granted ally. */
+    static CommandResult unaffordable(
+            CommandEnvelope envelope,
+            CommandKind<?> kind,
+            int units,
+            long[] missing,
+            MatchState state,
+            int ownerFaction) {
+        if (!envelope.issuer().isAdmin() && state.diplomacy().primaryFaction(envelope.issuer()) != ownerFaction) {
+            return rejectAll(envelope, kind, units, RejectReason.NOT_ENOUGH_RESOURCES);
+        }
         List<Long> lack = new ArrayList<>(missing.length);
         for (long m : missing) {
             lack.add(m);
         }
         return new CommandResult(
-                envelope.issuer(),
-                envelope.clientSeq(),
-                kind.id(),
-                CommandOutcome.REJECTED,
-                0,
-                units,
-                RejectReason.NOT_ENOUGH_RESOURCES,
-                lack);
+                envelope, kind.id(), CommandOutcome.REJECTED, 0, units, RejectReason.NOT_ENOUGH_RESOURCES, lack);
     }
 
     /** A whole-command refusal: no unit accepted, {@code units} refused. */
     static CommandResult rejectAll(CommandEnvelope envelope, CommandKind<?> kind, int units, RejectReason reason) {
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), CommandOutcome.REJECTED, 0, units, reason);
+        return new CommandResult(envelope, kind.id(), CommandOutcome.REJECTED, 0, units, reason, List.of());
     }
 }

@@ -74,7 +74,9 @@ class ShotPersistenceTest {
         long pristine = h.stateHash();
         JsonObject old =
                 MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
-        assertThat(old.has("play")).isFalse();
+        assertThat(old.getAsJsonObject("play").keySet())
+                .as("schema 7 requires authority and presentation, but unused shot state remains absent")
+                .containsExactly("diplomacy", "presentation");
         MatchState state = KernelAccess.state(h.core());
         state.shots().restore(new ShotStore.Snapshot(5, List.of()));
         assertThat(h.stateHash()).isNotEqualTo(pristine);

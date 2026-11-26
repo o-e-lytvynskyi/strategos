@@ -10,6 +10,7 @@ import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.ForeignLoad;
 import dev.strategos.core.testkit.ForeignLoad.Assessment;
 import dev.strategos.core.testkit.ForeignLoad.Reading;
+import dev.strategos.core.testkit.MultiplayerScene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.gametest.framework.GameTestHelper;
 import org.jspecify.annotations.Nullable;
@@ -69,6 +71,7 @@ final class PerfVerdicts {
      * a second gates only budget C, its p95 at most 23 ms over the speed (MATCH-05.4: 15.3 ms at 1.5).
      */
     static void judgeSoak(GameTestHelper h, SoakResult r, Window window, boolean stress) {
+        boolean multiplayer = r.config().scene() instanceof MultiplayerScene.Config;
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
@@ -114,7 +117,9 @@ final class PerfVerdicts {
                 JsonObject viewer = new JsonObject();
                 viewer.addProperty("bytesPerSecond", perSecond);
                 viewer.addProperty("limit", 100 * 1024);
-                if (perSecond > 100 * 1024 && gated("e") && !melee) {
+                if (multiplayer) viewer.addProperty("totalGameplayBytes", bytes);
+                boolean exceeds = multiplayer ? bytes > (100 * 1024) * seconds : perSecond > 100 * 1024;
+                if (exceeds && gated("e") && !melee) {
                     broken.add("budget E: " + perSecond + " bytes per second for a viewer, above 102,400");
                 }
                 viewers.add(viewer);
@@ -132,6 +137,15 @@ final class PerfVerdicts {
         json.addProperty("units", r.units());
         json.addProperty("ticks", r.config().ticks());
         json.addProperty("samples", r.tick().length);
+        if (r.config().scene() instanceof MultiplayerScene.Config setup) {
+            json.addProperty("factions", MultiplayerScene.FACTIONS);
+            json.addProperty("populationPerFactionAtStart", setup.scale().population());
+            json.addProperty("buildingsPerFactionAtStart", setup.scale().buildings());
+            json.addProperty("terrainExcludedFromE", true);
+            var load = Objects.requireNonNull(r.multiplayerLoad());
+            json.add("workload", multiplayerLoad(setup, load, broken));
+            if (r.refusedOrders() != 0) broken.add("PERF-10 workload commands refused: " + r.refusedOrders());
+        }
         json.addProperty("baselineTickP50", without);
         json.addProperty("baselineTickP95", Percentiles.percentile(r.baseline(), 0.95));
         json.addProperty("tickP50", Percentiles.percentile(r.tick(), 0.50));
@@ -157,11 +171,15 @@ final class PerfVerdicts {
         SoakCosts costs = r.costs();
         if (costs != null) {
             json.add(
-                    r.config().scene() instanceof MvpScene.Config
-                            ? "mvp"
-                            : r.config().scene() instanceof BattleScene.Config
-                                    ? "battle"
-                                    : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    multiplayer
+                            ? "multiplayer"
+                            : r.config().scene() instanceof MvpScene.Config
+                                    ? "mvp"
+                                    : r.config().scene() instanceof BattleScene.Config
+                                            ? "battle"
+                                            : r.config().scene() instanceof EconomyScene.Config
+                                                    ? "economy"
+                                                    : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
@@ -190,6 +208,35 @@ final class PerfVerdicts {
         } else {
             h.succeed();
         }
+    }
+
+    private static JsonObject multiplayerLoad(
+            MultiplayerScene.Config config, SoakResult.MultiplayerLoad load, List<String> broken) {
+        String[] metrics = {"population", "livingUnits", "finishedBuildings"};
+        var factions = new JsonArray();
+        for (int f = 0; f < MultiplayerScene.FACTIONS; f++) {
+            var row = new JsonObject();
+            row.addProperty("faction", f);
+            for (int metric = 0; metric < metrics.length; metric++) {
+                var range = new JsonObject();
+                range.addProperty("min", load.minimum(metric, f));
+                range.addProperty("max", load.maximum(metric, f));
+                range.addProperty("mean", load.mean(metric, f));
+                row.add(metrics[metric], range);
+            }
+            if (load.mean(0, f) < config.scale().population()
+                    || load.minimum(1, f) == 0
+                    || load.mean(2, f) < config.scale().buildings()) {
+                broken.add("PERF-10 faction " + f + " fell below the measured workload");
+            }
+            factions.add(row);
+        }
+        var result = new JsonObject();
+        result.addProperty("samples", load.samples());
+        result.addProperty("unitReplacements", load.unitReplacements());
+        result.addProperty("buildingReplacements", load.buildingReplacements());
+        result.add("factions", factions);
+        return result;
     }
 
     /**
@@ -236,7 +283,7 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        if (r.config().scene() instanceof MvpScene.Config) {
+        if (r.config().scene() instanceof MvpScene.Config || r.config().scene() instanceof MultiplayerScene.Config) {
             mvp(json, r, costs, b, broken, gates);
             return json;
         }
@@ -244,7 +291,7 @@ final class PerfVerdicts {
         boolean m4 = battle || r.config().scene() instanceof EconomyScene.Config;
         double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
         double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
-        int units = 2 * r.config().perFaction();
+        int units = r.config().expectedUnits();
         int ai = costs.phaseNames().indexOf("AI");
         long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
         for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
@@ -308,7 +355,7 @@ final class PerfVerdicts {
                 "vision is the WORLD phase (vision, then terrain edits, gear and alerts); the trackers' refresh runs one"
                         + " tick in five, so read its meanPerTick");
         json.add("systemsPerTick", systems);
-        int units = 2 * r.config().perFaction();
+        int units = r.config().expectedUnits();
         int ai = costs.phaseNames().indexOf("AI");
         long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
         for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick

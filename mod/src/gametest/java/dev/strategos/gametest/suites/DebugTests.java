@@ -46,6 +46,7 @@ public final class DebugTests {
         NetCounters counters = StrategosServer.get().net().counters();
         var state = new Object() {
             int before = -1;
+            int codeBefore;
             int ticks;
         };
         h.onEachTick(() -> {
@@ -58,6 +59,9 @@ public final class DebugTests {
             if (state.before < 0) {
                 move(rt, units[0], 28.5, 16.5);
                 state.before = counters.violations(name);
+                var reasons = counters.toJson().getAsJsonObject("violations");
+                String key = name + " debug_permission";
+                state.codeBefore = reasons.has(key) ? reasons.get(key).getAsInt() : 0;
                 plain.send(new DebugSubscribePayload(EVERYTHING));
                 return;
             }
@@ -67,6 +71,11 @@ public final class DebugTests {
             check(feeds(operator).isEmpty(), "an operator that never subscribed got a dev payload");
             check(feeds(plain).isEmpty(), "a refused player got a dev payload");
             check(counters.violations(name) == state.before + 1, "the refusal was not counted");
+            var reasons = counters.toJson().getAsJsonObject("violations");
+            String key = name + " debug_permission";
+            check(
+                    reasons.has(key) && reasons.get(key).getAsInt() == state.codeBefore + 1,
+                    "debug refusal has no stable permission reason code");
             operator.close();
             plain.close();
             h.succeed();

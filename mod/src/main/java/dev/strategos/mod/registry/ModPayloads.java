@@ -11,13 +11,21 @@ import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
+import dev.strategos.mod.server.net.payload.LobbyActionPayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
+import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.PingPayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -40,7 +48,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ModPayloads {
     /** The payload protocol's version: a client of another version cannot join. */
-    public static final String VERSION = "1";
+    public static final String VERSION = "8";
 
     private ModPayloads() {}
 
@@ -53,8 +61,16 @@ public final class ModPayloads {
         registrar.playToServer(
                 CommandsPayload.TYPE, CommandsPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::commands));
         registrar.playToClient(MatchJoinPayload.TYPE, MatchJoinPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(GroupRestorePayload.TYPE, GroupRestorePayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(
+                MatchPresentationPayload.TYPE, MatchPresentationPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(PlayerAuthorityPayload.TYPE, PlayerAuthorityPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchStatePayload.TYPE, MatchStatePayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FeedbackPayload.TYPE, FeedbackPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(LobbyStatePayload.TYPE, LobbyStatePayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(LobbyReplyPayload.TYPE, LobbyReplyPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(
+                LobbyActionPayload.TYPE, LobbyActionPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::lobby));
         registrar.playToClient(TemplateSetPayload.TYPE, TemplateSetPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitSummaryPayload.TYPE, UnitSummaryPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitHudPayload.TYPE, UnitHudPayload.STREAM_CODEC, PayloadArrived::post);
@@ -64,6 +80,8 @@ public final class ModPayloads {
         registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchEventPayload.TYPE, MatchEventPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(TeamPingPayload.TYPE, TeamPingPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(PingPayload.TYPE, PingPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::ping));
         registrar.playToClient(VisionDeltaPayload.TYPE, VisionDeltaPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
                 UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
@@ -93,6 +111,9 @@ public final class ModPayloads {
         return List.of(
                 CommandsPayload.SPEC,
                 MatchJoinPayload.SPEC,
+                GroupRestorePayload.SPEC,
+                PlayerAuthorityPayload.SPEC,
+                MatchPresentationPayload.SPEC,
                 MatchStatePayload.SPEC,
                 FeedbackPayload.SPEC,
                 TemplateSetPayload.SPEC,
@@ -108,9 +129,14 @@ public final class ModPayloads {
                 UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,
+                PingPayload.SPEC,
+                TeamPingPayload.SPEC,
                 ModeSwitchPayload.SPEC,
                 MatchControlPayload.SPEC,
                 SkirmishPayload.SPEC,
+                LobbyActionPayload.SPEC,
+                LobbyStatePayload.SPEC,
+                LobbyReplyPayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }

@@ -30,8 +30,9 @@ final class DemolishRule implements CommandRule<Demolish> {
             return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNKNOWN_TARGET);
         }
         FactionSlot faction = new FactionSlot(buildings.faction(handle));
-        if (!envelope.issuer().controls(faction)) {
-            return Tally.rejectAll(envelope, kind(), 1, RejectReason.NOT_OWNER);
+        var authority = Ownership.building(envelope.issuer(), handle, state);
+        if (authority != null) {
+            return Tally.rejectAll(envelope, kind(), 1, authority);
         }
         if (buildings.state(handle) != BuildingStore.COMPLETE) {
             return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);

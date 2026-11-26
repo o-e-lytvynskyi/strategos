@@ -154,7 +154,7 @@ public final class Journal {
             this.checkpointHashes = checkpointHashes.clone();
             this.slices = Collections.unmodifiableMap(new TreeMap<>(slices));
             for (PageRef ref : start.pages()) {
-                if (!this.slices.containsKey(ref.slice())) {
+                if (!ref.pending() && !this.slices.containsKey(ref.slice())) {
                     throw new IllegalArgumentException("the segment at " + start.tick() + " lacks the slice of page ("
                             + ref.x() + ", " + ref.z() + ")");
                 }

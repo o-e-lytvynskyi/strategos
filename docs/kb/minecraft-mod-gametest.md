@@ -169,3 +169,47 @@ blocks: an enemy 34 blocks away is never paired whatever `broadcastToPlayer` ans
 hidden enemy is never paired" passes with the fog gate switched off, and "a revealed map pairs
 it" fails with the gate right. Put the hidden body outside the faction's vision and inside the
 tracking range (M6: vision 12, the enemy 20 blocks off), and pair a visible enemy as the control.
+
+## Maven throttling before any test starts
+
+A cloud run can fail in build-logic compilation because Maven Central returns HTTP 429 for
+an unchanged Gradle plugin dependency. Record the failed run and its zero executed tests;
+never count it as functional evidence, substitute dependency versions or retry until green.
+The optional verify dispatch input `dependency_cache_run` restores the existing
+`cloud-gradle-modules` artifact from a successful same-branch manual full-ci nightly producer.
+It changes neither the Gradle verification command nor any allowance or test selection.
+
+`tools/ci_dependency_cache.py` validates the repository, source repository, branch, workflow,
+trigger and successful producer jobs before the pinned artifact download. The parent AI
+aggregate need not be finished: this is a dependency cache, not an acceptance verdict.
+Only bounded regular files/directories under modules-2 are extracted; traversal, links,
+other caches, oversized archives and escaping existing symlinks fail before any module is
+written. No credentials, init scripts or project outputs are restored. Cloud unit
+counterexamples run before this optional hand-off. The ordinary empty-input path is unchanged.
+
+## Deferred sequences own their multiplayer fixture lifetime
+
+Registering a GameTest sequence does not execute its callbacks before returning. Do not
+wrap sequence registration in try-with-resources for MultiplayerHarness: that would close
+the owned connections/match before admission or assertions run. Close in the final sequence
+action; the established batch cleanup remains the failure backstop. The fixture closes only
+its own runtime/players, so an unrelated positive-control viewer must survive.
+
+A capture is not updated until the mock channel is polled. A negative audience assertion
+against an undrained capture can pass falsely. The reusable harness polls every tick and
+before payload reads; retain matching positive recipient traffic and byte-encoder assertions.
+
+## A benchmark inventory is not a performance baseline
+
+After M6, the complete JMH suite has 28 annotated methods and 30 configurations: the three
+ShotBench.volley60 modes add two rows. A restored pre-M6 wrapper still expecting 27 rejects
+both complete reports before the performance gate can run. Keep an exact method/parameter
+inventory (`perf/jmh-suite.json`), not a historical magic number; missing, extra and duplicate
+configurations and changed measurement settings still fail. The inventory contains no scores.
+
+If both original measurements succeeded and the sole failure was this wrapper, verify's
+optional `paired_reports_run` validates the same-branch producer and source identities,
+downloads the immutable reports and calls the unchanged :core:jmhCompare on their original
+bytes. It never repeats timing, rewrites measurements, changes the 15%/allocation gates or
+reinterprets a genuine prior performance failure. Keep the original runner/VM telemetry
+and report hashes, and report the measured commit rather than the later tooling commit.

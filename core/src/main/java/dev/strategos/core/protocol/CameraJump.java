@@ -8,6 +8,16 @@ import dev.strategos.core.shared.CoreApi;
  */
 @CoreApi
 public record CameraJump(double x, double y, double z, float yaw, float pitch) {
+    public CameraJump {
+        if (!Double.isFinite(x)
+                || !Double.isFinite(y)
+                || !Double.isFinite(z)
+                || !Float.isFinite(yaw)
+                || !Float.isFinite(pitch)) {
+            throw new IllegalArgumentException("non-finite camera jump");
+        }
+    }
+
     public static final WireCodec<CameraJump> WIRE = new WireCodec<>() {
         @Override
         public void write(WireWriter out, CameraJump j) {
@@ -20,7 +30,12 @@ public record CameraJump(double x, double y, double z, float yaw, float pitch) {
 
         @Override
         public CameraJump read(WireReader in) {
-            return new CameraJump(in.readDouble(), in.readDouble(), in.readDouble(), in.readFloat(), in.readFloat());
+            try {
+                return new CameraJump(
+                        in.readDouble(), in.readDouble(), in.readDouble(), in.readFloat(), in.readFloat());
+            } catch (IllegalArgumentException invalid) {
+                throw new WireException("non-finite camera jump");
+            }
         }
 
         @Override

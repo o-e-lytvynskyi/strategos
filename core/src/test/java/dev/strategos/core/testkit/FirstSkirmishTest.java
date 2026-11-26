@@ -74,6 +74,39 @@ final class FirstSkirmishTest {
     }
 
     @Test
+    void theTeamPackageMatchesTheFairFourStartGenerator() throws IOException {
+        FirstSkirmish team = FirstSkirmish.generateTeamSkirmish();
+        Path resources = Path.of(System.getProperty("strategos.repoRoot"))
+                .resolve("mod/src/main/resources/data/strategos/strategos");
+        MapManifest manifest = MapManifest.CODEC
+                .parse(
+                        JsonOps.INSTANCE,
+                        JsonParser.parseString(Files.readString(resources.resolve("maps/team_skirmish.json"))))
+                .getOrThrow();
+        Scenario scenario = Scenario.CODEC
+                .parse(
+                        JsonOps.INSTANCE,
+                        JsonParser.parseString(Files.readString(resources.resolve("scenarios/team_skirmish.json"))))
+                .getOrThrow();
+        assertThat(manifest.id()).isEqualTo(scenario.map());
+        assertThat(manifest.terrainHash()).isEqualTo(team.terrainHash());
+        assertThat(manifest.startSlots())
+                .containsExactlyElementsOf(team.startSlots())
+                .hasSize(4);
+        assertThat(manifest.sizeZ()).isEqualTo(256);
+        assertThat(manifest.sizeX()).isEqualTo(FirstSkirmish.SIZE);
+        assertThat(manifest.startSlots()).extracting(slot -> slot.z()).containsExactly(76, 179, 202, 53);
+        assertThat(manifest.waypoints()).isEqualTo(team.waypoints());
+        assertThat(manifest.terrainJobs()).isEqualTo(team.terrainJobs());
+        assertThat(scenario.slots()).hasSize(4);
+        List<MapChecker.Site> sites = MapChecker.scenarioSites(scenario, team.startSlots(), TemplateSet.builtin());
+        MapChecker.Report teamReport = MapChecker.check(team.checkerInput(sites));
+        assertThat(teamReport.problems())
+                .as(String.join("\n", teamReport.measures()))
+                .isEmpty();
+    }
+
+    @Test
     void theMapIsTheSameTurnedHalfRound() {
         int differ = 0;
         for (int x = 0; x < FirstSkirmish.SIZE; x++) {

@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then the agents, then
+ * P0: installs a trusted first-tick diplomacy setup before other inputs, then puts those in canonical order
+ * (terrain pages by page, Z then X, then commands, then the agents, then
  * damage to bodies in the order it came, then path deliveries, then a template set), records them in the journal and
  * routes each to its one handler: the pages are published together, a command is queued, the agents are the tick's for
  * avoidance, a delivery lists the finished jobs the path service applies this tick, a new template set is swapped in
@@ -33,7 +34,10 @@ final class IngestSystem implements MatchSystem {
                 ExternalDamage.class,
                 JobDelivery.class,
                 ContentSwap.class,
-                LeaderUpdate.class);
+                LeaderUpdate.class,
+                DiplomacySetup.class,
+                PresentationSetup.class,
+                FactionExpiry.class);
     }
 
     @Override
@@ -56,6 +60,9 @@ final class IngestSystem implements MatchSystem {
                 case JobDelivery delivery -> state.addDelivery(delivery);
                 case ContentSwap swap -> state.swapTemplates(swap.set());
                 case LeaderUpdate leader -> state.leaders().set(leader);
+                case DiplomacySetup setup -> state.configureDiplomacy(setup);
+                case PresentationSetup setup -> state.configurePresentation(setup);
+                case FactionExpiry expiry -> expire(state, expiry);
             }
         }
         state.publishAll(pages);
@@ -63,15 +70,26 @@ final class IngestSystem implements MatchSystem {
 
     /** A vanilla blow as the core's damage packet, from no unit (CMB-01): hack, pierce or crush, or lethal. */
     private static Damage packet(ExternalDamage d) {
-        return switch (d.kind()) {
+        Damage packet = switch (d.kind()) {
             case HACK -> Damage.of(d.handle(), Handle.NONE, DamageType.HACK, d.amount());
             case PIERCE -> Damage.of(d.handle(), Handle.NONE, DamageType.PIERCE, d.amount());
             case CRUSH -> Damage.of(d.handle(), Handle.NONE, DamageType.CRUSH, d.amount());
             case LETHAL -> Damage.lethal(d.handle(), Handle.NONE);
         };
+        return packet.withSourceFaction(d.sourceFaction());
+    }
+
+    private static void expire(MatchState state, FactionExpiry expiry) {
+        int faction = expiry.faction().value();
+        if (faction >= state.config().factions()) throw new IllegalArgumentException("expiry faction outside match");
+        if (state.outcome().ended() || state.outcome().defeated(faction)) return;
+        state.outcome().defeat(faction);
+        state.outputs().add(new FactionDefeated(expiry.faction(), FactionDefeated.RESIGNED));
     }
 
     private static int canonical(InputEvent a, InputEvent b) {
+        if (a instanceof FactionExpiry first && b instanceof FactionExpiry second)
+            return Integer.compare(first.faction().value(), second.faction().value());
         if (a instanceof TerrainPage pa && b instanceof TerrainPage pb) {
             int byZ = Integer.compare(pa.coord().z(), pb.coord().z());
             return byZ != 0 ? byZ : Integer.compare(pa.coord().x(), pb.coord().x());
@@ -84,6 +102,8 @@ final class IngestSystem implements MatchSystem {
 
     private static int rank(InputEvent event) {
         return switch (event) {
+            case DiplomacySetup setup -> -2;
+            case PresentationSetup setup -> -1;
             case TerrainPage page -> 0;
             case CommandEnvelope envelope -> 1;
             case AgentUpdate update -> 2;
@@ -91,6 +111,7 @@ final class IngestSystem implements MatchSystem {
             case JobDelivery delivery -> 4;
             case ContentSwap swap -> 5;
             case LeaderUpdate leader -> 6;
+            case FactionExpiry expiry -> 7;
         };
     }
 }

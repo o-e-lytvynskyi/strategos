@@ -242,7 +242,7 @@ final class RtsMinimap {
                     y0,
                     x0 + Math.max(1, (int) Math.round(d.w())),
                     y0 + Math.max(1, (int) Math.round(d.h())),
-                    paint.theme.faction(d.faction()));
+                    StrategosClient.colour(d.faction()));
         }
         MatchNews alert = StrategosClient.model().alert();
         if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {
@@ -255,6 +255,13 @@ final class RtsMinimap {
             double[] p = m.toMap(ping.x(), ping.z());
             int radius = 2 + (int) (ping.progress(now) * 10);
             g.renderOutline((int) p[0] - radius, (int) p[1] - radius, 2 * radius + 1, 2 * radius + 1, 0xFFFFB030);
+        }
+        for (var ping : StrategosClient.teamPings().active()) {
+            double[] p = m.toMap(ping.x() + 0.5, ping.z() + 0.5);
+            int px = (int) p[0];
+            int py = (int) p[1];
+            g.renderOutline(px - 4, py - 4, 9, 9, TeamPingModel.COLOUR);
+            g.fill(px - 1, py - 1, px + 2, py + 2, TeamPingModel.COLOUR);
         }
         CameraRig rig = mode.rig();
         View view = mode.view();

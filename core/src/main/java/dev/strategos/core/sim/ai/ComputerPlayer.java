@@ -156,6 +156,15 @@ public final class ComputerPlayer {
         return memory.get(Slots.LAST_COMMAND);
     }
 
+    /** Nominal departure of a matching wave, or the issued departure once its muster has begun. */
+    public long projectedWaveLaunch(long wave) {
+        if (wave != waves()) return 0;
+        var attack = strategy.attack();
+        long mustered = memory.get(Slots.MUSTER);
+        long at = mustered == 0 ? MilitaryManager.nominalMuster(attack, wave) : mustered - 1;
+        return at + 20L * attack.announce();
+    }
+
     /** The waves it launched. */
     public long waves() {
         return memory.get(Slots.WAVE);

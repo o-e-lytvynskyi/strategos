@@ -4,7 +4,9 @@
   "package": "dev.strategos.mod.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "LevelChunkMixin"
+    "LevelChunkMixin",
+    "ServerGamePacketListenerImplMixin",
+    "ServerPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

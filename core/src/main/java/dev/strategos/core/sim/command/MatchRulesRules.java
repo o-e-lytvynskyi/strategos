@@ -32,7 +32,7 @@ final class MatchRulesRules {
         @Override
         public CommandResult apply(CommandEnvelope envelope, Resign resign, MatchState state) {
             int faction = resign.faction().value();
-            if (!envelope.issuer().isAdmin() && envelope.issuer().value() != faction) {
+            if (!envelope.issuer().isAdmin() && state.diplomacy().primaryFaction(envelope.issuer()) != faction) {
                 return Tally.rejectAll(envelope, kind(), 0, RejectReason.NOT_PERMITTED);
             }
             if (faction >= state.config().factions()) {

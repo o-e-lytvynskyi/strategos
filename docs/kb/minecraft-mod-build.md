@@ -151,3 +151,8 @@ arguments. A guard that ends the client (`ProcessHandle.current().descendants()`
 `commandLine()` on the run's name (`clientSmokeJar`); matching the game directory finds nothing and the task
 waits for its timeout (M6 T28). Read `project.version` and the like into a local at configuration: a
 `doLast` that touches `project` fails the build under the configuration cache.
+
+For JSpecify type-use annotations on a nested type, place the annotation after
+the enclosing qualifier: ClientResume.@Nullable Pose, not @Nullable
+ClientResume.Pose. The latter annotates a scoping construct and javac rejects
+it, including in test helpers and devtools scenarios.

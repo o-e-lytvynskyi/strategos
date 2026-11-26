@@ -3,6 +3,8 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.MatchPresentation;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -11,6 +13,7 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import dev.strategos.core.sim.replicate.HudMemory;
 import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
@@ -22,6 +25,8 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -29,6 +34,7 @@ import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -66,6 +72,7 @@ public final class Replication {
         final ArrayDeque<Long> recent = new ArrayDeque<>();
     }
 
+    private final Map<UUID, RecipientContext> contexts = new HashMap<>();
     private final Map<UUID, HudMemory> huds = new HashMap<>();
     private final Map<UUID, Subscription> subscriptions = new HashMap<>();
     private long queriesRefused;
@@ -73,6 +80,8 @@ public final class Replication {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final NetGateway net;
+    private final PlayerNameTeams nameTeams;
+    private final Map<UUID, MatchPresentation> presentations = new HashMap<>();
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
     private final Map<Long, VisionDeltaTracker> visionTrackers = new HashMap<>();
 
@@ -80,10 +89,15 @@ public final class Replication {
     private final Map<UUID, BuildingState> buildings = new HashMap<>();
     private final Map<UUID, DepositState> deposits = new HashMap<>();
 
+    private record AuthorityMemory(DiplomacyView source, PlayerAuthority frame) {}
+
+    private final Map<UUID, AuthorityMemory> authorities = new HashMap<>();
+
     public Replication(MinecraftServer server, Supplier<MatchRegistry> matches, NetGateway net) {
         this.server = server;
         this.matches = matches;
         this.net = net;
+        this.nameTeams = new PlayerNameTeams(server, net);
     }
 
     /** A test's own rule for match {@code match}; without one, the faction's {@code VisibilityIndex}. */
@@ -113,12 +127,27 @@ public final class Replication {
 
     /** A seated player's {@code ui_query}: it replaces the last; one past the rate is refused. */
     public void query(ServerPlayer player, MatchRegistry.Seat seat, UiQuery query, long tick) {
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        if (!seat.hasPerspective()
+                || current == null
+                || current.match() != seat.match()
+                || !current.slot().equals(seat.slot())
+                || online == null
+                || !origin.current(online, registry)) {
+            net.rejected(player, IngressReason.UI_QUERY_UNAVAILABLE);
+            return;
+        }
+        refreshRecipient(player, registry);
         Subscription sub = subscriptions.computeIfAbsent(player.getUUID(), k -> new Subscription());
         while (!sub.recent.isEmpty() && tick - sub.recent.peekFirst() >= 20) {
             sub.recent.removeFirst();
         }
         if (sub.recent.size() >= QUERIES_PER_SECOND) {
             queriesRefused++;
+            net.rejected(player, IngressReason.UI_QUERY_RATE);
             return;
         }
         sub.recent.addLast(tick);
@@ -133,14 +162,62 @@ public final class Replication {
 
     /** Forgets a player that left: its hud memory and subscription. */
     public void forget(UUID player) {
+        contexts.remove(player);
         huds.remove(player);
+        authorities.remove(player);
+        presentations.remove(player);
+        nameTeams.forget(player);
         subscriptions.remove(player);
         factions.remove(player);
         buildings.remove(player);
         deposits.remove(player);
     }
 
+    /** Reset every recipient-specific memory before producing from a new connection, seat or full view. */
+    private void refreshRecipients() {
+        MatchRegistry registry = matches.get();
+        var live = new HashSet<UUID>();
+        for (MatchRuntime rt : registry.all()) {
+            for (UUID member : rt.roster().members()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(member);
+                MatchRegistry.Seat seat = registry.seatOf(member);
+                if (player == null
+                        || seat == null
+                        || seat.match() != rt
+                        || rt.roster().generationOf(member) == 0) continue;
+                live.add(member);
+                refreshRecipient(player, registry);
+            }
+        }
+        for (UUID member : List.copyOf(contexts.keySet())) {
+            if (!live.contains(member)) forget(member);
+        }
+    }
+
+    private void refreshRecipient(ServerPlayer player, MatchRegistry registry) {
+        UUID member = player.getUUID();
+        RecipientContext before = contexts.get(member);
+        if (before != null && before.current(player, registry)) return;
+        forget(member);
+        RecipientContext fresh = RecipientContext.capture(player, registry);
+        contexts.put(member, fresh);
+        MatchRegistry.Seat seat = fresh.seat();
+        if (seat != null && fresh.generation() != 0 && fresh.primary() >= 0) {
+            // The delta tracker is per faction; a joining co-op primary needs a full initial bitmap too.
+            visionTrackers.remove(((long) seat.match().id().value() << 8) | fresh.primary());
+        }
+    }
+
+    /** A pause freezes simulation, not a member's initial/recipient snapshot delivery. */
+    private static boolean publishesSnapshots(MatchRuntime rt) {
+        MatchLifecycle lifecycle = rt.lifecycle();
+        return lifecycle == MatchLifecycle.RUNNING || lifecycle == MatchLifecycle.PAUSED;
+    }
+
     public void tick() {
+        refreshRecipients();
+        sendAuthorities();
+        sendPresentations();
         int now = server.getTickCount();
         if (now % HUD_EVERY == 0) {
             sendHuds();
@@ -162,18 +239,19 @@ public final class Replication {
         visionTrackers.keySet().removeIf(key -> matches.get().get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             VisionSystem vision = core.vision();
             for (int f = 0; f < core.queries().config().factions(); f++) {
                 FactionSlot faction = new FactionSlot(f);
-                if (rt.roster().of(faction).isEmpty()) {
+                if (rt.roster().of(faction, core.queries().diplomacy()).isEmpty()) {
                     continue;
                 }
-                net.send(
-                        new Audience.Faction(rt.id(), faction),
-                        new UnitSummaryPayload(ReplicationService.summary(
+                net.offerSummary(
+                        rt,
+                        faction,
+                        () -> new UnitSummaryPayload(ReplicationService.summary(
                                 core.queries(), rt.id().value(), faction, visibility(rt))));
                 if (vision != null) {
                     long trackerKey = ((long) rt.id().value() << 8) | f;
@@ -189,6 +267,59 @@ public final class Replication {
         }
     }
 
+    private void sendPresentations() {
+        var recipients = new java.util.HashSet<UUID>();
+        for (MatchRuntime match : matches.get().all()) {
+            if (match.core() == null) continue;
+            MatchPresentation frame = net.presentation(match);
+            for (UUID member : match.roster().members()) {
+                var seat = matches.get().seatOf(member);
+                ServerPlayer online = server.getPlayerList().getPlayer(member);
+                if (seat == null
+                        || !seat.match().equals(match)
+                        || !seat.hasPerspective()
+                        || online == null
+                        || online.hasDisconnected()) continue;
+                recipients.add(member);
+                MatchPresentation last = presentations.get(member);
+                if (last == null || !last.sameView(frame)) {
+                    net.send(new Audience.Player(online), new MatchPresentationPayload(frame));
+                    presentations.put(member, frame);
+                }
+                nameTeams.update(online, frame);
+            }
+        }
+        nameTeams.retain(recipients);
+        presentations.keySet().retainAll(recipients);
+    }
+
+    /** Unchanged diplomacy avoids rebuilding permission masks every tick. */
+    private void sendAuthorities() {
+        for (MatchRuntime rt : matches.get().all()) {
+            MatchCore core = rt.core();
+            if (core == null) continue;
+            DiplomacyView source = core.queries().diplomacy();
+            for (UUID player : rt.roster().members()) {
+                var seat = matches.get().seatOf(player);
+                ServerPlayer online = server.getPlayerList().getPlayer(player);
+                if (seat == null || seat.match() != rt || online == null || !seat.hasPerspective()) continue;
+                AuthorityMemory last = authorities.get(player);
+                if (last != null
+                        && last.source().equals(source)
+                        && last.frame().matchId() == rt.id().value()
+                        && last.frame().player().equals(seat.slot())) continue;
+                var next = seat.authority();
+                if (next.isEmpty()) continue;
+                PlayerAuthority frame = next.orElseThrow();
+                authorities.put(player, new AuthorityMemory(source, frame));
+                if (last == null) net.restoreGroups(online, seat, visibility(rt));
+                if (last == null || !last.frame().sameAuthority(frame)) {
+                    net.send(new Audience.Player(online), new PlayerAuthorityPayload(frame));
+                }
+            }
+        }
+    }
+
     /**
      * Each seated player's faction state, when it differs from the last one that player got, so a player who just
      * joined gets it at the next look; to that player only, so a faction's state never reaches another (ECO-01.3).
@@ -196,7 +327,7 @@ public final class Replication {
     private void sendFactions() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
@@ -204,14 +335,13 @@ public final class Replication {
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
                 if (seat == null
                         || seat.match() != rt
+                        || !seat.hasPerspective()
                         || online == null
                         || seat.slot().isAdmin()) {
                     continue;
                 }
                 FactionState now = ReplicationService.factionState(
-                        core.queries(),
-                        rt.id().value(),
-                        new FactionSlot(seat.slot().value()));
+                        core.queries(), rt.id().value(), seat.primaryFaction().orElseThrow());
                 FactionState last = factions.get(player);
                 if (last == null || !last.sameAs(now)) {
                     factions.put(player, now);
@@ -224,18 +354,18 @@ public final class Replication {
     /**
      * Each seated player's buildings (BLD-01), when they differ from the last the player got, at the summaries' pace:
      * its own faction's with the owner's fields, the others' without them. Under fog, unexplored enemy buildings are
-     * hidden (MATCH-07); a pristine grid still sends every live building.
+     * hidden (MATCH-07); a pristine grid still sends every live building. The first frame includes empty tables.
      */
     private void sendBuildings() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
-                if (seat == null || seat.match() != rt || online == null) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective() || online == null) {
                     continue;
                 }
                 FactionSlot view = viewer(seat);
@@ -243,7 +373,7 @@ public final class Replication {
                         ReplicationService.buildingState(core.queries(), rt.id().value(), view);
                 BuildingState now = fogBuildings(core, view, live);
                 BuildingState last = buildings.get(player);
-                if ((last == null && !now.buildings().isEmpty()) || (last != null && !last.sameAs(now))) {
+                if (last == null || !last.sameAs(now)) {
                     buildings.put(player, now);
                     net.send(new Audience.Player(online), new BuildingStatePayload(now));
                 }
@@ -284,7 +414,7 @@ public final class Replication {
     private void sendDeposits() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             DepositState now =
@@ -292,11 +422,11 @@ public final class Replication {
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
-                if (seat == null || seat.match() != rt || online == null) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective() || online == null) {
                     continue;
                 }
                 DepositState last = deposits.get(player);
-                if ((last == null && !now.deposits().isEmpty()) || (last != null && !last.sameAs(now))) {
+                if (last == null || !last.sameAs(now)) {
                     deposits.put(player, now);
                     net.send(new Audience.Player(online), new DepositStatePayload(now));
                 }
@@ -307,12 +437,12 @@ public final class Replication {
     private void sendHuds() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
-                if (seat == null || seat.match() != rt) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective()) {
                     continue;
                 }
                 UnitHud changed = huds.computeIfAbsent(player, k -> new HudMemory())
@@ -331,7 +461,7 @@ public final class Replication {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             MatchRegistry.Seat seat = matches.get().seatOf(e.getKey());
             MatchCore core = seat == null ? null : seat.match().core();
-            if (player == null || seat == null || core == null || sub.handles.isEmpty()) {
+            if (player == null || seat == null || core == null || !seat.hasPerspective() || sub.handles.isEmpty()) {
                 continue;
             }
             UnitDetail detail = ReplicationService.detail(
@@ -346,6 +476,6 @@ public final class Replication {
 
     /** The faction a seat views as; none for an observer (the admin's slot), who sees every faction. */
     private static @Nullable FactionSlot viewer(MatchRegistry.Seat seat) {
-        return seat.slot().isAdmin() ? null : new FactionSlot(seat.slot().value());
+        return seat.slot().isAdmin() ? null : seat.primaryFaction().orElseThrow();
     }
 }

@@ -55,31 +55,25 @@ final class CombatActions {
         int[] rank = {preferred.size() + 1};
         int[] found = {-1};
         s.spatial()
-                .forEachInRadius(
-                        qx,
-                        qz,
-                        qr,
-                        UnitFilter.enemiesOf(s.identity().faction(i), s.config().factions()),
-                        j -> {
-                            if (!s.entities().aliveAt(j) || s.garrisoned(j))
-                                return; // the grid may still hold a unit killed or garrisoned since its rebuild
-                            if (melee && s.stats().restricts(i, s.stats().classes(j))) return;
-                            if (melee
-                                    && s.footprintAt(Math.max(0, (int) Math.floor(motion.x(j))), Math.max(0, (int)
-                                            Math.floor(motion.z(j))))) {
-                                return; // inside a building's footprint: no melee unit can stand where it would strike
-                                // (QA-12)
-                            }
-                            if (stand && Engagement.gap(s, i, j) > Math.min(radius, Stances.reachTo(s, i, j)) + 1e-9)
-                                return;
-                            double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
-                            int r = preferred.isEmpty() ? 0 : rankOf(s, j, preferred);
-                            if (r < rank[0] || (r == rank[0] && d < best[0])) { // ascending indices: the lower on a tie
-                                rank[0] = r;
-                                best[0] = d;
-                                found[0] = j;
-                            }
-                        });
+                .forEachInRadius(qx, qz, qr, UnitFilter.enemiesOf(s.identity().faction(i), s.diplomacy()), j -> {
+                    if (!s.entities().aliveAt(j) || s.garrisoned(j))
+                        return; // the grid may still hold a unit killed or garrisoned since its rebuild
+                    if (melee && s.stats().restricts(i, s.stats().classes(j))) return;
+                    if (melee
+                            && s.footprintAt(Math.max(0, (int) Math.floor(motion.x(j))), Math.max(0, (int)
+                                    Math.floor(motion.z(j))))) {
+                        return; // inside a building's footprint: no melee unit can stand where it would strike
+                        // (QA-12)
+                    }
+                    if (stand && Engagement.gap(s, i, j) > Math.min(radius, Stances.reachTo(s, i, j)) + 1e-9) return;
+                    double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
+                    int r = preferred.isEmpty() ? 0 : rankOf(s, j, preferred);
+                    if (r < rank[0] || (r == rank[0] && d < best[0])) { // ascending indices: the lower on a tie
+                        rank[0] = r;
+                        best[0] = d;
+                        found[0] = j;
+                    }
+                });
         return found[0];
     }
 

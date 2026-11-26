@@ -37,9 +37,11 @@ import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.client.rts.RtsScreen;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.platform.Ids;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +128,7 @@ public final class RtsHud {
     private List<EconomyNotices.Shown> shownNotices = List.of();
     private long clientTicks;
     private final RtsMinimap minimap = new RtsMinimap();
+    private final TeamRosterHud teamRoster = new TeamRosterHud();
     private @Nullable PhasePanel phasePanel;
 
     private @Nullable Inspect inspect;
@@ -211,6 +214,9 @@ public final class RtsHud {
                                 mode.selection().handles(),
                                 net.minecraft.client.gui.screens.Screen.hasShiftDown())
                         .ifPresent(mode::send); // UI-20: one move of the selection, Shift queues
+            } else if (button == 2 && m.contains(x, y) && !join.slot().isAdmin()) {
+                double[] at = m.toWorld(x, y);
+                ClientPayloads.toServer(new PingPayload(0, (int) at[0], (int) at[1]));
             }
             return true;
         }
@@ -299,6 +305,7 @@ public final class RtsHud {
     private void build() {
         long start = System.nanoTime();
         clientTicks++;
+        StrategosClient.teamPings().tick();
         Minecraft client = Minecraft.getInstance();
         minimap.tick(client);
         news.poll(clientTicks);
@@ -364,7 +371,11 @@ public final class RtsHud {
                         StrategosClient.model().buildings(),
                         own != null && controller.demolishAsked(own.handle()),
                         CardController.shared(stances)),
-                own);
+                own,
+                faction -> {
+                    MatchJoin current = StrategosClient.match();
+                    return current != null && current.controlsFaction(faction);
+                });
         phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
                 templates,
                 new ClientFactionView(
@@ -458,9 +469,21 @@ public final class RtsHud {
             int handle = selection.handles().get(0);
             for (UnitDetail.Unit u : StrategosClient.model().details()) {
                 if (u.handle() == handle) {
-                    return SelectionPanel.Unit.of(u, join.slot().value());
+                    return SelectionPanel.Unit.of(u, join.primaryFaction());
                 }
             }
+            UnitSpawnData publicData = bodies.get(handle);
+            if (publicData != null)
+                return new SelectionPanel.Unit(
+                        publicData.handle(),
+                        publicData.templateIndex(),
+                        publicData.faction(),
+                        StrategosClient.model().health(Handle.index(handle)),
+                        UnitHud.WHOLE,
+                        -1,
+                        -1,
+                        0,
+                        false);
             return null;
         }
         Integer inspected = selection.inspected();
@@ -495,7 +518,7 @@ public final class RtsHud {
             return null;
         }
         String detail;
-        if (data.faction() == join.slot().value()) {
+        if (data.faction() == join.primaryFaction()) {
             query(List.of(data.handle()));
             UnitDetail.Unit known = null;
             for (UnitDetail.Unit u : StrategosClient.model().details()) {
@@ -591,7 +614,12 @@ public final class RtsHud {
                 SelectionPanel.Unit u = java.util.Objects.requireNonNull(p.unit());
                 cardPresentation.icon(g, font, templates, u.template(), SelectionPanel.icon(r, pad));
                 paint.text(
-                        g, font, r, 0, HudCardPresentation.name(templates, u.template()), theme.faction(u.faction()));
+                        g,
+                        font,
+                        r,
+                        0,
+                        HudCardPresentation.name(templates, u.template()),
+                        StrategosClient.colour(u.faction()));
                 paint.text(
                         g,
                         font,
@@ -611,8 +639,14 @@ public final class RtsHud {
                     paint.text(g, font, r, 2, state, theme.dimText());
                 }
             }
-            case BUILDING ->
-                buildingCard.building(g, font, templates, r, pad, java.util.Objects.requireNonNull(p.building()));
+            case BUILDING -> {
+                BuildingState.Entry selected = java.util.Objects.requireNonNull(p.building());
+                buildingCard.building(g, font, templates, r, pad, selected);
+                MatchJoin joined = StrategosClient.match();
+                if (!selected.own() && joined != null && joined.controlsFaction(selected.faction())) {
+                    paint.text(g, font, r, 3, "Orders use allied resources", theme.dimText());
+                }
+            }
             case DEPOSIT -> {
                 DepositState.Entry d = java.util.Objects.requireNonNull(p.deposit());
                 List<String> resources = StrategosClient.resources();
@@ -670,7 +704,9 @@ public final class RtsHud {
                         g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), edge);
                     }
                 }
-                case CANCEL_BUILDING -> paint.item(g, "minecraft:barrier", cell);
+                case CANCEL_BUILDING, CANCEL_NEXT -> paint.item(g, "minecraft:barrier", cell);
+                case AUTO_RESEED_ENABLE -> paint.item(g, "minecraft:wheat_seeds", cell);
+                case AUTO_RESEED_DISABLE -> paint.item(g, "minecraft:barrier", cell);
                 case RING_BELL -> paint.item(g, "minecraft:bell", cell);
                 case ALL_CLEAR -> paint.item(g, "minecraft:lime_banner", cell);
                 case DEMOLISH -> {
@@ -751,6 +787,7 @@ public final class RtsHud {
 
     private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
+            if (Minecraft.getInstance().screen instanceof RtsScreen) teamRoster.draw(g, layout(), paint);
             minimap.draw(g, mode, paint, clientTicks, news.alertAt());
         }
     }

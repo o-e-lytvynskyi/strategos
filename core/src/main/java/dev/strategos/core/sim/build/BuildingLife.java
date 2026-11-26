@@ -136,7 +136,7 @@ public final class BuildingLife {
                             at.worldX(b.x(k), b.z(k)),
                             baseY + b.y(k),
                             at.worldZ(b.x(k), b.z(k)),
-                            b.palette().get(b.state(k)),
+                            s.buildingMaterial(owner, b, k),
                             owner));
         }
     }

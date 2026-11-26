@@ -14,6 +14,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.ShotFired;
@@ -21,6 +22,7 @@ import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
@@ -44,10 +46,16 @@ class TownArrowsTest {
     static final double PIERCE = 8;
 
     final SimHarness h =
-            SimHarness.builder().size(96, 64).yBand(0, 31, 1).factions(3).build();
+            SimHarness.builder().size(96, 64).yBand(0, 31, 1).factions(4).build();
     final MatchState s;
 
     TownArrowsTest() {
+        h.schedule(
+                1,
+                new DiplomacySetup(DiplomacyState.identity(4)
+                        .withTeam(new FactionSlot(3), 1)
+                        .lockTeams()
+                        .snapshot()));
         h.publishAll(VoxelFixtures.flat(96, 64, 32, 1));
         h.step();
         s = KernelAccess.state(h.core());
@@ -180,6 +188,20 @@ class TownArrowsTest {
         run(2 * INTERVAL);
         assertThat(volleys(centre))
                 .hasSize(2 * ARROWS)
+                .extracting(ShotFired::target)
+                .containsOnly(enemy);
+    }
+
+    @Test
+    void aCentreDoesNotFireOnASeparateAlliedFaction() {
+        int centre = building(CENTRE, 1, 40, 30);
+        unit(TemplateSet.INFANTRY, 3, 49, 33);
+        run(INTERVAL);
+        assertThat(volleys(centre)).isEmpty();
+        int enemy = unit(TemplateSet.INFANTRY, 2, 52, 33);
+        run(INTERVAL);
+        assertThat(volleys(centre))
+                .hasSize(ARROWS)
                 .extracting(ShotFired::target)
                 .containsOnly(enemy);
     }

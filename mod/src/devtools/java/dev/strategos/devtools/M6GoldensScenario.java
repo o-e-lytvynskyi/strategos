@@ -150,6 +150,9 @@ final class M6GoldensScenario implements Scenario {
     private volatile boolean freezeOnIdle;
 
     private volatile boolean frozenIdle;
+    private volatile boolean mapCornerOnServerAtFreeze;
+    private volatile int forcedChunksAtFreeze;
+    private volatile int serverViewAtFreeze;
     private int idleSteps;
     private volatile int endStage;
     private volatile long endTick;
@@ -179,6 +182,7 @@ final class M6GoldensScenario implements Scenario {
         ScenarioWorld.run(server, "gamerule sendCommandFeedback false");
         ScenarioWorld.run(server, "gamerule doDaylightCycle false");
         ScenarioWorld.run(server, "gamerule doWeatherCycle false");
+        ScenarioWorld.run(server, "gamerule doMobSpawning false");
         ScenarioWorld.run(server, "time set 6000");
         ScenarioWorld.run(server, "weather clear");
         int floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
@@ -193,6 +197,14 @@ final class M6GoldensScenario implements Scenario {
                         new MatchOptions(
                                 5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor, null, play));
         match = rt;
+        // The minimap must sample the whole fixture even though spectator chunk generation is disabled.
+        // Town is 16 by 16 chunks (256); the fog world is smaller. Keep vanilla's command limit intact.
+        var space = rt.space();
+        ScenarioWorld.run(
+                server,
+                "forceload add " + space.origin().getX() + " " + space.origin().getZ()
+                        + " " + (space.origin().getX() + space.sizeX() - 1) + " "
+                        + (space.origin().getZ() + space.sizeZ() - 1));
         researched.clear();
         town = 0;
         scout = -1;
@@ -222,6 +234,12 @@ final class M6GoldensScenario implements Scenario {
             idleSteps = StrategosServer.get().writer().pending(server.overworld()) == 0 ? idleSteps + 1 : 0;
             if (idleSteps >= IDLE_STEPS) { // longer than a site's 4-tick burst interval
                 freezeOnIdle = false;
+                mapCornerOnServerAtFreeze = server.overworld()
+                        .hasChunk(
+                                rt.space().origin().getX() >> 4,
+                                rt.space().origin().getZ() >> 4);
+                forcedChunksAtFreeze = server.overworld().getForcedChunks().size();
+                serverViewAtFreeze = server.getPlayerList().getViewDistance();
                 ScenarioWorld.run(server, "tick freeze");
                 frozenIdle = true;
             }
@@ -356,6 +374,8 @@ final class M6GoldensScenario implements Scenario {
     @Override
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         RtsMode rts = StrategosClient.rts();
+        // Initial config loading can replace an early override; keep this scripted input invariant throughout.
+        if (StrategosClientConfig.INSTANCE.edgePan.get()) StrategosClientConfig.INSTANCE.edgePan.set(false);
         long window = mc.getWindow().getWindow();
         // the cursor rests mid-window, as a player's does; a screen's widgets would light under it, so it waits aside
         GLFW.glfwSetCursorPos(
@@ -418,6 +438,8 @@ final class M6GoldensScenario implements Scenario {
             RtsMode rts = StrategosClient.rts();
             return rts.active() && rts.view() != null && rts.rig() != null;
         }));
+        s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
+        s.add(until("the town camera at its fixed origin", LIMIT, mc -> cameraAt(mc, 0, 0)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnTown(rt))));
         s.add(until(
                 "the town and its spearmen",
@@ -426,6 +448,7 @@ final class M6GoldensScenario implements Scenario {
                         && ownBuilding(STOREHOUSE) != null
                         && ownBuilding(FARMSTEAD) != null
                         && bodies(mc, 0, SPEARMEN_Z) >= SPEARMEN));
+        s.add(until("the complete town minimap terrain", LIMIT, M6GoldensScenario::mapChunksReady));
         freeze(s);
         // the spearman with the starting gear
         s.add(act((mc, ctx) -> frame(0, SPEARMEN_Z, SPEARMEN_HEIGHT)));
@@ -556,6 +579,8 @@ final class M6GoldensScenario implements Scenario {
                     && StrategosClient.model().visionCellsX() > 0
                     && rendered(mc);
         }));
+        s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
+        s.add(until("the fog camera at its fixed origin", LIMIT, mc -> cameraAt(mc, 0, 0)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnFog(rt))));
         s.add(until(
                 "the two centres and the scout",
@@ -565,6 +590,7 @@ final class M6GoldensScenario implements Scenario {
             var core = rt.core();
             scout = core == null ? -1 : scoutOf(core.queries());
         })));
+        s.add(until("the complete fog minimap terrain", LIMIT, M6GoldensScenario::mapChunksReady));
         freeze(s);
         s.add(act((mc, ctx) -> {
             StrategosClient.rts().centreOn(-8, 0);
@@ -636,6 +662,52 @@ final class M6GoldensScenario implements Scenario {
                 return true;
             }
             if (inStep > limit) {
+                if (what.equals("the client to settle") || what.contains("camera at its fixed origin")) {
+                    ctx.result.addProperty("settleRendered", mc.levelRenderer.hasRenderedAllSections());
+                    ctx.result.addProperty("settleBuilt", allBuilt());
+                    ctx.result.addProperty(
+                            "settleMinimapCorner", StrategosClient.hud().minimapPixel(1, 1));
+                    ctx.result.addProperty("settleMinimapHash", minimapHash());
+                    ctx.result.addProperty(
+                            "settleHudTicks", StrategosClient.hud().clientTicks());
+                    ctx.result.addProperty("settleServerMapCorner", mapCornerOnServerAtFreeze);
+                    ctx.result.addProperty("settleForcedChunks", forcedChunksAtFreeze);
+                    ctx.result.addProperty("settleServerView", serverViewAtFreeze);
+                    ctx.result.addProperty(
+                            "settleClientView", mc.options.renderDistance().get());
+                    var join = Objects.requireNonNull(StrategosClient.match());
+                    var level = Objects.requireNonNull(mc.level);
+                    ctx.result.addProperty("settleOriginX", join.originX());
+                    ctx.result.addProperty("settleOriginZ", join.originZ());
+                    ctx.result.addProperty(
+                            "settleClientCornerChunk",
+                            level.getChunkSource().hasChunk(join.originX() >> 4, join.originZ() >> 4));
+                    var corner = new BlockPos(
+                            join.originX() + 1,
+                            level.getHeight(Heightmap.Types.WORLD_SURFACE, join.originX() + 1, join.originZ() + 1) - 1,
+                            join.originZ() + 1);
+                    ctx.result.addProperty(
+                            "settleCornerBlock", level.getBlockState(corner).toString());
+                    var player = Objects.requireNonNull(mc.player);
+                    ctx.result.addProperty("settlePlayerX", player.getX());
+                    ctx.result.addProperty("settlePlayerZ", player.getZ());
+                    ctx.result.addProperty("settleEdgePan", StrategosClientConfig.INSTANCE.edgePan.get());
+                    var rig = StrategosClient.rts().rig();
+                    if (rig != null) {
+                        ctx.result.addProperty("settleFocusX", rig.focusX());
+                        ctx.result.addProperty("settleFocusZ", rig.focusZ());
+                    }
+                    ctx.result.addProperty("settleCalmTicks", calm);
+                    ctx.result.addProperty(
+                            "settleBuildings",
+                            StrategosClient.model().buildings().size());
+                    ctx.result.addProperty(
+                            "settleIncompleteBuildings",
+                            StrategosClient.model().buildings().stream()
+                                    .filter(e -> e.state() != CommandCard.COMPLETE)
+                                    .count());
+                    ctx.capture("failure_settle");
+                }
                 failures.append("no ")
                         .append(what)
                         .append(" within ")
@@ -701,6 +773,31 @@ final class M6GoldensScenario implements Scenario {
             return calm >= CALM_WORLD;
         }));
         s.add(wait(ARRIVE));
+    }
+
+    /** A far centreOn is asynchronous; the server must accept it before the visual fixture freezes its ticks. */
+    private static boolean cameraAt(Minecraft mc, double x, double z) {
+        var rig = StrategosClient.rts().rig();
+        var player = mc.player;
+        if (rig == null || player == null) return false;
+        return Math.hypot(rig.focusX() - x, rig.focusZ() - z) < 0.5
+                && Math.hypot(
+                                player.getX() - rig.pose().x(),
+                                player.getZ() - rig.pose().z())
+                        < 0.5;
+    }
+
+    /** ClientLevel.hasChunk is always true; inspect the actual cache before freezing the server. */
+    private static boolean mapChunksReady(Minecraft mc) {
+        var join = StrategosClient.match();
+        var level = mc.level;
+        if (join == null || level == null) return false;
+        for (int x = join.originX() >> 4; x <= (join.originX() + join.sizeX() - 1) >> 4; x++) {
+            for (int z = join.originZ() >> 4; z <= (join.originZ() + join.sizeZ() - 1) >> 4; z++) {
+                if (!level.getChunkSource().hasChunk(x, z)) return false;
+            }
+        }
+        return true;
     }
 
     /** Whether every building the client knows of is finished. */

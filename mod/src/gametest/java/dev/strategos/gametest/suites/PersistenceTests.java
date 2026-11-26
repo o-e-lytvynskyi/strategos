@@ -9,16 +9,20 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRecord;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -35,8 +39,10 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.common.IOUtilities;
 
@@ -54,6 +60,135 @@ public final class PersistenceTests {
     private static final FileTime PLANTED = FileTime.fromMillis(1_000_000_000_000L);
 
     private PersistenceTests() {}
+
+    /** T5.2: actual login/logout updates the saved reservation even when the match is paused. */
+    @StrategosTest
+    public static void authenticatedConnectionEventsPersistWhilePaused(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        String name = "roster-session";
+        UUID member = MockViewer.uuidOf(name);
+        registry.join(rt, member, new PlayerSlot(0));
+        registry.pause(rt.id());
+        MatchData data = rt.data();
+        check(data != null, "paused connection fixture has no data");
+        var at = h.absolutePos(new net.minecraft.core.BlockPos(8, 2, 8));
+        data.setDirty(false);
+        try (MockViewer viewer = MockViewer.join(h.getLevel(), name, at.getX(), at.getY(), at.getZ(), 2)) {
+            check(rt.roster().isConnected(viewer.player().getUUID()), "authenticated login did not confirm the seat");
+            check(data.isDirty(), "paused login did not mark session metadata for saving");
+        }
+        check(!rt.roster().isConnected(member), "logout retained a live connection");
+        check(data.isDirty(), "paused logout did not mark session metadata for saving");
+        check(rt.roster().remainingNanos(member) > 0, "logout lost the reclaim duration");
+        data.setDirty(false);
+        try (MockViewer viewer = MockViewer.join(h.getLevel(), name, at.getX(), at.getY(), at.getZ(), 2)) {
+            check(
+                    rt.roster().isConnected(viewer.player().getUUID()),
+                    "returning authenticated connection stayed offline");
+            check(data.isDirty(), "returning connection did not mark the paused blob");
+        }
+        check(rt.lifecycle() == MatchLifecycle.PAUSED, "connection bookkeeping resumed the simulation");
+        h.succeed();
+    }
+
+    /** T5.2: four UUID/player seats retain two primary factions and a directional grant after restore. */
+    @StrategosTest(timeoutTicks = 40)
+    public static void coopRosterAndGrantsRestoreWithDisconnectedSessions(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        DiplomacyState authority = new DiplomacyState(2).withTeam(new FactionSlot(1), 0);
+        for (int player = 0; player < 4; player++) {
+            authority = authority.bind(new PlayerSlot(player), new FactionSlot(player / 2));
+        }
+        rt.initializeDiplomacy(new DiplomacySetup(authority
+                .lockTeams()
+                .grant(new PlayerSlot(0), new PlayerSlot(2))
+                .snapshot()));
+        h.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    for (int player = 0; player < 4; player++) {
+                        registry.join(rt, new UUID(9, 5200 + player), new PlayerSlot(player));
+                    }
+                    long hash = core(rt).stateHash();
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "co-op fixture has no persisted match");
+                    CompoundTag saved =
+                            data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    check(saved.getInt("v") == 3, "session metadata did not use the versioned blob");
+                    registry.unload(rt.id());
+                    MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), saved));
+                    check(back.lifecycle() == MatchLifecycle.PAUSED, "co-op roster did not restore paused");
+                    check(core(back).stateHash() == hash, "restoring sessions changed the core authority/hash");
+                    for (int player = 0; player < 4; player++) {
+                        UUID member = new UUID(9, 5200 + player);
+                        var seat = registry.seatOf(member);
+                        check(
+                                seat != null
+                                        && seat.match() == back
+                                        && seat.slot().value() == player,
+                                "co-op player identity was reinterpreted as a faction");
+                        check(!back.roster().isConnected(member), "restore trusted a saved connection");
+                        check(back.roster().remainingNanos(member) > 0, "saved reclaim window is missing");
+                        check(
+                                core(back)
+                                                .queries()
+                                                .diplomacy()
+                                                .factionOf(new PlayerSlot(player))
+                                                .orElseThrow()
+                                                .value()
+                                        == player / 2,
+                                "co-op primary binding changed");
+                    }
+                    check(
+                            core(back).queries().diplomacy().controls(new PlayerSlot(2), new FactionSlot(0)),
+                            "the saved explicit grant was lost");
+                    check(
+                            !core(back).queries().diplomacy().controls(new PlayerSlot(3), new FactionSlot(0)),
+                            "restore gave the ungranted co-op partner inherited control");
+                })
+                .thenSucceed();
+    }
+
+    /** M7 T5.1: a conflicting saved UUID must not replace another live match's membership. */
+    @StrategosTest
+    public static void aRestoredRosterCannotStealAnotherMatchsMember(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        var options = MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true);
+        MatchRuntime first = MatchFixture.create(h, 0, 0, 14, 32, options);
+        MatchRuntime second = MatchFixture.create(h, 18, 0, 14, 32, options);
+        UUID firstMember = new UUID(9, 5101);
+        UUID secondMember = new UUID(9, 5102);
+        registry.join(first, firstMember, new PlayerSlot(0));
+        registry.join(second, secondMember, new PlayerSlot(0));
+        MatchData data = second.data();
+        MatchRecord record = registry.record(second.id());
+        check(data != null && record != null, "persistent roster fixture has no data");
+        CompoundTag saved = data.save(new CompoundTag(), h.getLevel().registryAccess());
+        registry.unload(second.id());
+
+        MatchRuntime valid = registry.restore(h.getLevel(), record, MatchData.load(second.id(), saved));
+        check(valid.lifecycle() == MatchLifecycle.PAUSED, "an unrelated roster did not restore");
+        var validSeat = registry.seatOf(secondMember);
+        check(validSeat != null && validSeat.match() == valid, "valid restored membership is missing");
+        registry.unload(valid.id());
+
+        CompoundTag conflicting = saved.copy();
+        conflicting
+                .getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                .getCompound(0)
+                .put("uuid", NbtUtils.createUUID(firstMember));
+        MatchRuntime refused = registry.restore(h.getLevel(), record, MatchData.load(second.id(), conflicting));
+        check(refused.lifecycle() == MatchLifecycle.FAULTED, "a cross-match UUID was accepted");
+        check(String.valueOf(refused.faultMessage()).contains("roster"), "missing roster conflict reason");
+        var kept = registry.seatOf(firstMember);
+        check(kept != null && kept.match() == first, "restore replaced the original membership");
+        check(registry.seatOf(secondMember) == null, "an unloaded connection survived the rejected restore");
+        h.succeed();
+    }
 
     /**
      * CORE-07.5, ORD-01.5 (spec 1.6 row 30): saved, unloaded and restored in the same level, the hash holds, and the
@@ -568,6 +703,15 @@ public final class PersistenceTests {
     /** A newer terminal blob cannot be revived by an older PAUSED registry record (#23). */
     @StrategosTest
     public static void terminalOutcomeOverridesPausedRecord(GameTestHelper h) {
+        terminalOutcomeOverridesPausedRecord(h, false);
+    }
+
+    @StrategosTest
+    public static void coalitionOutcomeOverridesPausedRecord(GameTestHelper h) {
+        terminalOutcomeOverridesPausedRecord(h, true);
+    }
+
+    private static void terminalOutcomeOverridesPausedRecord(GameTestHelper h, boolean coalition) {
         MatchRegistry registry = StrategosServer.get().matches();
         MatchRuntime rt = MatchFixture.create(
                 h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
@@ -575,7 +719,8 @@ public final class PersistenceTests {
         var saved = core(rt).snapshot();
         var outcome = new dev.strategos.core.sim.Outcome();
         outcome.hold(0);
-        outcome.end(0, saved.tick());
+        if (coalition) outcome.hold(1);
+        outcome.end(coalition ? java.util.List.of(0, 1) : java.util.List.of(0), saved.tick());
         var finished = new dev.strategos.core.sim.MatchSnapshot(
                 saved.config(),
                 saved.tick(),
@@ -593,10 +738,16 @@ public final class PersistenceTests {
                 saved.ledger(),
                 saved.carried(),
                 new dev.strategos.core.sim.MatchSnapshot.Play(
-                        outcome.save(),
-                        saved.play().ai(),
-                        saved.play().aiWake(),
-                        saved.play().alerts()),
+                                outcome.save(),
+                                saved.play().ai(),
+                                saved.play().aiWake(),
+                                saved.play().alerts())
+                        .withDiplomacy(
+                                coalition
+                                        ? DiplomacyState.identity(saved.config().factions())
+                                                .withTeam(new FactionSlot(1), 0)
+                                                .lockTeams()
+                                        : saved.diplomacy()),
                 saved.templateBindings());
         MatchRecord record = registry.record(rt.id());
         check(record != null && record.lifecycle() == MatchLifecycle.PAUSED, "no paused record");
@@ -606,6 +757,17 @@ public final class PersistenceTests {
         MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
         check(back.lifecycle() == MatchLifecycle.ENDED, "terminal outcome restored as " + back.lifecycle());
         check(core(back).snapshot().play().ended(), "terminal outcome lost");
+        var results = core(back).queries().matchResults();
+        check(
+                results != null && results.winners().equals(coalition ? java.util.List.of(0, 1) : java.util.List.of(0)),
+                "restored terminal winners changed");
+        boolean refused = false;
+        try {
+            registry.resume(back.id());
+        } catch (IllegalStateException expected) {
+            refused = true;
+        }
+        check(refused, "terminal coalition accepted resume");
         h.succeed();
     }
 }

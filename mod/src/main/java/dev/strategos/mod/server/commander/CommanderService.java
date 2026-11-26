@@ -245,7 +245,8 @@ public final class CommanderService {
             return true;
         }
         VisionSystem vision = core.vision();
-        int faction = seat.slot().value();
+        if (seat.match() != rt || !seat.hasPerspective()) return false;
+        int faction = seat.primaryFaction().orElseThrow().value();
         if (vision == null || faction < 0 || faction >= core.queries().config().factions()) {
             return true;
         }

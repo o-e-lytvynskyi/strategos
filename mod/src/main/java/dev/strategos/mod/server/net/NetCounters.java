@@ -7,11 +7,13 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * What the gateway sent, per payload type and player (by name), with the bytes of each payload's record, and the
- * violations it counted per player and reason (ADR-0016): what perf runs report.
+ * violations and semantic refusals counted per player and stable reason (ADR-0016): what perf runs report.
  */
 public final class NetCounters {
     private final Map<String, long[]> sent = new TreeMap<>(); // "type player": payloads, bytes
+    private final Map<String, long[]> droppedFx = new TreeMap<>();
     private final Map<String, Integer> violations = new TreeMap<>(); // "player reason"
+    private final Map<String, Integer> rejections = new TreeMap<>(); // includes semantic refusals
 
     /** {@code who} is a player's name, or {@code trackers} for a payload vanilla's tracking delivered. */
     void sent(ResourceLocation type, String who, int bytes) {
@@ -20,8 +22,26 @@ public final class NetCounters {
         c[1] += bytes;
     }
 
-    void violation(String player, String reason) {
-        violations.merge(player + " " + reason, 1, Integer::sum);
+    void dropFx(String player, int bytes) {
+        long[] count = droppedFx.computeIfAbsent(player, key -> new long[2]);
+        count[0]++;
+        count[1] += bytes;
+    }
+
+    /** Expendable effects dropped under this client's FX byte pressure. */
+    public long droppedFx(String player) {
+        long[] count = droppedFx.get(player);
+        return count == null ? 0 : count[0];
+    }
+
+    void violation(String player, IngressReason reason) {
+        violations.merge(player + " " + reason.code(), 1, Integer::sum);
+        rejected(player, reason);
+    }
+
+    /** A normal gameplay refusal does not change the protocol violation count. */
+    void rejected(String player, IngressReason reason) {
+        rejections.merge(player + " " + reason.code(), 1, Integer::sum);
     }
 
     /** Payloads of {@code type} sent to {@code who}. */
@@ -64,9 +84,20 @@ public final class NetCounters {
             s.add(e.getKey(), c);
         }
         json.add("sent", s);
+        JsonObject fx = new JsonObject();
+        droppedFx.forEach((player, count) -> {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("payloads", count[0]);
+            entry.addProperty("bytes", count[1]);
+            fx.add(player, entry);
+        });
+        json.add("droppedFx", fx);
         JsonObject v = new JsonObject();
         violations.forEach(v::addProperty);
         json.add("violations", v);
+        JsonObject r = new JsonObject();
+        rejections.forEach(r::addProperty);
+        json.add("rejections", r);
         return json;
     }
 }

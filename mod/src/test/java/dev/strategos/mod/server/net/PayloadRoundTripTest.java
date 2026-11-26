@@ -7,17 +7,21 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.DebugLayer;
 import dev.strategos.core.protocol.DebugSubscribe;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
@@ -26,8 +30,12 @@ import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -67,6 +75,28 @@ class PayloadRoundTripTest {
                 FeedbackPayload.SPEC.cap());
         assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackPayload.SPEC.cap()).isLessThanOrEqualTo(1024);
+        roundTrip(
+                PlayerAuthorityPayload.STREAM_CODEC,
+                new PlayerAuthorityPayload(new PlayerAuthority(1, new PlayerSlot(0), 3, 0, 1, 3)),
+                PlayerAuthorityPayload.SPEC.cap());
+        roundTrip(
+                MatchPresentationPayload.STREAM_CODEC,
+                new MatchPresentationPayload(new MatchPresentation(
+                        1,
+                        1,
+                        FactionPresentation.legacy(2),
+                        List.of(new MatchPresentation.Participant(new PlayerSlot(0), 0, "host", true)))),
+                MatchPresentationPayload.SPEC.cap());
+        var ping = new TeamPingPayload(7, new TeamPingPayload.Ping(1, new PlayerSlot(15), 256, 512));
+        roundTrip(TeamPingPayload.STREAM_CODEC, ping, TeamPingPayload.SPEC.cap());
+        assertThat(TeamPingPayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);
+        assertThat(NetGateway.size(ping)).isEqualTo(21);
+        var restoration = new GroupRestorePayload(new GroupRestoreFrame(7, 1, List.of(1048576)));
+        roundTrip(GroupRestorePayload.STREAM_CODEC, restoration, GroupRestorePayload.SPEC.cap());
+        assertThat(GroupRestorePayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);
+        assertThat(NetGateway.size(restoration))
+                .isEqualTo(WireCodec.encode(GroupRestoreFrame.WIRE, restoration.frame()).length);
+        assertThat(MatchPresentationPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
     }
 
@@ -106,14 +136,15 @@ class PayloadRoundTripTest {
 
     @Test
     void anUnreadableBatchArrivesAsARefusal() {
-        byte[] thirtyThree = new WireWriter().writeVarInt(0).writeVarInt(33).toByteArray();
+        byte[] thirtyThree =
+                new WireWriter().writeLong(1).writeVarInt(0).writeVarInt(33).toByteArray();
         CommandsPayload malformed = read(thirtyThree);
         assertThat(malformed.ok()).isFalse();
         assertThat(malformed.problem()).isNotEmpty();
 
         CommandsPayload oversized = read(new byte[Limits.BATCH_BYTES + 100]);
         assertThat(oversized.ok()).isFalse();
-        assertThat(oversized.problem()).contains("above the batch's 4096");
+        assertThat(oversized.problem()).contains("above the framed batch's 4104");
     }
 
     private static CommandsPayload read(byte[] bytes) {
