@@ -19,6 +19,100 @@
   },
   "results": [
     {
+      "date": "2026-11-27",
+      "tree": "M10 T30, on dev/o-e-lytvynskyi/m10 after 905208b5",
+      "template": "the M10 roster",
+      "scene": "rts_frame_veterans: rts_frame_battle's scene (the RTS view at height 64 over the north ford of strategos:battle_at_the_ford, render distance 16, 202 units on screen, 270 bodies) with every unit ranked 1 to 3, so the bars' timer holds the insignia; vanilla three runs, Sodium one; rts_frame_battle (no ranks) one vanilla run beside it",
+      "command": "./gradlew :mod:runScenario -Pscenario=rts_frame_veterans [-Pcompat]",
+      "note": "M10's consent batch: every budget holds at the medians; the client tick p50 is at its 1 ms edge in vanilla (1.004, 0.973, 0.997 ms; the first run over by 0.4 %), and the scene without ranks read 1.128 ms in its one run, so the insignia are not its cost (our drawing 0.12 ms, the HUD's build 0.09-0.12 ms of the tick); the bare map's client tick alone reads 0.95 ms. M2's baseline was 0.80 ms: an M11 follow-up. Not yet approved as a baseline.",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 5.072,
+            "frameP99Ms": 10.267,
+            "unitsMs": 3.613,
+            "oursMs": 0.123,
+            "clientTickP50Ms": 0.997,
+            "clientTickP99Ms": 1.233
+          },
+          "runs": [
+            {
+              "frameP50Ms": 5.072,
+              "frameP99Ms": 11.087,
+              "unitsMs": 3.631,
+              "oursMs": 0.123,
+              "clientTickP50Ms": 1.004,
+              "clientTickP99Ms": 1.283,
+              "ok": false
+            },
+            {
+              "frameP50Ms": 5.033,
+              "frameP99Ms": 10.17,
+              "unitsMs": 3.553,
+              "oursMs": 0.121,
+              "clientTickP50Ms": 0.973,
+              "clientTickP99Ms": 1.233,
+              "ok": true
+            },
+            {
+              "frameP50Ms": 5.095,
+              "frameP99Ms": 10.267,
+              "unitsMs": 3.613,
+              "oursMs": 0.127,
+              "clientTickP50Ms": 0.997,
+              "clientTickP99Ms": 1.199,
+              "ok": true
+            }
+          ]
+        },
+        "sodium": {
+          "mods": "NeoForge 21.1.264, Sodium, Iris and Strategos (the compat set)",
+          "median": {
+            "frameP50Ms": 3.774,
+            "frameP99Ms": 8.062,
+            "unitsMs": 2.96,
+            "oursMs": 0.066,
+            "clientTickP50Ms": 0.855,
+            "clientTickP99Ms": 1.107
+          },
+          "runs": [
+            {
+              "frameP50Ms": 3.774,
+              "frameP99Ms": 8.062,
+              "unitsMs": 2.96,
+              "oursMs": 0.066,
+              "clientTickP50Ms": 0.855,
+              "clientTickP99Ms": 1.107,
+              "ok": true
+            }
+          ]
+        },
+        "vanilla-no-ranks": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 5.664,
+            "frameP99Ms": 11.369,
+            "unitsMs": 3.879,
+            "oursMs": 0.079,
+            "clientTickP50Ms": 1.128,
+            "clientTickP99Ms": 2.764
+          },
+          "runs": [
+            {
+              "frameP50Ms": 5.664,
+              "frameP99Ms": 11.369,
+              "unitsMs": 3.879,
+              "oursMs": 0.079,
+              "clientTickP50Ms": 1.128,
+              "clientTickP99Ms": 2.764,
+              "ok": false
+            }
+          ]
+        }
+      }
+    },
+    {
       "date": "2026-11-15",
       "tree": "M6 T27, on dev/o-e-lytvynskyi/m6-t2-t17 after f2df9421",
       "template": "the M6 roster",

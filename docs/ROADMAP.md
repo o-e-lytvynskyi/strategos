@@ -507,17 +507,17 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | CIV-02 | Civilisation 2: roster, bonuses and abilities | L | CIV-01, UNIT-10, D-03 | deferred (M14) |
 | ART-04 | Civilisation 2 art set | L | CIV-02, ART-03 | deferred (M14) |
 | TECH-04 | City phase | M | TECH-02, TERR-01 | done |
-| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | in_progress |
+| TECH-05 | Technology tree and tree screen | L | TECH-04, UI-13, TECH-03 | done |
 | UNIT-10 | Abilities | M | CORE-03, DATA-02 | done |
-| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | in_progress |
+| CMB-11 | Promotion and ranks | M | CMB-01, DATA-02 | done |
 | CMB-12 | Healing | M | CMB-05, BLD-10, UNIT-10 | done |
 | CMB-13 | Loot | S | CMB-01, ECO-01 | done |
 | ORD-06 | Formations (move only) | L | ORD-03, PATH-09 | done |
 | ORD-07 | Patrol and guard | M | ORD-04 | done |
 | ECO-10 | Wild herds and hunting | M | ECO-16, UNIT-06 | done |
-| UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | in_progress |
-| CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | in_progress |
-| MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | in_progress |
+| UI-17 | Full hotkeys and idle-unit cycling | M | UI-08 | done |
+| CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | done |
+| MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | done |
 | AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | done |
 | QA-16 | Balance matrix | M | QA-12, CIV-01 | done |
 | PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | done |

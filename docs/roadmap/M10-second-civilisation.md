@@ -138,7 +138,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. Tree-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-04, UI-13, TECH-03 · **Size:** L ·
   **Tier:** T1
-- **Status:** in_progress (criteria 1–3 pass: `TechEffectsTest`, `techtests.economy/military/buildings`, `TechPairsTest` and the sheet's tiers; criterion 4, the tree-screen goldens, is in the consent batch)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–3: `TechEffectsTest` (one generated case per technology), `techtests.economy/military/buildings`, `TechPairsTest` and the balance sheet's tiers (M10 T16–T17); criterion 4: `m10_tree` in `m10_goldens` (`mod/src/devtools/goldens/macos` and `macos-sodium`), taken after looking at every frame, a rerun on each platform within 1e-5 (nmse 3.1e-10 and 0), M10 T30
 
 #### UNIT-10 · Abilities
 - **Value:** Units with special actions, the cheapest asymmetry between civilisations, without a
@@ -169,7 +170,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. Rank modifiers apply, compounding as documented (L1).
   3. Insignia are visible at 40 blocks (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CMB-01, DATA-02 · **Size:** M · **Tier:** T1
-- **Status:** in_progress (criteria 1–2 pass: `ExperienceTest`, `RankModifiersTest` — ranks replace each other, they never compound; criterion 3, the insignia at 40 blocks, is in the consent batch)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–2: `ExperienceTest`, `RankModifiersTest` (M10 T12); criterion 3: `m10_insignia`, three soldiers of ranks 0, 1 and 3 at about 40 blocks from the camera, the pips readable, in `m10_goldens` (`mod/src/devtools/goldens/macos` and `macos-sodium`), taken after looking at every frame, a rerun on each platform within 1e-5 (1.2e-7 and 0), M10 T30
 
 #### CMB-12 · Healing
 - **Value:** Keep an army alive between fights (P4).
@@ -256,7 +258,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   2. The key reference matches the bindings (L1).
   3. Idle-soldier and idle-worker cycling work on screen (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-08 · **Size:** M · **Tier:** T1
-- **Status:** in_progress (criteria 1–2 pass: `HotkeyCoverageTest`, `KeyReferenceTest`; criterion 3, idle cycling on screen, is in the consent batch)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–2: `HotkeyCoverageTest`, `KeyReferenceTest` (M10 T22); criterion 3: `m10_idle_1` and `m10_idle_2`, Shift+I pressed twice on screen, each press selecting one far idle soldier, a different one, the camera on it (the scenario's guards), in `m10_goldens` (`mod/src/devtools/goldens/macos` and `macos-sodium`), taken after looking at every frame, a rerun on each platform within 1e-5, M10 T30
 
 #### CAM-06 · Orthographic view (optional)
 - **Value:** The classic flat RTS look for players who prefer it.
@@ -271,7 +274,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   3. Switching projection never freezes the game (L4, consent).
   4. Under Sodium and Iris it works or falls back cleanly (L4, consent).
 - **Tests:** L0, L1, L2, L4 (consent) · **Depends on:** CAM-02, D-09 · **Size:** M · **Tier:** T2
-- **Status:** in_progress (criteria 1–2 pass: `OrthoPickingTest`, `EngineSurfaceInventoryTest`; criteria 3–4, switching and Sodium/Iris, are in the consent batch)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–2: `OrthoPickingTest`, `EngineSurfaceInventoryTest` (M10 T23); criterion 3: `m10_ortho`, switched on and back to perspective with the client ticking on, vanilla and Sodium; criterion 4: under Sodium and Iris the option alone is refused and, opted in (`orthographicWithRenderMods`), the view is drawn (`ortho_default`, `ortho_opted_in` in the result); the frames in `m10_goldens` (`mod/src/devtools/goldens/macos` and `macos-sodium`), taken after looking at every frame, a rerun on each platform within 1e-5 (6.5e-8 and 0), M10 T30
 
 #### MATCH-16 · First Minecraft twist: day and night
 - **Value:** A signature mechanic only Minecraft can give: night shrinks what you see, and the
@@ -290,7 +294,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. Night goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** FOW-01, MATCH-01, D-13 · **Size:** M ·
   **Tier:** T2
-- **Status:** in_progress (criteria 1–3 pass: `NightVisionTest`, `LightSourceTest`, `NightReplayTest`; criterion 4, night goldens, is in the consent batch)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–3: `NightVisionTest`, `LightSourceTest`, `NightReplayTest` (M10 T24); criterion 4: `m10_night`, the level at night on the server and the client (13,060), the fog back and the buildings' lights, in `m10_goldens` (`mod/src/devtools/goldens/macos` and `macos-sodium`), taken after looking at every frame, a rerun on each platform within 1e-5 (1.3e-6 and 5.6e-9), M10 T30. The harness pinned the client to noon until then (spec §1.6 row 33)
 
 #### AI-09 · AI uses the new content
 - **Value:** The AI plays any civilisation it is given, by its rules, and the late game well (P5).
@@ -332,4 +337,4 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   3. The report lists the cost of formations, fauna and abilities (R).
 - **Tests:** L6, R · **Depends on:** CIV-01, ORD-06, ECO-10, PERF-16 · **Size:** S · **Tier:** T1
 - **Status:** done
-- **Done:** 2026-11-26 — `perftests.m_10_soak` (435 units, 18,000 ticks: A p50 1.92 ms, A p99 8.99 ms, B p95 5.44 ms, C p95 10.33 ms, D p99 0.32 ms, E 7.6 KB/s a viewer; valid, foreign load 4.9 %) and `perftests.m_10_stress` (1,088 units, C p95 13.4 ms ≤ 50 ms); the reports list formations (p95 31 µs a tick), fauna (4.5 µs) and abilities (11.2 µs), formed 86 % of the time, all four factions in City; `perf/m10-m4pro.json`; M10 T27. PERF-14 stays in the consent batch (T30)
+- **Done:** 2026-11-26 — `perftests.m_10_soak` (435 units, 18,000 ticks: A p50 1.92 ms, A p99 8.99 ms, B p95 5.44 ms, C p95 10.33 ms, D p99 0.32 ms, E 7.6 KB/s a viewer; valid, foreign load 4.9 %) and `perftests.m_10_stress` (1,088 units, C p95 13.4 ms ≤ 50 ms); the reports list formations (p95 31 µs a tick), fauna (4.5 µs) and abilities (11.2 µs), formed 86 % of the time, all four factions in City; `perf/m10-m4pro.json`; M10 T27. PERF-14 (T30): `rts_frame_veterans`, the battle scene with every unit ranked, vanilla medians of three runs frame p50/p99 5.07/10.27 ms, units 3.61, our drawing 0.12, client tick 0.997 (one run 1.004); Sodium 3.77/8.06, 2.96, 0.07, 0.855; `perf/client/m4pro.json`. On the head every perf scene holds (T29)

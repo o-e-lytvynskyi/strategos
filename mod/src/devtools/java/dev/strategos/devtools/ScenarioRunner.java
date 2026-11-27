@@ -97,6 +97,7 @@ public final class ScenarioRunner {
             case "art_look" -> new ArtLookScenario();
             case "rts_frame" -> new RtsFrameScenario("rts_frame", RtsFrameScenario.REVEALED);
             case "rts_frame_battle" -> new BattleFrameScenario();
+            case "rts_frame_veterans" -> new BattleFrameScenario(true);
             case "m5_goldens" -> new M5GoldensScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
             case "far_markers" -> new FarMarkersScenario();
@@ -107,6 +108,7 @@ public final class ScenarioRunner {
             case "arena_world" -> new ArenaWorldScenario();
             case "m6_goldens" -> new M6GoldensScenario();
             case "m9_goldens" -> new M9GoldensScenario();
+            case "m10_goldens" -> new M10GoldensScenario();
             case "skirmish_flow" -> new SkirmishFlowScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             case "rts_frame_borders" -> new RtsFrameScenario("rts_frame_borders", RtsFrameScenario.REVEALED, true);
@@ -190,7 +192,9 @@ public final class ScenarioRunner {
      * depend on how many ticks the load took; it is pinned at its limit under the open noon sky, 0.
      */
     private static void holdCamera(Minecraft mc, ScenarioContext ctx) {
-        pinLight(mc);
+        if (!ctx.worldLight) {
+            pinLight(mc);
+        }
         double[] pose = ctx.camera;
         if (mc.mouseHandler.isMouseGrabbed()) {
             mc.mouseHandler.releaseMouse();
@@ -206,7 +210,8 @@ public final class ScenarioRunner {
      * The world's light, the same in every frame: noon with the day cycle off and no rain or thunder, on the client too.
      * The server's {@code time set} reaches a client only in the next time packet, and until then the client counts its
      * own ticks, so a frame shot early would be lit a little differently from one shot later (a uniform shift of one or
-     * two levels, which shows as a failed diff).
+     * two levels, which shows as a failed diff). A scenario that shows the world's own light opts out
+     * ({@link ScenarioContext#worldLight()}).
      */
     private static void pinLight(Minecraft mc) {
         var level = mc.level;
