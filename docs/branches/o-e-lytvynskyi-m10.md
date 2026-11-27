@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M10, 30 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
-- **In progress:** M10 T29 since 2026-11-26. The first long runs (on T28) were green but for one perf scene, `crowd_soak_600` (one order given up); its fix, a step across a corner walked as the leg check walks it, is committed after `verify verifySlow verifySoak` passed on it (10,902 s, 2026-11-27 03:32, in ../strategos-longrun/m10-close); jmh and the perf batch run on it there next. T30's scenario `m10_goldens` is written, uncommitted, waiting for its windows.
-- **Last finished task:** M10 T25b (2026-11-26).
-- **Next task:** T30 · The consent batch (its windows after T29's chain), then T31.
+- **Milestone:** M10, 31 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **In progress:** M10 T30 since 2026-11-27: the scenarios `m10_goldens` and `rts_frame_veterans` are written, their windows next, after the balance runs on the head (`:core:openingBalance`, `:core:balanceMatrix`).
+- **Last finished task:** M10 T29 (2026-11-27).
+- **Next task:** T31 · The close.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -28,6 +28,10 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-27 — M10 T29–T31
+
+- **M10 T29 · The close's long runs** — QA-16 **done**. Two chains in the long-run worktree. On T28 (ec90298a): `verify verifySlow verifySoak` green (3 h 10 min); `jmhCompare` red only on `volley60{preferred}` against the old row, green against the approved 6.636; the perf batch passed every scene but `crowd_soak_600`, which gave up one order of 18,437, and `walk_600`, invalid (a 0.35-s window in which the CPU counters did not advance). The give-up was a step refused at a corner the leg check had passed (spec §1.6 row 32): `MotionMoves.tryMove` walks such a step through the column its leg crosses first, at corners whose sides both link; a wall's corner stays refused (the broad version broke `head_on_groups_through_gap`, 1.01 against 1.0, and two golden journals). `RampCornerTest`; the scene's journal replayed with the fix: no order given up, the highest net count 400. On the fix (25b942cb's code): `verify verifySlow verifySoak` green, 3 h 02 min (the aisoak's 20 matches across the levels: 10 by conquest in 19.6–42.5 minutes, 10 to the limit, 872,830 ticks, every journal replayed to its hash); `jmhCompare` green (`volley60` 6.774 µs/op); the perf batch's 27 scenes pass, foreign load at most 2.6 % — `crowd_soak_600` gives up none (most stuck 220 ticks), `walk_600` valid, `m_10_soak` A p50/p99 1.58/8.58 ms, C p95 9.05, `m_10_stress` C p95 12.09, `mvp_soak` A 0.73/6.14 — and the batch hit its 180-minute watchdog before `battle_soak`, which passed alone on the same code (304 units, A p50/p99 1.27/3.15 ms, C p95 6.0 ms, foreign load 2.1 %). The watchdog is 210 minutes now.
 
 ### 2026-11-26 — M10 T16–T28, T25b
 
@@ -90,6 +94,12 @@ Newest first; one entry per session in the worklog's shape.
 8. **Decided (the owner, 2026-11-26): the easy mirror, option (c)** — QA-16's matrix plays Normal and Hard only; Easy learns to finish a won match in M11 (AI-12), and the matrix takes the easy mirror back then.
 
 ## Decisions taken
+- 2026-11-27 · The corner rule is narrowed to corners whose two sides link and whose diagonal does not: the step walks its segment as `LineOfWalk` does there; a wall's corner stays refused, because the broad rule changed every crowd's path through a gap and missed `head_on_groups_through_gap`'s tolerance, which is never raised — undo: revert 25b942cb's `tryMove` block.
+- 2026-11-27 · `runGameTestPerf`'s watchdog 180 → 210 minutes (`mod/build.gradle`), as M1, M3, M4, M6 and M9 raised it for their scenes: T27's `m_10_soak` and `m_10_stress` add 20 minutes of wall time, and the batch ran 27 of 28 in 180. A wall-clock guard; no budget changed — undo: set it back and drop a scene from the batch.
+- 2026-11-27 · `battle_soak`'s verdict on the head comes from a run of it alone (`-Pperf.filter=battle_soak`) on the same code, after the batch's watchdog cut it off; the other 27 verdicts are the batch's — undo: a full batch on the head under the new watchdog.
+- 2026-11-27 · The first chain's `jmhCompare` read the baseline file of its own commit, before the owner's `volley60` row; it was compared again against the approved row (6.636) and is green — undo: none.
+- 2026-11-27 · trial reviewer: pass — the corner fix's review found no blocker; its two minors (pin the test's first step, say in the comment why a wall's corner stays refused) were applied.
+- 2026-11-27 · trial implementer: pass — `m10_goldens` (T30's scenario) compiled and passed `verifyFast` on the first hand-back; the orthographic branch was reworked by the orchestrator for CAM-06.3–4 (the opt-in under a render mod, the switch back).
 - 2026-11-26 · AiCityTest's opponent is the shipped script with its attacks off (`attack.first` past the limit, `attack.min` 1,000,000, `battle.finish` false) and the match has no conquest victory: the owner's reading of AI-09.1; its bar is the measured 11 of 12 seeds — undo: a contested test with M11.
 - 2026-11-26 · The depth script lives in a test resource (core/src/test/resources/ai/skirmish-depth.json: `techs.from` 720 s, `phaseHold` 36,000), merged into the shipped script by the test; M11 moves it into the shipped script — undo: none needed.
 - 2026-11-26 · The saving rules are all behind `Depth.late`; the shipped AI's opening balance is identical at `-Pseeds=4` — undo: revert T25b.
@@ -194,6 +204,8 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Pitfalls
 
+- `docs/kb/rts-sim-ladder.md` (split out of rts-sim.md in T29): the rule that checks a leg and the rule that steps along it must cross the same columns; how to find a given-up order in a perf run by replaying its journal (T29).
+- `docs/kb/perf-tick-spacing.md`: a perf window shorter than the foreign-load sampler's interval reads invalid by chance (`walk_600`, T29).
 - `docs/kb/rts-sim-perf.md` (split out of rts-sim.md in T25): a for-each over a `List` in a hot path allocates its iterator (T3/T5).
 - `docs/kb/minecraft-mod-data.md`: Gson's getters throw more than `IllegalArgumentException` on a wrong shape (T5).
 - `docs/kb/rts-sim-economy.md`: an AI that saves for a big price — what its reserve must hold (T25b).

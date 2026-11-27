@@ -318,7 +318,8 @@ D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06 and D-13
   4. The L3 samples complete and replay to the same hash (L3).
 - **Tests:** L1, L3 · **Fixtures:** balance seed sets · **Depends on:** QA-12, CIV-01 ·
   **Size:** M · **Tier:** T1
-- **Status:** in_progress (criteria 1–3 pass: `:core:balanceMatrix`, `BalanceMatrixTest`; criterion 4, the aisoak samples across the levels, passed at 3 seeds and runs at 20 in the close's `verifySoak`, T29)
+- **Status:** done
+- **Done:** 2026-11-27 — criteria 1–3: `:core:balanceMatrix` (every mirror pairing × start slot over 200 seeds, the band flagged, the sheet diffed) and `BalanceMatrixTest` (pairings, the band's edges, reproduction from seeds, the sheet diff), M10 T26; criterion 4: the aisoak batch's 20 matches rotating the mirrors across the levels in the close's `verifySoak` (10 by conquest, 10 to the 45-minute limit, 872,830 ticks, every journal replayed to its hash), M10 T29. The easy mirror is out of the matrix until M11 (the owner, 2026-11-26)
 
 #### PERF-17 · M10 perf gate
 - **Value:** More content never costs tick rate.

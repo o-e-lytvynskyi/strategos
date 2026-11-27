@@ -63,7 +63,8 @@ marks a window `invalid` when the wall clock ran more than 2 s past the monotoni
 
 Windows measurements are not a Mac baseline. Preserve actual worker count and CPU verdict.
 If foreign load exceeds min(10 %, 0.9/N) of the machine (ADR-0026 part B), retain the invalid report and identify/reduce interfering load;
-never override the value or retry until a green result appears. A newly started VM can change
+never override the value or retry until a green result appears. A window shorter than the sampler's 1-s interval
+can see no counter advance and reads invalid by chance (`walk_600`, 0.35 s, M10 T29): give it several intervals. A newly started VM can change
 the environment halfway through a benchmark. Pausing applications temporarily needs the
 operator's authorization, and every successfully paused process must be resumed in `finally`.
 

@@ -519,7 +519,7 @@ Cards: [roadmap/M10-second-civilisation.md](roadmap/M10-second-civilisation.md#c
 | CAM-06 | Orthographic view (optional) | M | CAM-02, D-09 | in_progress |
 | MATCH-16 | First Minecraft twist: day and night | M | FOW-01, MATCH-01, D-13 | in_progress |
 | AI-09 | AI uses the new content | M | AI-08, CIV-05, TECH-04 | done |
-| QA-16 | Balance matrix | M | QA-12, CIV-01 | in_progress |
+| QA-16 | Balance matrix | M | QA-12, CIV-01 | done |
 | PERF-17 | M10 perf gate | S | CIV-01, ORD-06, ECO-10, PERF-16 | done |
 
 > 2026-11-25: the owner reshaped and approved M10 («сейчас сделать 1 дефолтную нацию, начальную, самую простую и
