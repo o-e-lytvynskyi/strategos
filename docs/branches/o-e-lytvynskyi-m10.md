@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M10, 30 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
-- **In progress:** none.
+- **In progress:** M10 T29 since 2026-11-26. The first long runs (on T28) were green but for one perf scene, `crowd_soak_600` (one order given up); its fix, a step across a corner walked as the leg check walks it, is committed after `verify verifySlow verifySoak` passed on it (10,902 s, 2026-11-27 03:32, in ../strategos-longrun/m10-close); jmh and the perf batch run on it there next. T30's scenario `m10_goldens` is written, uncommitted, waiting for its windows.
 - **Last finished task:** M10 T25b (2026-11-26).
-- **Next task:** T29 · The close's long runs (running in ../strategos-longrun/m10-close since 18:05), then T30's consent batch.
+- **Next task:** T30 · The consent batch (its windows after T29's chain), then T31.
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work

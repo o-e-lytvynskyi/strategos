@@ -1,4 +1,4 @@
-# RTS simulation in Java: avoidance, crowd arrival, formations, the stuck ladder
+# RTS simulation in Java: avoidance, crowd arrival, formations
 
 Facts from this repository: the deterministic core `core/sim`, M1 T20–T23. Minecraft has nothing
 to do with it here. This is about ORCA, unit crowds and formations; measuring the core (JMH,
@@ -92,39 +92,10 @@ allocations) is in [rts-sim-perf.md](rts-sim-perf.md). The mod toolchain is in
 - Standing units approach their gap asymptotically: check the gap after ~60 ticks of rest and with
   a tolerance of 1e-3, or the test catches 0.5999999.
 
-## The stuck ladder: what counts as progress
+## The stuck ladder
 
-- A "ticks without progress" counter that resets on any change of the point the unit steers to
-  breaks the ladder. The first rung is a path re-request, the new path gives a new first point,
-  the counter goes to zero, and the unit sits on the first rung forever.
-- Progress is only getting closer to the point by a noticeable amount (here 0.05 blocks from the
-  best) or passing a path point. A new route is not progress, and a nudge of the ladder is not
-  either (the best distance is rewritten after a nudge). A new order and a stop reset the counter
-  explicitly.
-- The check: for an immobile unit the counter grows by exactly 1 every tick through a route change
-  and a nudge.
-- "Walled in with no exit" in a core test: walls from the terrain give "no path", and the move
-  ends in place (not a failure). A ring of units is passed through on the "no avoidance" rung,
-  because units are not solid to each other. Only a unit with speed 0 (a modifier) has no exit on
-  any rung.
-
-- A bot that sends the same order to a unit on every think resets its stuck count each time (a new
-  order resets it), so a unit held up in a crowd (a one-block lane of burners round a centre, two
-  swapped head-on) never reaches the ladder's end and the invariant "WALKING without progress for
-  641 ticks" fires, though the ladder is fine. Send an order only to units not already on it
-  (`MilitaryManager.pushFogMarch`, M6 T21; `FieldWaveTest`).
-- "Passing a path point" is progress only if the route goes on. A boxed-in unit is given a truncated
-  one-point route at its own feet on every re-request; passing that point at once zeroed the count, so
-  the ladder never left its first rung and the same invariant fired (M10 T25, horsemen boxed in at
-  their base). Passing the last point of a route keeps the count (`MotionMoves.passedLast`,
-  `StuckLadderTest.aTruncatedRouteAtTheUnitsFeetDoesNotRestartTheCount`).
-- A backstop that ends an order before the invariant fires must restart its count exactly where the
-  invariant does, or it runs out later than the invariant. QA-12's net-progress count restarted only
-  after 8 blocks of displacement, while the invariant restarts on any strictly nearer distance to
-  the target: units creeping into a crowd at one front point were failed 276 ticks too late (M10,
-  long AI matches). It now keeps the best squared distance and the target it was taken against
-  (both hashed while it runs), counts on landing ticks too, and a new order to the same place keeps
-  the count (an AI alternating Burn and Capture on one building restarted it every swap).
+What counts as progress for the ladder and its backstop, and stepping past corners:
+[rts-sim-ladder.md](rts-sim-ladder.md).
 
 ## Vision: COMMANDS phase runs before WORLD
 

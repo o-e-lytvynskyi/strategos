@@ -123,7 +123,24 @@ final class MotionMoves {
             return false; // faster than a column a tick: never at M1's speeds
         }
         int layer = layerOf(grid, cx, cz, motion.floor(i));
-        int nl = grid.neighbour(cx, cz, layer, direction(ncx - cx, ncz - cz));
+        int dir = direction(ncx - cx, ncz - cz);
+        int nl = grid.neighbour(cx, cz, layer, dir);
+        if (nl < 0
+                && layer >= 0
+                && Dir.diagonal(dir)
+                && grid.neighbour(cx, cz, layer, Dir.left(dir)) >= 0
+                && grid.neighbour(cx, cz, layer, Dir.right(dir)) >= 0) {
+            // across a corner whose sides both link but whose diagonal does not (a rise or a ceiling the diagonal alone
+            // cannot take): the step walks its segment as the line-of-walk check walks a leg, through the column it
+            // crosses first. A leg passing a hair from the corner is clear to that check, and a step that slid on one
+            // axis instead could land in a pocket beside the leg (M10 T29, the crowd soak). A wall's corner, a side
+            // without a link, stays refused: a body passing a hair from it would cut into the wall. A segment exactly
+            // through the corner is a diagonal step to the walk too, and stays refused.
+            int end = LineOfWalk.walk(grid, grid.node(cx, cz, layer), x, z, nx, nz);
+            if (end >= 0) {
+                nl = SurfaceGrid.nodeLayer(end);
+            }
+        }
         if (nl < 0) {
             GateLinks.Pass gates = ncx != cx && ncz != cz ? null : gates(s, i);
             if (gates != null && gates.gate(ncx, ncz)) {
