@@ -634,7 +634,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 - [x] T28 (2026-11-26)
 - [x] T29 (2026-11-27)
 - [x] T30 (2026-11-27)
-- [ ] T31
+- [x] T31 (2026-11-27)
 
 ## 8. Acceptance checklist (M10 exit)
 
@@ -652,4 +652,84 @@ civilisation's display name ("Settlers", a lang key).
 
 ## 10. Implementation results
 
-Written at the close (T31).
+Written at the close (T31), 2026-11-27, on `dev/o-e-lytvynskyi/m10`.
+
+### 10.1 What was built
+
+The milestone as the owner reshaped it on 2026-11-25: one default civilisation (today's content, "Settlers") and a
+civilisation foundation — civilisations as content (CIV-01) and the rule catalogue with its seams (CIV-05), proved by
+a test-only probe civilisation that plays a Town with no houses, no dropsites and no builders and needed one edit
+outside `core.sim.civ` (row 20). On it, the depth the roadmap planned: abilities, ranks, healing, loot, the City phase,
+a technology set of 32 with its tree screen, formations, patrol and guard, wild herds and hunting, the full hotkey set,
+the orthographic view, day and night, the AI's use of all of it, the balance matrix and the M10 perf gate.
+
+All 17 active cards are `done`: CIV-01, CIV-05, TECH-04, TECH-05, UNIT-10, CMB-11, CMB-12, CMB-13, ORD-06, ORD-07,
+ECO-10, UI-17, CAM-06, MATCH-16, AI-09, QA-16 and PERF-17. CIV-02 and ART-04 are deferred to M14 with D-03 (§1.5).
+
+### 10.2 Numbers
+
+M4 Pro, the head's code (25b942cb and later) unless noted.
+
+| What | Result | Bound |
+|---|---|---|
+| `perftests.m_10_soak` (435 units, four Hard factions, formations of 40, herds, `charge`, City; 18,000 ticks) | A p50 1.58 ms, A p99 8.58, B p95 5.02, C p95 9.05, D p99 0.24, E 4.3 KB/s (T27: 1.92, 8.99, 5.44, 10.33, 0.32, 7.6) | 5, 10, 23 ms; 100 KB/s |
+| `perftests.m_10_stress` (1,088 units) | C p95 12.09 ms (T27: 13.4) | 50 ms |
+| formations / fauna / abilities a tick (T27) | p95 31 / 4.5 / 11.2 µs; formed 86 % of the time | reported (R) |
+| the cumulative `runGameTestPerf`, 28 scenes | every scene passes, foreign load at most 2.6 %; 27 in the batch, which reached its 180-minute watchdog (now 210), `battle_soak` alone (A p50/p99 1.27/3.15 ms, C p95 6.0). `crowd_soak_600`: 18,437 orders, none given up (row 32). `mvp_soak` A 0.73/6.14 ms, C 6.81; `territory_soak` A 0.95/7.11, C 7.93 | every earlier budget |
+| `jmhCompare` | green; `ShotBench.volley60{preferred}` 6.774 µs/op against the owner's 6.636 row (the ranks' cost, row 30) | the approved baseline |
+| `AiCityTest` (Normal with the depth block, unopposed, 45 min) | City in 11 of 12 seeds (26–32 min), tier 2 in 10, tier 3 in 9, healers and formations in 12, charges in 9 | — |
+| the AI soak, 20 seeds rotating the mirrors over the levels (QA-16.4) | 10 by conquest (19.6–42.5 min), 10 to the 45-minute limit, 872,830 ticks; every journal replays to its hash | every journal replays |
+| `:core:balanceMatrix` (200 seeds a pairing; the Normal and Hard mirrors) | Normal 104/86 and Hard 89/103 wins by start slot, 10 and 8 unfinished, medians 36:09 and 24:44; nothing flagged; 400 matches in 3.8 min | 80–120 of 200 a start slot |
+| `:core:openingBalance` (QA-12) | every criterion holds: 818 of 1000 by conquest, median 34:49; rush 75 and 75, boom 69, Hard 155, Normal 170 of 200; 8.3 min | every criterion |
+| PERF-14 `rts_frame_veterans` (202 units on screen, every one ranked) | vanilla, medians of three runs: frame p50/p99 5.07/10.27 ms, units 3.61, ours 0.12, client tick 0.997 (runs 1.004, 0.973, 0.997); Sodium and Iris: 3.77/8.06, 2.96, 0.07, 0.855 | F: 16.7, 25, 6, 3, 1 ms |
+| `m10_goldens`, macos and macos-sodium | twelve frames each, every one looked at; reruns at most 1.3e-6 (vanilla, the night) and 5.6e-9 | 1e-5 |
+| `runClientSmokeJar`; the demo `-Pdemo=m10` | green, 13 s; nine chapters shown, none failed, 6 min 20 s | — |
+| `verify verifySlow verifySoak` | green, 3 h 02 min | — |
+| `verify` | 3 min 3 s after a core change, 1 min 17 s after a devtools change; `verify verifySlow` about 5 min 11 s (T27) | 5 min for `verify` |
+
+### 10.3 Deviations
+
+Findings rows 1–33 (§1.6). The ones a reviewer should read first:
+
+- **Rows 1–11, the reshape.** On the owner's word: the default civilisation and a foundation for distinctive ones
+  instead of a second civilisation. CIV-05 is new; CIV-02, ART-04 and D-03 move to M14; AI-09, QA-16 and PERF-17
+  follow (ADR-0028).
+- **Rows 29 and 31, City in the AI's hands.** The first runs had City out of reach and the opening balance red. A
+  diagnosis of 100 matches found the cause in the late game: unspent stock, soldiers held back, a mop-up that searched
+  too narrowly. City's price came down, and the depth path learned to save for a big price. The shipped script keeps
+  `depth` off until M11 (the owner's option (a)).
+- **Row 26, stalled walkers in long matches (T26).** The 90-minute matrix found three causes the 45-minute soak never
+  reached: the AI's base drifting to a captured centre, the net backstop restarting later than the invariant, and a
+  re-order to the same place restarting the count.
+- **Row 32, a corner the step refused and the check passed (T29).** The crowd soak gave up one order of 18,437. A step
+  across a corner whose sides link but whose diagonal does not now walks its segment as the line-of-walk check does; a
+  wall's corner stays refused.
+- **Row 33, the harness hid the night (T30).** The scenario runner pinned the client to noon on every tick; a scene
+  about the light now releases the pin.
+- **Row 30, the combat path's cost.** It is the ranks' own; the spec's proposed hand-over would have saved nothing and
+  was not done.
+- **Row 23, formations.** One route per formation, searched at command time, instead of a PATH-09 group request.
+  `MatchSnapshot.Play` reached DFU's 16-field limit and nests the M10 sections.
+
+### 10.4 Follow-ups
+
+1. Split the classes over 800 lines: `BuiltinTemplates` (660 → 1,298, the built-in content mirror: units,
+   technologies, City), `RtsHud` (757 → 847), `QueriesImpl` (668 → 810), and `MatchState` (811; T1 took it to 761,
+   and later tasks grew it back). The first tasks of M11.
+2. PERF-14's client tick sits at its 1 ms edge: 0.997 ms at the median, 1.128 in one run of the battle scene
+   without ranks, against M2's 0.80. The bare map alone reads about 0.95 ms of it, and our HUD's build 0.09–0.12 ms.
+   Profile the client tick (`-Pscenario.jfr=profile`) before M11's scenes add to it.
+3. The shipped script's `depth` block goes on with M11's AI-11 and AI-12, QA-12.1 as the gate. The easy mirror
+   rejoins the matrix when Easy can finish a won match (AI-12).
+4. `walk_600`'s measured window (about 0.4 s) is shorter than the foreign-load sampler's 1-s interval, so its
+   validity is chance: lengthen the window.
+5. The perf batch runs about 190 minutes now; the next scene should come with a split of the batch, not another
+   raise of its watchdog.
+6. `AFTER-M8` in `NightFactor`: FOW-02's team vision takes the stamped night radius. The `AFTER-M7` markers carried
+   from M9 stay.
+
+### 10.5 Planned against actual
+
+33 tasks (T25 split in two) in three days, 2026-11-25 to 2026-11-27, against at most 68 card-days. T25 took the most:
+T25b needed seven implementer rounds, each round's measurement naming the next cause. The long runs needed two chains
+of about six hours each, because the first one found the corner.

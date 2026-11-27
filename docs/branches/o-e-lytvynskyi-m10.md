@@ -1,15 +1,15 @@
 # M10 on dev/o-e-lytvynskyi/m10
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m10 · **Work:** M10 · **Base:** main @ 05cd50b; dev/o-e-lytvynskyi/m9 @ fdc2c38 is merged in after the claim (M10 stacks on M9) · **Claimed:** 2026-11-25 · **Status:** in progress
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m10 · **Work:** M10 · **Base:** main @ 05cd50b; dev/o-e-lytvynskyi/m9 @ fdc2c38 is merged in after the claim (M10 stacks on M9) · **Claimed:** 2026-11-25 · **Status:** ready for review
 
 **Note:** the owner's word in the developer session, 2026-11-25: «давай начинать разработку с учетом переписывания вех и адр, если надо, цель такая: сейчас сделать 1 дефолтную нацию, начальную, самую простую и понятную по типу того, что у нас уже есть, и так же сделать фундамент для того, чтобы правильно и бестпрактисно, без переписывания ядра мы потом могли добавлять экстравагантные нации с отличающимся геймплеем. в остальном, следуй уже намеченым планам.» The claim covers the M10 spec and every M10 task. The milestone is reshaped on that word: one default civilisation (today's content, the simplest), and a civilisation foundation — a per-faction civilisation record and per-rule seams in the core, with the AI asking its civilisation's rules instead of assuming them — so distinctive civilisations with their own gameplay are added later without rewriting the core. The second civilisation and its art (CIV-02, ART-04, decision D-03) move to M14 beside CIV-03; the other M10 cards follow the roadmap. The card and ADR changes are written in the spec and listed under "Decisions taken" for the owner's veto.
 
 ## Now
 
-- **Milestone:** M10, 32 of 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
-- **In progress:** M10 T31 since 2026-11-27: the results, the hand-in.
-- **Last finished task:** M10 T30 (2026-11-27).
-- **Next task:** T31 · The close.
+- **Milestone:** M10, all 33 tasks done (T25 split into T25a and T25b); spec [M10](../milestones/M10-civilisations-and-depth.md).
+- **In progress:** none — M10 is handed in (2026-11-27).
+- **Last finished task:** M10 T31 (2026-11-27).
+- **Next task:** none ready: M11's cards are `proposed` ("For the owner" 7).
 - **Merged from main last:** e18bcdd (2026-11-25, the claim's merge); dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46.
 
 ## Depends on unfinished work
@@ -22,8 +22,8 @@ MATCH-02, ORD-03, ORD-04, PATH-09, QA-12, TECH-02, TECH-03, UI-08, UI-13, UNIT-0
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
 | M9 (handed in, [PR #58](https://github.com/o-e-lytvynskyi/strategos/pull/58)) | TERR-01 for TECH-04 (the City phase), BLD-10 for CMB-12 (healing at a temple), AI-08 for AI-09, PERF-16 for PERF-17; M9's code as a whole | stacked: dev/o-e-lytvynskyi/m9 @ fdc2c38 merged in at aec0d46; `origin/main` is merged in once #58 lands | none |
-| M7 (spec only) | ART-03 (the first civilisation's art pass) for ART-04; MATCH-06 and NET-03 for per-player views of the new content (the technology screen, hotkeys) in multiplayer | ART-04 moves to M14 with CIV-02 (the owner's word above); multiplayer: independent over the existing single gateway, with `AFTER-M7` markers where per-player state matters | to be listed as written |
-| M8 (claimed by `lev1pes`, foundations only) | FOW-02 team vision meets MATCH-16's night radius and its torch vision sources | against FOW-01's vision seam (`VisionGrid`); the team-vision policy is not touched; `AFTER-M8` where shared vision meets the night radius | to be listed as written |
+| M7 (spec only) | ART-03 (the first civilisation's art pass) for ART-04; MATCH-06 and NET-03 for per-player views of the new content (the technology screen, hotkeys) in multiplayer | ART-04 moves to M14 with CIV-02 (the owner's word above); multiplayer: independent over the existing single gateway, with `AFTER-M7` markers where per-player state matters | none written in M10; M9's eight stay (its hand-in lists them) |
+| M8 (claimed by `lev1pes`, foundations only) | FOW-02 team vision meets MATCH-16's night radius and its torch vision sources | against FOW-01's vision seam (`VisionGrid`); the team-vision policy is not touched; `AFTER-M8` where shared vision meets the night radius | `core/src/main/java/dev/strategos/core/sim/NightFactor.java:18`: FOW-02's shared vision reads the stamped night radius |
 
 ## Log
 
@@ -31,6 +31,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-27 — M10 T29–T31
 
+- **M10 T31 · The close** — the health check (classes over 800 lines: `BuiltinTemplates` 1,298, `RtsHud` 847, `QueriesImpl` 810, `MatchState` 811; no new TODO; ArchUnit's rules unchanged since aec0d46; one new marker, `AFTER-M8` in `NightFactor`), the results in spec §10 with six follow-ups, the hand-in. `roadmap.py check` 0 problems; M10 19 cards: 17 done, 2 deferred.
 - **M10 T30 · The consent batch** — TECH-05, CMB-11, UI-17, CAM-06 and MATCH-16 **done**; all 17 active cards done. Windows one at a time, announced, about 20 minutes in all. `m10_goldens` (the tree screen, insignia at 40 blocks, idle cycling twice, the orthographic view and the switch back, the night; each scene shot twice): the first runs failed on the night scene — the harness pinned the client's light to noon every tick, so the level's night (13,060 on the server) never reached the client (6,000); `ScenarioContext.worldLight()` releases the pin for a scene about the light and for the demo (spec §1.6 row 33). Every frame looked at and taken for macos and macos-sodium; reruns within 1e-5 on every frame (vanilla at most 1.3e-6, the night; Sodium at most 5.6e-9). Under Sodium and Iris the orthographic option alone is refused and, opted in, the view is drawn. PERF-14 on `rts_frame_veterans` (the battle scene with every unit ranked): vanilla medians of three runs frame p50/p99 5.07/10.27 ms, units 3.61, our drawing 0.12, client tick 0.997 ms of 1 (runs 1.004, 0.973, 0.997); Sodium 3.77/8.06, 2.96, 0.07, 0.855; the same scene without ranks read a client tick of 1.128 ms in its one run, so the tick's growth is not the insignia (an M11 follow-up); archived in `perf/client/m4pro.json`. `runClientSmokeJar` green (13 s); the demo `-Pdemo=m10` showed all nine chapters, none failed (6 min 20 s), and its night chapter, shot alone, goes dark. On the head before the windows: `:core:openingBalance` every criterion holds (818 of 1000 by conquest, median 34:49 — as on T26; 8.3 min) and `:core:balanceMatrix` flags nothing (Normal 104/86 and Hard 89/103 by start slot of 200; 3.8 min). Frames in `docs/media/m10/`.
 - **M10 T29 · The close's long runs** — QA-16 **done**. Two chains in the long-run worktree. On T28 (ec90298a): `verify verifySlow verifySoak` green (3 h 10 min); `jmhCompare` red only on `volley60{preferred}` against the old row, green against the approved 6.636; the perf batch passed every scene but `crowd_soak_600`, which gave up one order of 18,437, and `walk_600`, invalid (a 0.35-s window in which the CPU counters did not advance). The give-up was a step refused at a corner the leg check had passed (spec §1.6 row 32): `MotionMoves.tryMove` walks such a step through the column its leg crosses first, at corners whose sides both link; a wall's corner stays refused (the broad version broke `head_on_groups_through_gap`, 1.01 against 1.0, and two golden journals). `RampCornerTest`; the scene's journal replayed with the fix: no order given up, the highest net count 400. On the fix (25b942cb's code): `verify verifySlow verifySoak` green, 3 h 02 min (the aisoak's 20 matches across the levels: 10 by conquest in 19.6–42.5 minutes, 10 to the limit, 872,830 ticks, every journal replayed to its hash); `jmhCompare` green (`volley60` 6.774 µs/op); the perf batch's 27 scenes pass, foreign load at most 2.6 % — `crowd_soak_600` gives up none (most stuck 220 ticks), `walk_600` valid, `m_10_soak` A p50/p99 1.58/8.58 ms, C p95 9.05, `m_10_stress` C p95 12.09, `mvp_soak` A 0.73/6.14 — and the batch hit its 180-minute watchdog before `battle_soak`, which passed alone on the same code (304 units, A p50/p99 1.27/3.15 ms, C p95 6.0 ms, foreign load 2.1 %). The watchdog is 210 minutes now.
 
@@ -85,14 +86,30 @@ Newest first; one entry per session in the worklog's shape.
 
 ## For the owner
 
-1. **Merge the claim pull request** (`Claim: M10`): it adds this file only. Development starts after it.
-2. **M9's hand-in, [PR #58](https://github.com/o-e-lytvynskyi/strategos/pull/58)**, waits for a maintainer review; M10 stacks on it, so its review comes first.
-3. **ART-03 (M7) and D-03.** ART-03, the first civilisation's art pass, still names D-03, which now waits for M14. Options: (a) ART-03 becomes the default civilisation's art pass in D-04's vanilla-faithful look, without D-03 (recommended: the default civilisation is today's content); (b) ART-03 waits for D-03 in M14. Blocks nothing in M10; M7 is not claimed.
-4. **The default civilisation's name** in game: "Settlers" (one lang key; spec §2.1). Veto or rename at any time.
-6. **Decided (the owner, 2026-11-26): the combat hot path's M10 cost** — the proposed `ShotBench.volley60{preferred}` row (6.636 µs/op, the ranks' own cost) is copied into `perf/baseline-m4pro.json`.
-5. **`main`'s records after M6** (a maintainer session): M6 was merged in [PR #55](https://github.com/o-e-lytvynskyi/strategos/pull/55) on 2026-11-15, but `docs/branches/o-e-lytvynskyi-m6-t2-t17.md` on `main` still says `ready for review` and STATE.md still shows M6 as not open. `claims.py check` fails on it, so the `records` gate is red on every pull request — this claim and #58 included — until the maintainer sets `merged 2026-11-15` and folds M6 into STATE.md.
-7. **Decided (the owner, 2026-11-26): AI-09, option (a)** — the machinery and City as a capability (`AiCityTest` against an opponent that does not attack) in M10; the shipped script's `depth` block goes on with M11's AI-11 and AI-12, QA-12.1 as the gate. T25b is reshaped so.
-8. **Decided (the owner, 2026-11-26): the easy mirror, option (c)** — QA-16's matrix plays Normal and Hard only; Easy learns to finish a won match in M11 (AI-12), and the matrix takes the easy mirror back then.
+1. **The demo and the playtest.** `scripts/playtest.sh` for a free game with the default civilisation; the M10
+   chapters in a window: `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m10 -Pscenario.timeoutSeconds=3600` —
+   city, tree, healers, veterans, formations, patrol, hunt, charge, night (all nine shown, none failed, 6 min 20 s).
+   The orthographic view by hand: Ctrl+O on the RTS screen (the demo script's step 8, spec §1.3). The milestone's last
+   open item is the owner's playtest with the questionnaire (spec §1.3, §8).
+2. **M9's hand-in, [PR #58](https://github.com/o-e-lytvynskyi/strategos/pull/58), first.** M10 stacks on it: this
+   hand-in's diff carries M9's commits until #58 merges.
+3. **PERF-14's M10 results** in `perf/client/m4pro.json` are not approved as baselines yet (PERF-14.2). Every budget
+   holds at the medians; the client tick sits at its 1 ms edge (0.997 ms; spec §10.4 item 2, an M11 follow-up).
+   Recommended: approve them.
+4. **ART-03 (M7) and D-03.** ART-03, the first civilisation's art pass, still names D-03, which now waits for M14.
+   Options: (a) ART-03 becomes the default civilisation's art pass in D-04's vanilla-faithful look, without D-03
+   (recommended: the default civilisation is today's content); (b) ART-03 waits for D-03 in M14. M7 is not claimed.
+5. **The default civilisation's name** in game: "Settlers" (one lang key; spec §2.1). Veto or rename at any time.
+6. **`main`'s records after M6** (a maintainer session): `docs/branches/o-e-lytvynskyi-m6-t2-t17.md` on `main` still
+   says `ready for review` and STATE.md still shows M6 as not open, so `claims.py check` fails on every pull request
+   until the maintainer sets `merged 2026-11-15` and folds M6 into STATE.md.
+7. **M11's seven cards are `proposed`.** Approving them makes its spec claimable; the follow-ups in M10's spec §10.4
+   (the classes over 800 lines first) become its first tasks.
+8. **Dependabot:** GitHub reports 36 alerts on `main`'s dependencies (1 critical, 16 high) at every push; this branch
+   adds none. A maintainer's look.
+9. **Decided by the owner, 2026-11-26** («принимай решения рекомендованые сам»): the `volley60` baseline row
+   (6.636 µs/op), AI-09 as a capability with the `depth` block on in M11, and the matrix without the easy mirror
+   until M11. Applied.
 
 ## Decisions taken
 - 2026-11-27 · `m10_goldens` taken as the goldens for macos and macos-sodium after looking at every frame (the tree with Felling axes researched; ranks 0, 1 and 3 at 40 blocks; the west and east idle soldiers; the orthographic village; the village at night with its lights) — undo: delete `mod/src/devtools/goldens/*/m10_goldens`.
