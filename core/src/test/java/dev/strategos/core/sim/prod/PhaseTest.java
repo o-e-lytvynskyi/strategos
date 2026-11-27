@@ -45,7 +45,7 @@ class PhaseTest {
     static final TemplateId FIELD = new TemplateId("strategos:building/field");
 
     /** The unlocks the test-only Town carries, as its TOKENS effects add them. */
-    static final List<String> UNLOCKS = List.of("strategos:gather_wood_2", "strategos:unit/infantry");
+    static final List<String> UNLOCKS = List.of("strategos:early_axes", "strategos:unit/infantry");
 
     /**
      * The built-in set with a Town that unlocks a unit and a tech (the mechanism, T18 to T20 fill it for real), the
@@ -74,7 +74,7 @@ class PhaseTest {
                          "filter":"CivicCentre","stage":0,"priority":0}
                         """));
                 effects.add(JsonParser.parseString("""
-                        {"path":"Researcher/techs","op":"tokens","tokens":"+strategos:gather_wood_2",
+                        {"path":"Researcher/techs","op":"tokens","tokens":"+strategos:early_axes",
                          "filter":"CivicCentre","stage":0,"priority":0}
                         """));
                 JsonArray unlocks = json.has("unlocks") ? json.getAsJsonArray("unlocks") : new JsonArray();
@@ -85,7 +85,7 @@ class PhaseTest {
         }
         int next = b.techs().stream().mapToInt(TechDef::netIndex).max().orElse(-1) + 1;
         techs.add(new TemplateCompiler.TechFlat(
-                new TechId("strategos:gather_wood_2"),
+                new TechId("strategos:early_axes"),
                 next,
                 JsonParser.parseString("{\"icon\":\"minecraft:iron_axe\",\"time\":5}")
                         .getAsJsonObject()));

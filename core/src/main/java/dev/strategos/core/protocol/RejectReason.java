@@ -27,10 +27,14 @@ public enum RejectReason {
     NOT_FLAT,
     /** A civic centre nearer another than their spacing (BLD-02). */
     TOO_CLOSE,
-    /** A building beyond its reach of its faction's civic centres (BLD-02). */
+    /** A building beyond its reach of its faction's civic centres (BLD-02); unused since TERR-02, kept for the wire. */
     OUT_OF_REACH,
     /** A building its faction has as many of as its {@code Limit/count} allows (BLD-08). */
     LIMIT,
     /** A technology or a building whose requirements, its phase, the faction does not meet (TECH-01, BLD-17). */
-    REQUIREMENTS
+    REQUIREMENTS,
+    /** A building outside its faction's territory, or a civic centre on another's (TERR-02). */
+    OUTSIDE_TERRITORY,
+    /** An ability that has not yet rested the ticks of its cooldown (UNIT-10). */
+    ON_COOLDOWN
 }

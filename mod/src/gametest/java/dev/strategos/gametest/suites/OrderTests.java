@@ -1,5 +1,6 @@
 package dev.strategos.gametest.suites;
 
+import static dev.strategos.gametest.suites.Units.FACTION;
 import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
@@ -11,7 +12,9 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.Guard;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Patrol;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
@@ -233,5 +236,71 @@ public final class OrderTests {
             }
         }
         return false;
+    }
+
+    /**
+     * ORD-07.3: through real commands on a 48 x 48 floor. A spearman patrols between (6, 8) and (40, 8) past an enemy
+     * walker standing on its leg at (22, 8): it engages and kills it, and goes on looping, east and west and east
+     * again. A second spearman, told to guard a walker, follows it as it is sent east and stands beside it there.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 3_000)
+    public static void patrolAndGuard(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, FACTION, new Vec2d(6, 8), 1, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(22, 8), 1, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, FACTION, new Vec2d(6, 34), 1, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, FACTION, new Vec2d(10, 36), 1, 0));
+        var state = new Object() {
+            boolean ordered;
+            int patroller;
+            int enemy;
+            int guard;
+            int charge;
+            String visited = "";
+            boolean enemyDied;
+            boolean followed;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] own = core.queries().unitHandlesOf(FACTION);
+                int[] foes = core.queries().unitHandlesOf(new FactionSlot(1));
+                if (own.length != 3 || foes.length != 1) {
+                    return;
+                }
+                state.enemy = foes[0];
+                for (int handle : own) {
+                    UnitView view = unit(rt, handle);
+                    boolean spearman = view.template().equals(TemplateSet.INFANTRY);
+                    if (spearman && view.z() < 20) {
+                        state.patroller = handle;
+                    } else if (spearman) {
+                        state.guard = handle;
+                    } else {
+                        state.charge = handle;
+                    }
+                }
+                rt.submit(
+                        PlayerSlot.ADMIN,
+                        Patrol.replace(UnitSet.of(state.patroller), List.of(new Vec2d(6, 8), new Vec2d(40, 8))));
+                rt.submit(PlayerSlot.ADMIN, Guard.replace(UnitSet.of(state.guard), state.charge));
+                rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(state.charge), new Vec2d(40, 36)));
+                state.ordered = true;
+                return;
+            }
+            double x = unit(rt, state.patroller).x();
+            char at = x < 9 ? 'A' : x > 37 ? 'B' : 0;
+            if (at != 0 && (state.visited.isEmpty() || state.visited.charAt(state.visited.length() - 1) != at)) {
+                state.visited += at;
+            }
+            state.enemyDied |= core.queries().unit(state.enemy) == null;
+            UnitView charge = unit(rt, state.charge);
+            UnitView guard = unit(rt, state.guard);
+            state.followed |= charge.x() > 36 && Math.hypot(guard.x() - charge.x(), guard.z() - charge.z()) < 8;
+            if (state.enemyDied && state.followed && state.visited.startsWith("ABAB")) {
+                h.succeed();
+            }
+        });
     }
 }

@@ -50,7 +50,7 @@ final class RestingGround {
                 && groundFloors[i] == motion.floor(i)) {
             return true;
         }
-        grounded[i] = MotionSystem.ground(s, i);
+        grounded[i] = MotionMoves.ground(s, i);
         if (grounded[i]) {
             groundVersions[i] = version;
             groundX[i] = x;

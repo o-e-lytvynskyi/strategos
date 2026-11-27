@@ -1,0 +1,60 @@
+{
+  "name": "strategos.civ.probe",
+  "phases": ["strategos.phase.0", "strategos.phase.1", "strategos.phase.2"],
+  "roster": {
+    "templates": [
+      "strategos:building/arsenal",
+      "strategos:building/civic_centre",
+      "strategos:building/farmstead",
+      "strategos:building/field",
+      "strategos:building/palisade",
+      "strategos:building/palisade_gate",
+      "strategos:building/probe_barracks",
+      "strategos:building/sentry_tower",
+      "strategos:building/tower",
+      "strategos:unit/archer",
+      "strategos:unit/chicken",
+      "strategos:unit/horseman",
+      "strategos:unit/pig",
+      "strategos:unit/probe_infantry",
+      "strategos:unit/ram",
+      "strategos:unit/sheep",
+      "strategos:unit/worker"
+    ],
+    "techs": "*"
+  },
+  "centreClass": "CivicCentre",
+  "roles": {
+    "centre": "strategos:building/civic_centre",
+    "worker": "strategos:unit/worker",
+    "infantry": "strategos:unit/probe_infantry",
+    "ranged": "strategos:unit/archer",
+    "cavalry": "strategos:unit/horseman",
+    "siege": "strategos:unit/ram",
+    "barracks": "strategos:building/probe_barracks",
+    "tower": "strategos:building/tower",
+    "farmstead": "strategos:building/farmstead",
+    "field": "strategos:building/field",
+    "wall": "strategos:building/palisade",
+    "gate": "strategos:building/palisade_gate"
+  },
+  "start": {
+    "resources": { "food": 350, "wood": 250, "stone": 100, "iron": 100 },
+    "entities": [
+      { "role": "centre" },
+      { "role": "worker", "dz": 9, "count": 6, "spread": 2 },
+      { "template": "strategos:unit/sheep", "dx": 9, "dz": 3, "count": 4, "spread": 2 },
+      { "template": "strategos:unit/chicken", "dx": 5, "dz": 11, "count": 3, "spread": 1.5 }
+    ]
+  },
+  "bonuses": [
+    { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.1, "filter": "Gatherer" },
+    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/probe_barracks", "filter": "Worker" }
+  ],
+  "rules": {
+    "population": { "id": "fixed", "params": { "cap": 60 } },
+    "delivery": { "id": "direct", "params": {} },
+    "construction": { "id": "self", "params": { "rate": 1 } }
+  },
+  "ai": { "profile": "probe" }
+}

@@ -6,6 +6,7 @@ import static dev.strategos.gametest.suites.Units.core;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.diag.SystemTimes;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Move;
@@ -30,11 +31,13 @@ import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.JournalFiles;
+import dev.strategos.core.testkit.M10Scene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SoakOrders;
 import dev.strategos.core.testkit.SoakScene;
+import dev.strategos.core.testkit.TerritoryScene;
 import dev.strategos.gametest.TickPacer;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -176,6 +179,13 @@ final class CrowdSoak {
     private final boolean mvp;
     private final long[] trackers;
     private long trackersBefore;
+    /** PERF-16: per sampled tick, the territory system's run, its join wait, the garrison's and the capture's time, and the grids delivered. */
+    private final long[][] territory;
+    /** PERF-17: per sampled tick, the formation system's run, the wild animals' thinking and the ability system's run. */
+    private final long[][] depth;
+
+    private SystemTimes.Stats systemsLast = new SystemTimes.Stats(0, 0, 0, 0, 0, 0, 0);
+    private long recomputesLast;
     private final long[][] combat;
     private CombatTimes.Stats combatLast = new CombatTimes.Stats(0, 0, 0, 0, 0);
     private CombatTimes.Stats combatBefore = new CombatTimes.Stats(0, 0, 0, 0, 0);
@@ -198,9 +208,13 @@ final class CrowdSoak {
         this.h = h;
         this.config = config;
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
-        boolean skirmish = config.scene() instanceof MvpScene.Config; // PERF-09 plays MAP-02, not the proving ground
+        boolean territoryScene = config.scene() instanceof TerritoryScene.Config;
+        boolean m10Scene = config.scene() instanceof M10Scene.Config;
+        // PERF-09, PERF-16 and PERF-17 play MAP-02, not the proving ground
+        boolean skirmish = territoryScene || m10Scene || config.scene() instanceof MvpScene.Config;
         this.rt = skirmish
-                ? MapTests.firstSkirmish(h, config.lane(), true)
+                ? MapTests.firstSkirmish(
+                        h, config.lane(), true, territoryScene || m10Scene ? TerritoryScene.FACTIONS : 2)
                 : MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
         this.manifest = skirmish ? MapTests.firstSkirmishManifest(h) : MapTests.manifest(h);
         this.orders = new SoakOrders(seed, ProvingGround.generate());
@@ -215,8 +229,12 @@ final class CrowdSoak {
         SoakScene.Spec sc = config.scene();
         this.scene = sc == null ? null : sc.create(manifest.startSlots());
         this.battle = scene instanceof BattleScene;
-        this.mvp = scene instanceof MvpScene;
+        this.mvp = scene instanceof MvpScene
+                || scene instanceof TerritoryScene
+                || scene instanceof M10Scene; // the computer's matches on MAP-02
         this.trackers = new long[mvp ? samples : 0];
+        this.territory = new long[territoryScene ? 5 : 0][territoryScene ? samples : 0];
+        this.depth = new long[m10Scene ? 3 : 0][m10Scene ? samples : 0];
         this.combat = new long[4][battle ? samples : 0];
         this.writer = new long[sc == null ? 0 : samples];
         this.fx = new long[sc == null ? 0 : samples];
@@ -325,6 +343,11 @@ final class CrowdSoak {
             economyBefore = q.economyTimes();
             combatBefore = q.combatTimes();
             combatLast = combatBefore;
+            systemsLast = q.systemTimes();
+            recomputesLast = q.territoryRecomputes();
+            if (scene instanceof M10Scene m10) {
+                m10.startWindow();
+            }
             shotsBefore = shots;
             hitsBefore = hits;
             deathsBefore = deaths;
@@ -349,6 +372,23 @@ final class CrowdSoak {
                     combat[2][i] = now.shotNanos() - combatLast.shotNanos();
                     combat[3][i] = now.damageNanos() - combatLast.damageNanos();
                     combatLast = now;
+                }
+                if (territory.length > 0) {
+                    SystemTimes.Stats now = q.systemTimes();
+                    territory[0][i] = now.territoryNanos() - systemsLast.territoryNanos();
+                    territory[1][i] = now.joinNanos() - systemsLast.joinNanos();
+                    territory[2][i] = now.garrisonNanos() - systemsLast.garrisonNanos();
+                    territory[3][i] = now.captureNanos() - systemsLast.captureNanos();
+                    territory[4][i] = q.territoryRecomputes() - recomputesLast;
+                    systemsLast = now;
+                    recomputesLast = q.territoryRecomputes();
+                }
+                if (depth.length > 0) {
+                    SystemTimes.Stats now = q.systemTimes();
+                    depth[0][i] = now.formationNanos() - systemsLast.formationNanos();
+                    depth[1][i] = now.faunaNanos() - systemsLast.faunaNanos();
+                    depth[2][i] = now.abilityNanos() - systemsLast.abilityNanos();
+                    systemsLast = now;
                 }
                 if (mvp) {
                     long now = StrategosServer.get().trackerRefresher().nanos();
@@ -502,7 +542,21 @@ final class CrowdSoak {
                                 hits - hitsBefore,
                                 deaths - deathsBefore)
                         : null,
-                trackers);
+                trackers,
+                territory.length == 0
+                        ? null
+                        : new SoakCosts.Territory(territory[0], territory[1], territory[2], territory[3], territory[4]),
+                depth.length == 0 || !(sc instanceof M10Scene m10)
+                        ? null
+                        : new SoakCosts.Depth(
+                                depth[0],
+                                depth[1],
+                                depth[2],
+                                m10.formedFraction(),
+                                m10.marches(),
+                                m10.charges(),
+                                m10.researches(),
+                                m10.phaseNames(q)));
     }
 
     /** Budget G in the window: one save of the match's blob, as an autosave would make it. */

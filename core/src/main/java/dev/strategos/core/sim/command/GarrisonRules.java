@@ -33,8 +33,18 @@ final class GarrisonRules {
         return null;
     }
 
+    /** Whether the issuer controls a faction allied with {@code faction}: an ally's holder takes the issuer's units. */
+    private static boolean controlsAnAlly(CommandEnvelope envelope, MatchState state, int faction) {
+        for (int f = 0; f < state.config().factions(); f++) {
+            if (envelope.issuer().controls(new FactionSlot(f)) && state.allies().allied(f, faction)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * Garrison: each owned living unit of the building's faction and of a class it admits walks to its door and goes in
+     * Garrison: each owned living unit of the building's faction or an ally's and of a class it admits walks to its door and goes in
      * (its order replaces the others); a unit already inside is refused, and a full building fails the order on arrival.
      */
     static final class GarrisonRule implements CommandRule<Garrison> {
@@ -50,9 +60,11 @@ final class GarrisonRules {
                 return Tally.rejectAll(envelope, kind(), 0, RejectReason.INVALID_ARGUMENT);
             }
             int handle = garrison.building();
-            RejectReason refusal = building(envelope, state, handle);
-            if (refusal != null) {
-                return Tally.rejectAll(envelope, kind(), units.size(), refusal);
+            if (!BuildingStore.isBuilding(handle) || !state.buildings().alive(handle)) {
+                return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
+            }
+            if (!controlsAnAlly(envelope, state, state.buildings().faction(handle))) {
+                return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.NOT_OWNER);
             }
             if (state.buildings().state(handle) != BuildingStore.COMPLETE || Garrisons.capacity(state, handle) == 0) {
                 return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNSUPPORTED);
@@ -70,7 +82,10 @@ final class GarrisonRules {
                     continue;
                 }
                 int i = Handle.index(unit);
-                if (state.identity().faction(i) != state.buildings().faction(handle)) {
+                if (!state.allies()
+                        .allied(
+                                state.buildings().faction(handle),
+                                state.identity().faction(i))) {
                     tally.reject(RejectReason.NOT_OWNER);
                 } else if (state.garrison().inside(i)) {
                     tally.reject(RejectReason.INVALID_ARGUMENT);

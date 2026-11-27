@@ -3,11 +3,13 @@ package dev.strategos.mod.server.content;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.gson.JsonObject;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.TemplateSetView;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import io.netty.buffer.Unpooled;
@@ -67,5 +69,41 @@ class TemplateSetPayloadSizeTest {
         assertThat(back.view()).isEqualTo(view);
         assertThat(back.view().toSet().version()).isEqualTo(bundled.version());
         assertThat(back.view().toSet().techs()).isEqualTo(bundled.techs());
+    }
+
+    @Test
+    void aSetWithCivilisationsRoundTripsThroughThePayloadAndFitsTheBound() {
+        TemplateSet bundled = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = bundled.all().stream()
+                .map(t -> new TemplateCompiler.Flat(t.id(), t.netIndex(), bundled.flattened(t.id())))
+                .toList();
+        List<TemplateCompiler.TechFlat> techs =
+                bundled.techs().stream().map(TemplateCompiler.TechFlat::of).toList();
+        JsonObject tribe = new JsonObject();
+        JsonObject roles = new JsonObject();
+        roles.addProperty("house", "strategos:building/house");
+        tribe.add("roles", roles);
+        TemplateSet set = TemplateCompiler.fromFlattened(
+                        flats,
+                        techs,
+                        List.of(
+                                new RawCiv(
+                                        new CivId("strategos:default"),
+                                        "default",
+                                        bundled.civs().get(0).toJson()),
+                                new RawCiv(new CivId("t:tribe"), "tribe", tribe)))
+                .set();
+        TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
+
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(
+                Unpooled.buffer(), RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY));
+        TemplateSetPayload.STREAM_CODEC.encode(buf, new TemplateSetPayload(view));
+        TemplateSetPayload back = TemplateSetPayload.STREAM_CODEC.decode(buf);
+
+        assertThat(view.civs()).hasSize(2);
+        assertThat(WireCodec.encode(TemplateSetView.WIRE, view).length).isLessThan(TemplateSetView.MAX_BYTES);
+        assertThat(back.view()).isEqualTo(view);
+        assertThat(back.view().toSet().version()).isEqualTo(set.version());
+        assertThat(set.version()).isNotEqualTo(bundled.version());
     }
 }

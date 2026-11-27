@@ -2,6 +2,7 @@ package dev.strategos.gametest;
 
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.suites.AiSoak;
+import dev.strategos.gametest.suites.CivTests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -247,6 +248,26 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_mvp_stress");
     }
 
+    @AfterBatch(batch = "perf_territory")
+    public static void afterPerfTerritory(ServerLevel level) {
+        afterBatch(level, "perf_territory");
+    }
+
+    @AfterBatch(batch = "perf_territory_stress")
+    public static void afterPerfTerritoryStress(ServerLevel level) {
+        afterBatch(level, "perf_territory_stress");
+    }
+
+    @AfterBatch(batch = "perf_m10")
+    public static void afterPerfM10(ServerLevel level) {
+        afterBatch(level, "perf_m10");
+    }
+
+    @AfterBatch(batch = "perf_m10_stress")
+    public static void afterPerfM10Stress(ServerLevel level) {
+        afterBatch(level, "perf_m10_stress");
+    }
+
     @AfterBatch(batch = "perf_first_loop_fast")
     public static void afterPerfFirstLoopFast(ServerLevel level) {
         afterBatch(level, "perf_first_loop_fast");
@@ -287,6 +308,12 @@ public final class StrategosGameTests {
         afterBatch(level, "aisoak");
     }
 
+    @AfterBatch(batch = "ai_sample")
+    public static void afterAiSample(ServerLevel level) {
+        level.getServer().tickRateManager().stopSprinting(); // a failed check must not leave the server sprinting
+        afterBatch(level, "ai_sample");
+    }
+
     @AfterBatch(batch = "ai_starts")
     public static void afterAiStarts(ServerLevel level) {
         afterBatch(level, "ai_starts");
@@ -295,6 +322,12 @@ public final class StrategosGameTests {
     @AfterBatch(batch = "ai_battle")
     public static void afterAiBattle(ServerLevel level) {
         afterBatch(level, "ai_battle");
+    }
+
+    @AfterBatch(batch = "civ_two")
+    public static void afterCivTwo(ServerLevel level) {
+        afterBatch(level, "civ_two");
+        CivTests.unloadProbe();
     }
 
     @AfterBatch(batch = "ai_economy")

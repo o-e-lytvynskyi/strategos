@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.mod.client.StrategosClient;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -22,6 +23,9 @@ final class HudBuildingCard {
     private final HudPaint paint;
     private final HudTheme theme;
     private final HudCardPresentation cardPresentation;
+
+    /** The phase panel's tree button as last drawn (TECH-05), null while no panel shows. */
+    private @Nullable HudRect treeButton;
 
     HudBuildingCard(HudPaint paint, HudCardPresentation cardPresentation) {
         this.paint = paint;
@@ -39,6 +43,13 @@ final class HudBuildingCard {
             default -> Math.round(100.0 * b.health() / UnitHud.WHOLE) + " % HP";
         };
         paint.text(g, font, r, 1, b.rally() ? state + " · rally set" : state, theme.text());
+        if (!b.captureShares().isEmpty()) { // CMB-10: each faction's share of the capture points
+            HudRect bar = SelectionPanel.captureBar(r, pad);
+            g.fill(bar.x(), bar.y(), bar.right(), bar.bottom(), theme.border());
+            for (int[] seg : SelectionPanel.captureSegments(bar, b)) {
+                g.fill(seg[1], bar.y(), seg[1] + seg[2], bar.bottom(), theme.faction(seg[0]));
+            }
+        }
         if (b.fieldLeft() >= 0) {
             String crop = b.fieldRipening() > 0
                     ? "Ripening, " + (b.fieldRipening() + 19) / 20 + " s"
@@ -64,6 +75,7 @@ final class HudBuildingCard {
 
     /** UI-13: the next phase's leaves above the card, met ones green, the rest with their amounts. */
     void phasePanel(GuiGraphics g, Font font, HudRect card, @Nullable PhasePanel p) {
+        treeButton = null;
         if (p == null) {
             return;
         }
@@ -75,12 +87,17 @@ final class HudBuildingCard {
         int y = r.y() + theme.padding();
         g.drawString(
                 font,
-                Component.translatable(p.phase().name()).getString() + " — "
+                Component.translatable(p.title(StrategosClient.viewerCiv())).getString() + " — "
                         + (p.rows().isEmpty() ? "ready" : "needs"),
                 x,
                 y,
                 0xFFFFD040,
                 false);
+        String tree = Component.translatable("strategos.techtree.button").getString();
+        int w = font.width(tree) + 8;
+        treeButton = new HudRect(r.right() - w - theme.padding(), r.y() + 2, w, font.lineHeight + 2);
+        g.fill(treeButton.x(), treeButton.y(), treeButton.right(), treeButton.bottom(), theme.border());
+        g.drawString(font, tree, treeButton.x() + 4, treeButton.y() + 2, theme.text(), false);
         for (PhasePanel.Row row : p.rows()) {
             y += line;
             String text = (row.met() ? "✔ " : "✘ ")
@@ -88,6 +105,11 @@ final class HudBuildingCard {
                     + (row.need() > 1 ? " " + row.have() + "/" + row.need() : "");
             g.drawString(font, text, x, y, row.met() ? 0xFF80FF80 : 0xFFFF8080, false);
         }
+    }
+
+    /** Whether the tree button of the phase panel, if one shows, is at ({@code x}, {@code y}). */
+    boolean treeButtonAt(double x, double y) {
+        return treeButton != null && treeButton.contains(x, y);
     }
 
     /** A queue entry's icon: a unit's via {@link HudCardPresentation}, or for a technology (TECH-01) its own item. */

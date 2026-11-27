@@ -30,7 +30,7 @@ final class GatherChapter implements DemoChapter {
                         st.bush(10 + k * 2, 12);
                     }
                 })
-                .run(DemoStage::match)
+                .run(Stage::match)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -10, 0);
                     st.units(Ids.WORKER, 0, 0, 0, 8, 2);

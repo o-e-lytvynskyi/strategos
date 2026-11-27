@@ -9,7 +9,9 @@ import org.jspecify.annotations.Nullable;
  * {@link Lifecycle#ENDED} the match results (M6 §2.3), and each faction's equipment tiers {@code looks} (TECH-03; empty
  * when none is known, as in a message of the form before it). On the wire the results come first, then the looks, so an
  * older reader that stops after the results still reads the rest; at {@code ENDED} without results no looks are
- * written, since the reader could not tell them from results.
+ * written, since the reader could not tell them from results. {@code tint} (MATCH-16: the client draws the match's
+ * night over the world, because the world's own time is not the match's) is one more byte after the looks, written
+ * only when set, with the looks' count before it even when there are none.
  */
 @CoreApi
 public record MatchStateMsg(
@@ -17,7 +19,8 @@ public record MatchStateMsg(
         Lifecycle lifecycle,
         long tick,
         @Nullable MatchResults results,
-        List<FactionLook> looks) {
+        List<FactionLook> looks,
+        boolean tint) {
     /** The most factions a match has, which bounds {@code looks}. */
     public static final int MAX_FACTIONS = 16;
 
@@ -39,6 +42,11 @@ public record MatchStateMsg(
         if (looks.size() > MAX_FACTIONS) {
             throw new IllegalArgumentException("more looks than factions: " + looks.size());
         }
+    }
+
+    public MatchStateMsg(
+            int matchId, Lifecycle lifecycle, long tick, @Nullable MatchResults results, List<FactionLook> looks) {
+        this(matchId, lifecycle, tick, results, looks, false);
     }
 
     public MatchStateMsg(int matchId, Lifecycle lifecycle, long tick, @Nullable MatchResults results) {
@@ -68,10 +76,14 @@ public record MatchStateMsg(
             if (value.results() != null) {
                 MatchResults.WIRE.write(out, value.results());
             }
-            if (!value.looks().isEmpty() && (value.lifecycle() != Lifecycle.ENDED || value.results() != null)) {
+            boolean tail = value.lifecycle() != Lifecycle.ENDED || value.results() != null;
+            if (tail && (!value.looks().isEmpty() || value.tint())) {
                 out.writeVarInt(value.looks().size());
                 for (FactionLook look : value.looks()) {
                     out.writeByte(look.pack());
+                }
+                if (value.tint()) {
+                    out.writeByte(1);
                 }
             }
         }
@@ -106,12 +118,20 @@ public record MatchStateMsg(
                 }
                 looks = List.of(read);
             }
-            return new MatchStateMsg(id, lifecycle, tick, results, looks);
+            boolean tint = false;
+            if (in.remaining() > 0) {
+                int flag = in.readUnsignedByte();
+                if (flag != 1) { // written only when set
+                    throw new WireException("a tint byte of " + flag);
+                }
+                tint = true;
+            }
+            return new MatchStateMsg(id, lifecycle, tick, results, looks, tint);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 1 + 10 + MatchResults.WIRE.maxSize() + 5 + MAX_FACTIONS;
+            return 5 + 1 + 10 + MatchResults.WIRE.maxSize() + 5 + MAX_FACTIONS + 1;
         }
     };
 }

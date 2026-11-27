@@ -47,7 +47,15 @@ class CommandKindsTest {
                         "strategos:ring_bell",
                         "strategos:all_clear",
                         "strategos:attack_spread",
-                        "strategos:research");
+                        "strategos:research",
+                        "strategos:capture",
+                        "strategos:upgrade_building",
+                        "strategos:place_wall",
+                        "strategos:use_ability",
+                        "strategos:patrol",
+                        "strategos:guard",
+                        "strategos:formation_move",
+                        "strategos:delete_units");
     }
 
     @Test

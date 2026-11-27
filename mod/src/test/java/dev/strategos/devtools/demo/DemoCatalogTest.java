@@ -19,7 +19,7 @@ class DemoCatalogTest {
     void everyChapterIsWellFormed() {
         Set<String> ids = new HashSet<>();
         for (DemoChapter c : ALL) {
-            assertThat(c.id()).matches("[a-z][a-z0-9-]*");
+            assertThat(c.id()).matches("[a-z][a-z0-9_-]*");
             assertThat(ids.add(c.id())).as("a second chapter %s", c.id()).isTrue();
             assertThat(c.version()).isPositive();
             assertThat(c.title()).isNotBlank().hasSizeLessThanOrEqualTo(40);
@@ -56,11 +56,29 @@ class DemoCatalogTest {
     }
 
     @Test
+    void m9IsFiveChaptersInTheOrderOfTheSpecsScript() {
+        List<DemoChapter> m9 = DemoCatalog.pick(ALL, "m9", "", Set.of());
+        assertThat(ids(m9)).containsExactly("territory", "capture", "garrison_heal", "towers", "palisade");
+        assertThat(m9).allMatch(c -> c.version() == 1 && c.groups().getFirst().equals("m9"));
+    }
+
+    @Test
+    void m10IsNineChaptersInTheOrderOfTheSpecsScript() {
+        List<DemoChapter> m10 = DemoCatalog.pick(ALL, "m10", "", Set.of());
+        assertThat(ids(m10))
+                .containsExactly(
+                        "city", "tree", "healers", "veterans", "formations", "patrol", "hunt", "charge", "night");
+        assertThat(m10).allMatch(c -> c.version() == 1 && c.groups().getFirst().equals("m10"));
+        assertThat(m10).allMatch(c -> c.groups().size() >= 2);
+        assertThat(ids(DemoCatalog.pick(ALL, "m10", "orders", Set.of()))).doesNotContain("formations", "patrol");
+    }
+
+    @Test
     void everyChapterRunsRevealedExceptFog() {
         assertThat(DemoStage.rules(false).revealMap()).isTrue();
         assertThat(DemoStage.rules(true).revealMap()).isFalse();
         assertThat(ALL.stream().filter(DemoChapter::fogged).map(DemoChapter::id))
-                .containsExactly("fog");
+                .containsExactly("fog", "night");
     }
 
     @Test

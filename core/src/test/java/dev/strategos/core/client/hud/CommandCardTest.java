@@ -174,7 +174,11 @@ class CommandCardTest {
         assertThat(main.buttons())
                 .extracting(CommandCard.Button::kind)
                 .filteredOn(k -> k != CommandCard.Kind.STANCE)
-                .containsExactly(CommandCard.Kind.BUILD_PAGE, CommandCard.Kind.STOP);
+                .containsExactly(
+                        CommandCard.Kind.BUILD_PAGE,
+                        CommandCard.Kind.PATROL,
+                        CommandCard.Kind.GUARD,
+                        CommandCard.Kind.STOP);
         List<Command> sent = new ArrayList<>();
         assertThat(controller
                         .click(main.buttons().get(0), units, null, T, sent::add)
@@ -206,7 +210,7 @@ class CommandCardTest {
                 .extracting(CommandCard.Button::kind)
                 .as("a spearman builds nothing")
                 .filteredOn(k -> k != CommandCard.Kind.STANCE)
-                .containsExactly(CommandCard.Kind.STOP);
+                .containsExactly(CommandCard.Kind.PATROL, CommandCard.Kind.GUARD, CommandCard.Kind.STOP);
     }
 
     private static CommandCard.Button button(CommandCard card, CommandCard.Kind kind) {

@@ -63,6 +63,7 @@ final class DemoScenario implements Scenario {
         ScenarioWorld.run(server, "gamerule doWeatherCycle false");
         ScenarioWorld.run(server, "time set 6000");
         ScenarioWorld.run(server, "weather clear");
+        ctx.worldLight(); // a person watches, and the night chapter's sky is the level's time (MATCH-16)
         if (list || chapters.isEmpty()) {
             return;
         }

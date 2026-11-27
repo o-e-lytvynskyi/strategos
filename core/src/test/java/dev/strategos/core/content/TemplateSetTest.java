@@ -36,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(21);
+        assertThat(set.all()).hasSize(27);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -88,14 +88,37 @@ class TemplateSetTest {
                         "strategos:gather_farm_1",
                         "strategos:gather_iron_1",
                         "strategos:gather_stone_1",
-                        "strategos:iron_weapons");
+                        "strategos:iron_weapons",
+                        "strategos:phase_city", // M10 T15's, appended
+                        "strategos:gather_wood_2",
+                        "strategos:gather_wood_3",
+                        "strategos:gather_farm_2",
+                        "strategos:gather_farm_3",
+                        "strategos:gather_stone_2",
+                        "strategos:gather_stone_3",
+                        "strategos:gather_iron_2",
+                        "strategos:gather_iron_3",
+                        "strategos:carry_2",
+                        "strategos:carry_3",
+                        "strategos:diamond_weapons",
+                        "strategos:netherite_weapons",
+                        "strategos:iron_armour",
+                        "strategos:diamond_armour",
+                        "strategos:masonry_1",
+                        "strategos:masonry_2",
+                        "strategos:arrow_slits",
+                        "strategos:carpentry",
+                        "strategos:guild_lumber",
+                        "strategos:guild_mining",
+                        "strategos:phalanx",
+                        "strategos:skirmish_drill"); // M10 T16's, appended
         assertThat(set.techByIndex(0)).isSameAs(tech);
         assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
         assertThat(tech.ticks()).isEqualTo(600);
         JsonObject storehouse = set.flattened(new TemplateId("strategos:building/storehouse"));
         assertThat(storehouse.getAsJsonObject("Researcher").get("techs").getAsString())
-                .isEqualTo(
-                        "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1");
+                .isEqualTo("strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1"
+                        + " strategos:guild_lumber strategos:guild_mining");
         double rate = set.value(
                 set.byId(TemplateSet.WORKER).netIndex(),
                 set.valuePaths().byPath("ResourceGatherer/rates/wood/tree").id());
@@ -175,22 +198,27 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(21)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(27)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge.
+    // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge;
+    // M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory (TERR-02); M9 T10: the garrison's
+    // heal and ejectBelow, the houses' and the tower's holders (BLD-10); M9 T7: Capturable and Capture (CMB-10).
+    // M9 T11, T13: unchanged (the sentry tower, the palisade and its gate are in the tech set only, BLD-12, BLD-13).
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
-            "0f0a11e24ee9046d3831697ce750e664a32dc292bf7cfd2533e19f121084a5ef";
+            "426ba9a4b4049c6504b4f0d3de7770ecbfb5734b6b4b26faa976cc70eaf1b8b7";
 
     // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
     // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
     // civic centre's Researcher; M6 T20: the defence tower (BLD-17) and its blueprint; M6
     // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09); M6 T23: Town costs 600
-    // wood, not 500 (QA-12's tuning). Rebaselined after merging
-    // M5
-    // combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "2b500c1bac3ef33615701f65f3cfdebdfaa4b88f2c30c0cbacaff61f90a79a0e";
+    // wood, not 500 (QA-12's tuning); M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory
+    // and Town's second centre (TERR-02); M9 T10: the garrison's heal and ejectBelow, the houses' and the tower's
+    // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10); M9 T11: the sentry tower,
+    // its blueprint, its place on the Village worker's list and its Upgrade (BLD-12); M9 T13: the palisade and its
+    // gate, the worker's list (BLD-13). Rebaselined after merging M5 combat content into BuiltinTemplates.
+    private static final String BUILTIN_VERSION = "dc3b4420f0b695562e8355650b902c17d31ed8d4fae039632748c16d5d8535c6";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

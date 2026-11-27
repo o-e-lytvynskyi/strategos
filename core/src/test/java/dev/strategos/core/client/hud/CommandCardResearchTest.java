@@ -3,6 +3,7 @@ package dev.strategos.core.client.hud;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.FactionState;
@@ -82,8 +83,8 @@ class CommandCardResearchTest {
         ClientMatchModel model = CommandCardTest.model(faction(500_000, 500_000, List.of()), shed);
         List<CommandCard.Button> buttons = research(model, model.buildings().get(0));
         assertThat(buttons)
-                .as("the storehouse's four techs, in its list's order")
-                .hasSize(4)
+                .as("the storehouse's six techs, in its list's order (the pair of guilds last)")
+                .hasSize(6)
                 .first()
                 .isEqualTo(new CommandCard.Button(
                         CommandCard.Kind.RESEARCH, 0, WOOD_1, List.of(100_000L, 50_000L, 0L, 0L), true));
@@ -141,8 +142,41 @@ class CommandCardResearchTest {
         assertThat(research(done, done.buildings().get(0)))
                 .extracting(CommandCard.Button::template)
                 .as("the others stay")
-                .hasSize(3)
+                .hasSize(5)
                 .doesNotContain(WOOD_1);
+    }
+
+    @Test
+    void theLockedHalfOfAPairNamesTheTechThatLocksIt() {
+        TechDef lumber = Objects.requireNonNull(CommandCardTest.T.tech(new TechId("strategos:guild_lumber")));
+        TechDef mining = Objects.requireNonNull(CommandCardTest.T.tech(new TechId("strategos:guild_mining")));
+        int town = Objects.requireNonNull(CommandCardTest.T.tech(new TechId("strategos:phase_town")))
+                .netIndex();
+        ClientMatchModel open =
+                CommandCardTest.model(faction(500_000, 500_000, List.of(town)), building(7, STOREHOUSE, List.of(), 0));
+        assertThat(research(open, open.buildings().get(0)))
+                .filteredOn(b -> b.template() == mining.netIndex())
+                .extracting(CommandCard.Button::reason)
+                .as("with Town and neither guild, the pair is not locked")
+                .noneMatch(r -> r != null && r.startsWith("Locked"));
+
+        ClientMatchModel chosen = CommandCardTest.model(
+                faction(500_000, 500_000, List.of(town, lumber.netIndex())), building(7, STOREHOUSE, List.of(), 0));
+        List<CommandCard.Button> buttons = research(chosen, chosen.buildings().get(0));
+        assertThat(buttons).extracting(CommandCard.Button::template).doesNotContain(lumber.netIndex());
+        assertThat(buttons)
+                .filteredOn(b -> b.template() == mining.netIndex())
+                .extracting(CommandCard.Button::reason)
+                .containsExactly("Locked by guild_lumber");
+
+        ClientMatchModel queued = CommandCardTest.model(
+                faction(500_000, 500_000, List.of(town)),
+                building(7, STOREHOUSE, List.of(QueueEntry.techEntry(lumber.netIndex())), 10));
+        assertThat(research(queued, queued.buildings().get(0)))
+                .filteredOn(b -> b.template() == mining.netIndex())
+                .extracting(CommandCard.Button::reason)
+                .as("a queued half locks the other as well")
+                .containsExactly("Locked by guild_lumber");
     }
 
     @Test

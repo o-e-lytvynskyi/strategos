@@ -1,0 +1,51 @@
+{
+  "depth": {
+    "workers": {
+      "strategos:phase_town": 12,
+      "strategos:phase_city": 8
+    },
+    "techs": {
+      "from": 720,
+      "order": [
+        "strategos:phase_city",
+        "strategos:gather_wood_1",
+        "strategos:gather_farm_1",
+        "strategos:carry_1",
+        "strategos:gather_stone_1",
+        "strategos:gather_iron_1",
+        "strategos:gather_wood_2",
+        "strategos:gather_farm_2",
+        "strategos:carry_2",
+        "strategos:gather_stone_2",
+        "strategos:gather_iron_2",
+        "strategos:gather_wood_3",
+        "strategos:gather_farm_3",
+        "strategos:carry_3",
+        "strategos:gather_stone_3",
+        "strategos:gather_iron_3",
+        "strategos:iron_weapons",
+        "strategos:chainmail",
+        "strategos:phalanx",
+        "strategos:iron_armour",
+        "strategos:diamond_weapons",
+        "strategos:netherite_weapons",
+        "strategos:diamond_armour"
+      ]
+    },
+    "healers": 3,
+    "charge": {
+      "ability": "charge",
+      "range": 14
+    },
+    "march": 70,
+    "veterans": {
+      "rank": 1,
+      "below": 0.35,
+      "resume": 0.8,
+      "near": 60
+    },
+    "hold": 6000,
+    "phaseHold": 36000,
+    "techHold": 1200
+  }
+}

@@ -3,11 +3,16 @@ package dev.strategos.mod.client;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.civ.CivRules;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
@@ -22,7 +27,10 @@ import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
+import dev.strategos.mod.client.overlay.NightTint;
 import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.client.territory.BorderEcho;
+import dev.strategos.mod.client.territory.BorderRenderer;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import java.util.List;
@@ -57,8 +65,11 @@ public final class StrategosClient {
     private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
     private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
+    private static final BorderEcho BORDER_ECHO = new BorderEcho();
     private static volatile @Nullable MatchJoin match;
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(StrategosClient.class);
     private static volatile List<String> resources = List.of();
+    private static volatile @Nullable RulesCache rules;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
 
@@ -91,10 +102,17 @@ public final class StrategosClient {
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
+        NightTint.register(modBus); // MATCH-16: the fallback night, below every other layer
         FAR.register();
         SHROUD.register();
+        BorderRenderer.register();
         NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
+    }
+
+    /** The borders' second dirty pass (TERR-03). */
+    public static BorderEcho borderEcho() {
+        return BORDER_ECHO;
     }
 
     /** The fog shroud (FOW-07); the client thread's only. */
@@ -155,6 +173,44 @@ public final class StrategosClient {
         match = join;
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    /**
+     * Faction {@code faction}'s civilisation as the joined match lists it (CIV-01), from the client's copy of the set;
+     * the default's when the match lists none; null when the set lacks it (a stale copy: the roster is then not narrowed).
+     */
+    public static @Nullable CivDef civ(int faction) {
+        MatchJoin join = match;
+        TemplateSet set = templates;
+        return set.civ(join == null ? CivId.DEFAULT : join.civ(faction));
+    }
+
+    /** The viewer's civilisation; the default's before the first {@code faction_state}. */
+    public static @Nullable CivDef viewerCiv() {
+        FactionState f = MODEL.faction();
+        return civ(f == null ? 0 : f.faction());
+    }
+
+    /**
+     * The viewer's civilisation's rule seams, made by the core's catalogue (CIV-05): the placement preview and the
+     * resource bar run the same rules as the server. Cached for the civilisation it was made from.
+     */
+    public static CivRules viewerRules() {
+        CivDef civ = viewerCiv();
+        RulesCache cached = rules;
+        if (cached == null || !java.util.Objects.equals(cached.civ(), civ)) {
+            cached = new RulesCache(civ, ViewerRules.resolve(RuleCatalogue.DEFAULT, civ, LOG::warn));
+            rules = cached;
+        }
+        return cached.rules();
+    }
+
+    private record RulesCache(@Nullable CivDef civ, CivRules rules) {}
+
+    /** The class token of faction {@code faction}'s centres, from its civilisation (CIV-01). */
+    public static String centreClass(int faction) {
+        CivDef civ = civ(faction);
+        return civ == null ? CivDef.DEFAULT_CENTRE_CLASS : civ.centreClass();
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */

@@ -34,6 +34,10 @@ import org.lwjgl.glfw.GLFW;
  * frame interval's p50, as in {@link RtsFrameScenario}; the frame is the battle window's. The battle is live, with no
  * selection, so our drawing is the health bars' and the HUD's own timers together, in the same budget. The card's
  * budgets decide {@code ok}.
+ *
+ * <p>{@code rts_frame_veterans} (M10, CMB-11) is the same scene with every unit given a rank (1 to 3 by handle) once
+ * the armies stand, through the body's own rank path, so the bars' timer holds the insignia too; the battle window
+ * waits until three quarters of the bodies on the client show one.
  */
 final class BattleFrameScenario implements Scenario {
     static final int UNITS = 200;
@@ -55,8 +59,10 @@ final class BattleFrameScenario implements Scenario {
         DONE
     }
 
+    private final boolean veterans;
     private final StringBuilder failures = new StringBuilder();
     private final AtomicInteger bodiesOnServer = new AtomicInteger();
+    private final AtomicInteger ranked = new AtomicInteger(-1);
     private final AtomicInteger joined = new AtomicInteger();
     private final Map<String, RtsFrameScenario.Sample> samples = new HashMap<>();
     private volatile @Nullable MatchRuntime match;
@@ -66,9 +72,17 @@ final class BattleFrameScenario implements Scenario {
     private RtsFrameScenario.@Nullable Sample pending;
     private int lead;
 
+    BattleFrameScenario() {
+        this(false);
+    }
+
+    BattleFrameScenario(boolean veterans) {
+        this.veterans = veterans;
+    }
+
     @Override
     public String name() {
-        return "rts_frame_battle";
+        return veterans ? "rts_frame_veterans" : "rts_frame_battle";
     }
 
     @Override
@@ -185,11 +199,22 @@ final class BattleFrameScenario implements Scenario {
             }
             case SPAWNING -> {
                 server.execute(() -> bodiesOnServer.set(rt.bodies().count()));
-                if (bodiesOnServer.get() >= UNITS && bodies(mc) >= UNITS && inStage >= SETTLE) {
+                if (veterans && ranked.get() < 0 && bodiesOnServer.get() >= UNITS) {
+                    ranked.set(0);
+                    server.execute(() -> ranked.set(rankAll(rt)));
+                }
+                if (bodiesOnServer.get() >= UNITS
+                        && bodies(mc) >= UNITS
+                        && inStage >= SETTLE
+                        && (!veterans || ranked(mc) >= UNITS * 3 / 4)) {
                     int seen = onScreen(mc, rts);
                     ctx.result.addProperty("onScreen", seen);
                     check(seen >= UNITS * 3 / 4, seen + " of " + UNITS + " units on screen");
-                    ctx.capture("rts_frame_battle");
+                    if (veterans) {
+                        ctx.result.addProperty("ranked", ranked.get());
+                        ctx.result.addProperty("rankedOnClient", ranked(mc));
+                    }
+                    ctx.capture(name());
                     next(Stage.BATTLE, true, 0);
                 } else if (inStage > 1_200) {
                     return fail(ctx, "only " + bodies(mc) + " bodies arrived");
@@ -244,6 +269,34 @@ final class BattleFrameScenario implements Scenario {
                 PlayerSlot.ADMIN,
                 new SpawnUnits(
                         TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(216, M5GoldensScenario.FORD_Z), EXTRA, 10));
+    }
+
+    /** Every unit of both armies given rank 1, 2 or 3 by its handle, as a rank-up gives its body one. Server thread. */
+    private static int rankAll(MatchRuntime rt) {
+        var core = rt.core();
+        if (core == null) {
+            return 0;
+        }
+        int n = 0;
+        for (int f = 0; f < 2; f++) {
+            for (int h : core.queries().unitHandlesOf(new FactionSlot(f))) {
+                rt.bodies().rank(h, 1 + h % 3);
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private static int ranked(Minecraft mc) {
+        int n = 0;
+        if (mc.level != null) {
+            for (Entity e : mc.level.entitiesForRendering()) {
+                if (e instanceof UnitEntity u && u.rank() > 0) {
+                    n++;
+                }
+            }
+        }
+        return n;
     }
 
     private static int bodies(Minecraft mc) {

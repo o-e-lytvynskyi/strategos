@@ -3,6 +3,7 @@ package dev.strategos.core.sim.nav;
 import dev.strategos.core.port.JobScratch;
 import dev.strategos.core.port.PureJob;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A group's request (PATH-09): one search from the surface nearest the group's centroid to its goal, as a {@link
@@ -11,16 +12,37 @@ import java.util.List;
  * admission found them.
  */
 public record GroupJob(
-        SurfaceGrid grid, PathRequest request, List<GroupPaths.Member> members, int joinCap, int maxJoins)
+        SurfaceGrid grid,
+        PathRequest request,
+        List<GroupPaths.Member> members,
+        int joinCap,
+        int maxJoins,
+        GateLinks.@Nullable Pass gates)
         implements PureJob<PathResult> {
-    public GroupJob {
-        members = List.copyOf(members);
+    public GroupJob(
+            SurfaceGrid grid,
+            PathRequest request,
+            List<GroupPaths.Member> members,
+            int joinCap,
+            int maxJoins,
+            GateLinks.@Nullable Pass gates) {
+        this.grid = grid;
+        this.request = request;
+        this.members = List.copyOf(members);
+        this.joinCap = joinCap;
+        this.maxJoins = maxJoins;
+        this.gates = gates;
+    }
+
+    /** A group's job where no gate is crossed. */
+    public GroupJob(SurfaceGrid grid, PathRequest request, List<GroupPaths.Member> members, int joinCap, int maxJoins) {
+        this(grid, request, members, joinCap, maxJoins, null);
     }
 
     @Override
     public PathResult run(JobScratch scratch) {
-        PathResult group = new PathJob(grid, request).run(scratch);
+        PathResult group = new PathJob(grid, request, gates).run(scratch);
         return GroupPaths.members(
-                grid, request, group, members, joinCap, maxJoins, scratch.get(GridAStar.class, GridAStar::new));
+                grid, request, group, members, joinCap, maxJoins, scratch.get(GridAStar.class, GridAStar::new), gates);
     }
 }

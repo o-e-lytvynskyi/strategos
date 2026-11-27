@@ -50,7 +50,7 @@ class IncomeTest {
                         .as("seed %d resource %d", seed, r)
                         .isEqualTo(minute);
             }
-            ResourceBar bar = ResourceBar.of(last, List.of("food", "wood", "stone", "iron"), income);
+            ResourceBar bar = ResourceBar.of(last, List.of("food", "wood", "stone", "iron"), income, r -> true);
             assertThat(bar.resources().get(EconScene.FOOD).perMinute())
                     .isEqualTo(Math.floorDiv(income.perMinute(EconScene.FOOD), 1000));
             assertThat(bar.resources().get(EconScene.FOOD).workers())

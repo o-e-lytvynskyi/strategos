@@ -1,0 +1,25 @@
+{
+  "maxWorkers": 24,
+  "ratio": { "food": 24, "wood": 36, "stone": 9, "iron": 4 },
+  "livestock": true,
+  "balance": true,
+  "reserve": true,
+  "build": [
+    { "building": "strategos:building/farmstead", "population": 6, "near": "food" },
+    { "building": "strategos:building/field", "population": 8, "near": "strategos:building/farmstead" },
+    { "building": "strategos:building/probe_barracks", "population": 10 },
+    { "building": "strategos:building/field", "population": 12, "near": "strategos:building/farmstead" },
+    { "building": "strategos:building/probe_barracks", "population": 14 },
+    { "building": "strategos:building/farmstead", "population": 16, "near": "food" },
+    { "building": "strategos:building/probe_barracks", "population": 18 },
+    { "phase": "town", "population": 20 }
+  ],
+  "housingMargin": 3,
+  "soldierQueue": 3,
+  "attack": { "first": 900, "every": 180, "min": 14, "muster": 24, "announce": 30 },
+  "battle": { "focus": "wounded", "behind": 4, "retreat": 0.6, "replan": 1200, "reach": 28, "defence": 600, "launch": 0.6, "spears": 6, "line": 400, "rams": 3, "finish": true },
+  "camp": { "minDistance": 40 },
+  "levels": {
+    "normal": { "think": 20, "reaction": 60, "commands": 16, "wave": 1.0, "tactics": true }
+  }
+}

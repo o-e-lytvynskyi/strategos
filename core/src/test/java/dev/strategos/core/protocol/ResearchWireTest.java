@@ -49,9 +49,10 @@ class ResearchWireTest {
     }
 
     @Test
-    void requirementsIsTheLastReasonAndCode18() {
+    void requirementsIsCode18OutsideTerritoryCode19AndOnCooldownTheLastReasonAndCode20() {
         RejectReason[] all = RejectReason.values();
-        assertThat(all[all.length - 1]).isEqualTo(RejectReason.REQUIREMENTS);
+        assertThat(all[all.length - 1]).isEqualTo(RejectReason.ON_COOLDOWN); // UNIT-10, after TERR-02's
+        assertThat(all[all.length - 2]).isEqualTo(RejectReason.OUTSIDE_TERRITORY);
         for (RejectReason reason : all) {
             WireWriter w = new WireWriter();
             WireCodecs.writeReason(w, reason);
@@ -60,6 +61,12 @@ class ResearchWireTest {
         WireWriter w = new WireWriter();
         WireCodecs.writeReason(w, RejectReason.REQUIREMENTS);
         assertThat(w.toByteArray()).containsExactly(18);
+        WireWriter t = new WireWriter();
+        WireCodecs.writeReason(t, RejectReason.OUTSIDE_TERRITORY);
+        assertThat(t.toByteArray()).containsExactly(19);
+        WireWriter c = new WireWriter();
+        WireCodecs.writeReason(c, RejectReason.ON_COOLDOWN);
+        assertThat(c.toByteArray()).containsExactly(20);
     }
 
     @Test

@@ -2,8 +2,11 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
   "Building": { "blueprint": "strategos:storehouse" },
+  "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
+  "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
   "Health": { "max": 800 },
+  "Loot": { "resources": { "wood": 20, "stone": 10 } },
   "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
   "Dropsite": { "resources": "wood stone iron" },
-  "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1" }
+  "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1 strategos:guild_lumber strategos:guild_mining" }
 }

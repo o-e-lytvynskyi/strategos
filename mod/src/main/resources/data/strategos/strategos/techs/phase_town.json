@@ -9,8 +9,14 @@
   "effects": [
     { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
     { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
-    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
-    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail +strategos:diamond_weapons +strategos:iron_armour", "filter": "Barracks" },
+    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal +strategos:building/temple", "filter": "Builder" },
+    { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
+    { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:phase_city", "filter": "CivicCentre" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_wood_2 +strategos:gather_stone_2 +strategos:gather_iron_2 +strategos:carry_2", "filter": "Storehouse" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:gather_farm_2", "filter": "Farmstead" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:masonry_1 +strategos:arrow_slits +strategos:carpentry", "filter": "Arsenal" }
   ],
-  "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
+  "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal", "strategos:building/temple", "strategos:phase_city", "strategos:diamond_weapons", "strategos:iron_armour", "strategos:gather_wood_2", "strategos:gather_stone_2", "strategos:gather_iron_2", "strategos:carry_2", "strategos:gather_farm_2", "strategos:masonry_1", "strategos:arrow_slits", "strategos:carpentry"]
 }

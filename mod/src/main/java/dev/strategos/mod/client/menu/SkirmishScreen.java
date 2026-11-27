@@ -1,9 +1,12 @@
 package dev.strategos.mod.client.menu;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.protocol.SkirmishSetup;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.mod.client.StrategosClient;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -16,7 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 /**
- * The skirmish setup (MATCH-02, spec §2.11): the map, the civilisation (the one there is, shown), the computer's level
+ * The skirmish setup (MATCH-02, spec §2.11): the map, each slot's civilisation (the template set's; one today), the computer's level
  * with its handicaps, the starting resources, the population cap and the visibility (MATCH-07). The defaults are
  * {@link SkirmishSetup#DEFAULTS}, so Skirmish then Start is two clicks; Start opens the arena world and the setup goes
  * to the server once it is joined.
@@ -31,6 +34,9 @@ public final class SkirmishScreen extends Screen {
     private SkirmishSetup.StartResources resources = SkirmishSetup.DEFAULTS.resources();
     private int population = SkirmishSetup.DEFAULTS.populationCap();
     private SkirmishSetup.Visibility visibility = SkirmishSetup.DEFAULTS.visibility();
+    private boolean dayNight = SkirmishSetup.DEFAULTS.dayNight();
+    private CivId playerCiv = CivId.DEFAULT;
+    private CivId computerCiv = CivId.DEFAULT;
 
     public SkirmishScreen(Screen parent) {
         super(Component.translatable("strategos.skirmish.title"));
@@ -39,7 +45,15 @@ public final class SkirmishScreen extends Screen {
 
     /** The setup as chosen now. */
     SkirmishSetup setup() {
-        return new SkirmishSetup(map, level, resources, population, visibility);
+        boolean custom = !playerCiv.equals(CivId.DEFAULT) || !computerCiv.equals(CivId.DEFAULT);
+        return new SkirmishSetup(
+                map,
+                level,
+                resources,
+                population,
+                visibility,
+                custom ? List.of(playerCiv, computerCiv) : List.of(),
+                dayNight);
     }
 
     @Override
@@ -50,7 +64,12 @@ public final class SkirmishScreen extends Screen {
                 .withValues(List.of(SkirmishSetup.FIRST_SKIRMISH))
                 .withInitialValue(map)
                 .create(x, y, WIDTH, 20, Component.translatable("strategos.skirmish.map"), (b, v) -> map = v));
-        y += ROW * 2;
+        y += ROW;
+        List<CivId> civs =
+                StrategosClient.templates().civs().stream().map(CivDef::id).toList();
+        addRenderableWidget(civButton("you", civs, playerCiv, x, y, v -> playerCiv = v));
+        addRenderableWidget(civButton("computer", civs, computerCiv, x + WIDTH / 2 + 2, y, v -> computerCiv = v));
+        y += ROW;
         addRenderableWidget(CycleButton.<SkirmishSetup.Level>builder(
                         v -> Component.translatable("strategos.skirmish.level." + key(v)))
                 .withValues(SkirmishSetup.Level.values())
@@ -84,6 +103,16 @@ public final class SkirmishScreen extends Screen {
                         20,
                         Component.translatable("strategos.skirmish.visibility"),
                         (b, v) -> visibility = v));
+        y += ROW;
+        addRenderableWidget(CycleButton.onOffBuilder(dayNight)
+                .withTooltip(v -> Tooltip.create(Component.translatable("strategos.skirmish.daynight.tooltip")))
+                .create(
+                        x,
+                        y,
+                        WIDTH,
+                        20,
+                        Component.translatable("strategos.skirmish.daynight"),
+                        (b, v) -> dayNight = v));
         y += ROW * 2;
         addRenderableWidget(Button.builder(
                         Component.translatable("strategos.skirmish.start"),
@@ -99,17 +128,31 @@ public final class SkirmishScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(font, title, width / 2, 20, 0xFFFFFF);
-        g.drawCenteredString(
-                font,
-                Component.translatable("strategos.skirmish.civilisation"),
-                width / 2,
-                height / 6 + 12 + ROW + 6,
-                0xA0A0A0);
     }
 
     @Override
     public void onClose() {
         Minecraft.getInstance().setScreen(parent);
+    }
+
+    /** A slot's civilisation: the set's, cycling, shown by its name key. */
+    private CycleButton<CivId> civButton(
+            String slot, List<CivId> civs, CivId initial, int x, int y, Consumer<CivId> onChange) {
+        return CycleButton.<CivId>builder(this::civName)
+                .withValues(civs)
+                .withInitialValue(civs.contains(initial) ? initial : civs.get(0))
+                .create(
+                        x,
+                        y,
+                        WIDTH / 2 - 2,
+                        20,
+                        Component.translatable("strategos.skirmish.civ." + slot),
+                        (b, v) -> onChange.accept(v));
+    }
+
+    private Component civName(CivId id) {
+        CivDef civ = StrategosClient.templates().civ(id);
+        return Component.translatable(civ == null ? id.value() : civ.name());
     }
 
     private static Component mapName(String id) {

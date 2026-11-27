@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_wood_2",
+  "icon": "minecraft:diamond_axe",
+  "cost": { "food": 200, "wood": 100 },
+  "time": 45,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:gather_wood_1" }] },
+  "supersedes": "strategos:gather_wood_1",
+  "effects": [
+    { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.4, "filter": "Worker" }
+  ]
+}

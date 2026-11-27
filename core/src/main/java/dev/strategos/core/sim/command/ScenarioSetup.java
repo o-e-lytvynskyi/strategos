@@ -1,8 +1,11 @@
 package dev.strategos.core.sim.command;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.StartKit;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -13,14 +16,18 @@ import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnDeposit;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.Livestock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /** A scenario's setup (MATCH-01): the admin commands that make a match what {@link Scenario} describes. */
@@ -28,6 +35,9 @@ import org.jspecify.annotations.Nullable;
 public final class ScenarioSetup {
     /** A slot's player that the computer plays: {@code ai:<profile>}. */
     public static final String AI = "ai:";
+
+    /** The yaw the default civilisation's start kit is written for: slot 0 of {@code first_skirmish} (facing east). */
+    public static final float KIT_YAW = 270f;
 
     private ScenarioSetup() {}
 
@@ -50,6 +60,27 @@ public final class ScenarioSetup {
             List<StartSlot> starts,
             TemplateSet templates,
             Function<String, @Nullable String> scripts) {
+        return commands(scenario, starts, templates, scripts, List.of(), r -> r);
+    }
+
+    /**
+     * As {@link #commands(Scenario, List, TemplateSet, Function)}, faction {@code k} playing {@code civs.get(k)} (the
+     * default for every faction when the list is empty) and each slot's starting resources passed through {@code scale}.
+     *
+     * <p>A slot whose faction plays the civilisation it was written for emits its entities exactly as written. One that
+     * plays another drops its {@code civ}-flagged entities and emits that civilisation's {@link StartKit} in place of
+     * the first of them, with the kit's resources when it has any. A slot with {@code kit} and no flagged entity emits
+     * its faction's kit first, whatever the civilisation. Kit offsets are in the slot's frame: written for {@link
+     * #KIT_YAW}, turned by the start slot's yaw in quarter turns, building rotations with them. A role that the
+     * civilisation has no template for, or a civilisation the set lacks, throws.
+     */
+    public static List<Command> commands(
+            Scenario scenario,
+            List<StartSlot> starts,
+            TemplateSet templates,
+            Function<String, @Nullable String> scripts,
+            List<CivId> civs,
+            UnaryOperator<Map<String, Long>> scale) {
         List<Scenario.Slot> slots = scenario.slots();
         if (starts.size() < slots.size()) {
             throw new IllegalArgumentException(slots.size() + " slots but " + starts.size() + " start slots");
@@ -67,12 +98,27 @@ public final class ScenarioSetup {
                     out.add(new SetAi(faction, profile, script));
                 }
             }
-            slot.resources().forEach((id, amount) -> { // sorted by id
+            CivId played = k < civs.size() ? civs.get(k) : CivId.DEFAULT;
+            Map<String, Long> resources = slot.resources();
+            List<Scenario.Entity> entities = slot.entities();
+            boolean flagged = slot.hasCivEntities();
+            if (flagged ? !played.equals(slot.civ()) : slot.kit()) {
+                CivDef civ = templates.civ(played);
+                if (civ == null) {
+                    throw new IllegalArgumentException("the template set has no civilisation " + played);
+                }
+                StartKit kit = civ.start();
+                if (!kit.resources().isEmpty()) {
+                    resources = kit.resources();
+                }
+                entities = withKit(slot.entities(), flagged, kit(civ, at.yaw()));
+            }
+            scale.apply(resources).forEach((id, amount) -> { // sorted by id
                 if (amount > 0) {
                     out.add(new Grant(faction, id, amount));
                 }
             });
-            for (Scenario.Entity e : slot.entities()) {
+            for (Scenario.Entity e : entities) {
                 UnitTemplate t = templates.byId(e.template());
                 if (t == null) {
                     throw new IllegalArgumentException(
@@ -106,6 +152,71 @@ public final class ScenarioSetup {
                             e.spread()));
                 }
             }
+        }
+        return out;
+    }
+
+    /**
+     * The commands that spawn a map's wild {@code herds} (ECO-10), in order, as Gaia's (the slot after the scenario's):
+     * each at its own place, scattered by the same seeded rolls every run. A template that is not in {@code templates}
+     * or is not an animal throws.
+     */
+    public static List<Command> herds(Scenario scenario, List<Herd> herds, TemplateSet templates) {
+        FactionSlot gaia = new FactionSlot(scenario.slots().size());
+        List<Command> out = new ArrayList<>();
+        for (Herd h : herds) {
+            UnitTemplate t = templates.byId(h.template());
+            if (t == null || t.isBuilding() || !Livestock.isFauna(templates, t.netIndex())) {
+                throw new IllegalArgumentException(
+                        "a herd names " + h.template().value() + ", which is not an animal");
+            }
+            out.add(new SpawnUnits(h.template(), gaia, new Vec2d(h.x(), h.z()), h.count(), h.spread()));
+        }
+        return out;
+    }
+
+    /** {@code entities} with the kit in place of the first flagged one (the others dropped), or ahead of them all. */
+    private static List<Scenario.Entity> withKit(
+            List<Scenario.Entity> entities, boolean flagged, List<Scenario.Entity> kit) {
+        List<Scenario.Entity> out = new ArrayList<>();
+        if (!flagged) {
+            out.addAll(kit);
+            out.addAll(entities);
+            return out;
+        }
+        boolean placed = false;
+        for (Scenario.Entity e : entities) {
+            if (!e.civ()) {
+                out.add(e);
+            } else if (!placed) {
+                out.addAll(kit);
+                placed = true;
+            }
+        }
+        return out;
+    }
+
+    /** {@code civ}'s start kit as scenario entities for a slot facing {@code yaw}: roles resolved, offsets turned. */
+    private static List<Scenario.Entity> kit(CivDef civ, float yaw) {
+        int quarters = Math.floorMod(Math.round((yaw - KIT_YAW) / 90f), 4);
+        List<Scenario.Entity> out = new ArrayList<>();
+        for (StartKit.Entity e : civ.start().entities()) {
+            TemplateId template = e.template();
+            if (template == null) {
+                template = civ.roles().get(java.util.Objects.requireNonNull(e.role()));
+                if (template == null) {
+                    throw new IllegalArgumentException("the start kit of " + civ.id() + " names role " + e.role()
+                            + ", which it has no template for");
+                }
+            }
+            int dx = e.dx();
+            int dz = e.dz();
+            for (int q = 0; q < quarters; q++) { // a quarter turn from east to south: (dx, dz) -> (-dz, dx)
+                int turned = -dz;
+                dz = dx;
+                dx = turned;
+            }
+            out.add(new Scenario.Entity(template, dx, dz, e.count(), e.spread(), (e.rotation() + quarters) & 3, false));
         }
         return out;
     }

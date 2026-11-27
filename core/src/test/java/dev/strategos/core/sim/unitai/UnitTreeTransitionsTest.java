@@ -65,6 +65,7 @@ class UnitTreeTransitionsTest {
         int dropsite;
         int site;
         int enemyHouse;
+        int charge;
 
         Unit(StateId from, boolean worker) {
             h = worker
@@ -98,6 +99,14 @@ class UnitTreeTransitionsTest {
                 BuildTransitionRows.start(this, from);
             } else if (from.equals(UnitAi.BURN_APPROACHING) || from.equals(UnitAi.BURNING)) {
                 BurnTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.CAPTURE_APPROACHING) || from.equals(UnitAi.CAPTURING)) {
+                CaptureTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.ABILITY)) {
+                AbilityTransitionRows.start(this);
+            } else if (from.equals(UnitAi.FORMATION_MARCHING) || from.equals(UnitAi.FORMATION_HOLDING)) {
+                FormationTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.GUARDING) || from.equals(UnitAi.GUARD_STANDING)) {
+                GuardTransitionRows.start(this, from);
             } else if (from.equals(UnitAi.FLEEING)) {
                 FleeTransitionRows.start(this);
             } else if (from.equals(UnitAi.GARRISON_APPROACHING) || from.equals(UnitAi.GARRISONED)) {
@@ -154,7 +163,7 @@ class UnitTreeTransitionsTest {
                 .orElseThrow();
     }
 
-    private static Arguments row(
+    static Arguments row(
             String name,
             StateId from,
             Function<Unit, @Nullable BusMessage> message,
@@ -256,7 +265,11 @@ class UnitTreeTransitionsTest {
                         BuildTransitionRows.rows(),
                         BurnTransitionRows.rows(),
                         FleeTransitionRows.rows(),
-                        GarrisonTransitionRows.rows())
+                        GarrisonTransitionRows.rows(),
+                        CaptureTransitionRows.rows(),
+                        AbilityTransitionRows.rows(),
+                        FormationTransitionRows.rows(),
+                        GuardTransitionRows.rows())
                 .flatMap(r -> r);
     }
 

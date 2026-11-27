@@ -453,4 +453,52 @@ public final class PathTests {
             }
         }
     }
+
+    /**
+     * PATH-12.2: a unit of faction 0 ordered through its own palisade gate (a wall across the arena with one gate) walks
+     * it without stopping: near the gate its position changes on every tick but one at most, and it arrives on the far side.
+     */
+    @StrategosTest(timeoutTicks = 1_500)
+    public static void own_gate_no_stop(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        WallTests.wallAcross(rt);
+        var state = new Object() {
+            int unit = -1;
+            boolean ordered;
+            double lastX = Double.NaN;
+            double lastZ = Double.NaN;
+            int still;
+            int stillest;
+            boolean crossed;
+        };
+        h.onEachTick(() -> {
+            if (!state.ordered) {
+                return;
+            }
+            UnitView u = unit(rt, state.unit);
+            if (Math.abs(u.x() - WallTests.WALL_X) <= 3 && u.state() == UnitState.WALKING) {
+                state.still = u.x() == state.lastX && u.z() == state.lastZ ? state.still + 1 : 0;
+                state.stillest = Math.max(state.stillest, state.still);
+                check(state.stillest <= 1, "it stood still " + state.stillest + " ticks at the gate (" + u.x() + ")");
+            }
+            state.crossed |= u.x() > WallTests.WALL_X + 1;
+            state.lastX = u.x();
+            state.lastZ = u.z();
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> WallTests.wallStands(rt))
+                .thenExecute(() -> spawn(rt, 9.5, 13.5, 1, 0))
+                .thenWaitUntil(() -> check(handles(rt).length == 1, "not spawned yet"))
+                .thenExecute(() -> {
+                    state.unit = onlyUnit(rt);
+                    move(rt, state.unit, 24.5, 13.5);
+                    state.ordered = true;
+                })
+                .thenWaitUntil(() -> {
+                    UnitView u = unit(rt, state.unit);
+                    check(u.state() == UnitState.IDLE && u.x() == 24.5, "it has not arrived: " + u.x() + ", " + u.z());
+                })
+                .thenExecute(() -> check(state.crossed, "it never crossed the wall"))
+                .thenSucceed();
+    }
 }

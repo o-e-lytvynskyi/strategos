@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.CivRoles;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import org.jspecify.annotations.Nullable;
@@ -12,9 +13,6 @@ import org.jspecify.annotations.Nullable;
  * can train and the stock pays for, the one furthest below its wanted share.
  */
 final class Composition {
-    static final TemplateId ARCHER = new TemplateId("strategos:unit/archer");
-    static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
-
     private static final int MASK = 0xFFFF;
 
     private Composition() {}
@@ -64,9 +62,16 @@ final class Composition {
      */
     static @Nullable TemplateId pick(
             AiView view, StrategyScript script, AiMemory memory, TemplateId building, int[] have) {
-        TemplateId[] units = {new TemplateId(script.soldier()), ARCHER, HORSEMAN};
+        // the foot soldier is the script's, else the civilisation's infantry; the others are its ranged and cavalry
+        // roles
+        TemplateId[] units = {
+            script.soldier().isEmpty() ? view.civRole(CivRoles.INFANTRY) : new TemplateId(script.soldier()),
+            view.civRole(CivRoles.RANGED),
+            view.civRole(CivRoles.CAVALRY)
+        };
         int total = have[AiView.ROLE_SPEAR] + have[AiView.ROLE_ARCHER] + have[AiView.ROLE_HORSE];
         if (script.battle().spears() > 0
+                && units[0] != null
                 && view.trains(building, units[0])
                 && have[AiView.ROLE_SPEAR] < script.battle().line() / 1000.0 * (total + 1.0)) {
             return view.affords(units[0]) ? units[0] : null;
@@ -74,14 +79,15 @@ final class Composition {
         TemplateId best = null;
         double deficit = Double.NEGATIVE_INFINITY;
         for (int k = 0; k < units.length; k++) {
-            if (!view.trains(building, units[k]) || !view.affords(units[k])) {
+            TemplateId unit = units[k];
+            if (unit == null || !view.trains(building, unit) || !view.affords(unit)) {
                 continue;
             }
             int role = AiView.ROLE_SPEAR + k;
             double d = want(memory, role) / 1000.0 - have[role] / (total + 1.0);
             if (d > deficit) {
                 deficit = d;
-                best = units[k];
+                best = unit;
             }
         }
         return best;

@@ -2,6 +2,7 @@ package dev.strategos.core.content;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
@@ -18,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * An immutable set of unit templates in net-index order, with their flattened JSON (04 §8.3): its version is the
  * SHA-256 of the canonical JSON of every template keyed by id and, when the set has techs, of the techs under the key
- * {@code $techs}, so two servers with equal content have equal versions.
+ * {@code $techs} and, when they are not just the implied default, of the civilisations under {@code $civs}, so two servers with equal content have equal versions.
  * Net indices come from the session's {@link TemplateIdTable}, so a set after a reload may leave a retired one out.
  * {@link TemplateCompiler} builds sets from data; the constructor builds one from code, as tests and M0 did.
  */
@@ -41,6 +42,14 @@ public final class TemplateSet {
     private final @Nullable Blueprint[] blueprints; // by net index: a building's shape
     private final List<TechDef> techs; // ascending by net index
     private final int[] techPosition; // by tech net index: the tech's place in the list, -1 for a retired index
+    private final List<CivDef> civs; // ascending by id; never empty
+    private final boolean impliedCivs; // the built-in default, left out of the hash
+    private final List<AbilityDef> abilities; // every ability of the set by id, ascending (UNIT-10)
+    private final List<List<AbilityDef>> abilitiesOf; // by net index: a template's own, ascending by id
+    private final boolean autocasts; // whether any ability is used by itself
+    private final @Nullable PromotionDef[] promotionByIndex; // by net index: a unit's ranks, null for most (CMB-11)
+    private final long[][] promotionMilli; // by net index: the thresholds as primitives, null where no ranks
+    private final boolean hasRanks; // whether any template has ranks
 
     /** A set from code: each template's JSON is {@link UnitTemplate#toJson()}. */
     public TemplateSet(List<UnitTemplate> templates) {
@@ -54,6 +63,15 @@ public final class TemplateSet {
 
     /** As above, with the technologies (TECH-01) ascending by net index, ids distinct. */
     TemplateSet(List<UnitTemplate> templates, List<JsonObject> flattened, List<TechDef> techs) {
+        this(templates, flattened, techs, List.of());
+    }
+
+    /**
+     * As above, with the civilisations (CIV-01) distinct by id. No civilisations, or exactly the built-in default,
+     * is the implied default: the set then has it and its canonical form no {@code $civs} entry, so every set made
+     * before civilisations keeps its version.
+     */
+    TemplateSet(List<UnitTemplate> templates, List<JsonObject> flattened, List<TechDef> techs, List<CivDef> civs) {
         if (templates.size() != flattened.size()) {
             throw new IllegalArgumentException("one JSON per template");
         }
@@ -113,6 +131,59 @@ public final class TemplateSet {
         if (!techs.isEmpty()) {
             canonical.add("$techs", techJson); // no template id can be '$techs': sets without techs keep their hash
         }
+        List<CivDef> sortedCivs = new ArrayList<>(civs);
+        sortedCivs.sort((a, b) -> a.id().value().compareTo(b.id().value()));
+        JsonObject civJson = new JsonObject();
+        for (int i = 0; i < sortedCivs.size(); i++) {
+            CivDef c = sortedCivs.get(i);
+            if (i > 0 && sortedCivs.get(i - 1).id().equals(c.id())) {
+                throw new IllegalArgumentException(c.id() + " listed twice");
+            }
+            civJson.add(c.id().value(), c.toJson());
+        }
+        boolean implied =
+                sortedCivs.isEmpty() || CanonicalJson.write(civJson).equals(BuiltinTemplates.DEFAULT_CIVS_CANONICAL);
+        this.impliedCivs = implied;
+        this.civs = implied ? List.of(BuiltinTemplates.DEFAULT_CIV) : List.copyOf(sortedCivs);
+        if (!implied) {
+            canonical.add("$civs", civJson); // likewise reserved: a set with only the default keeps its hash
+        }
+        Map<String, AbilityDef> byId = new TreeMap<>();
+        List<List<AbilityDef>> own = new ArrayList<>();
+        for (int k = 0; k < indices; k++) {
+            own.add(List.of());
+        }
+        for (int i = 0; i < templates.size(); i++) {
+            List<AbilityDef> mine = templates.get(i).isBuilding() ? List.of() : AbilityChecks.defs(copies.get(i));
+            for (AbilityDef def : mine) {
+                byId.putIfAbsent(def.id(), def);
+            }
+            own.set(templates.get(i).netIndex(), mine);
+        }
+        this.abilities = List.copyOf(byId.values());
+        this.abilitiesOf = List.copyOf(own);
+        this.autocasts = abilities.stream().anyMatch(AbilityDef::autocast);
+        List<@Nullable PromotionDef> ranked = new ArrayList<>();
+        for (int k = 0; k < indices; k++) {
+            ranked.add(null);
+        }
+        for (int i = 0; i < templates.size(); i++) {
+            if (!templates.get(i).isBuilding()) {
+                ranked.set(templates.get(i).netIndex(), PromotionChecks.def(copies.get(i)));
+            }
+        }
+        this.promotionByIndex = ranked.toArray(new PromotionDef[0]);
+        this.promotionMilli = new long[indices][];
+        boolean any = false;
+        for (int k = 0; k < indices; k++) {
+            PromotionDef def = promotionByIndex[k];
+            if (def != null) {
+                any = true;
+                promotionMilli[k] =
+                        def.thresholds().stream().mapToLong(Long::longValue).toArray();
+            }
+        }
+        this.hasRanks = any;
         this.sha = CanonicalJson.sha256(CanonicalJson.write(canonical));
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
@@ -217,6 +288,25 @@ public final class TemplateSet {
                 : null;
     }
 
+    /** The civilisations (CIV-01) ascending by id; a set with none declared has the built-in default alone. */
+    public List<CivDef> civs() {
+        return civs;
+    }
+
+    /** Whether the civilisations are the implied default: the canonical form has no {@code $civs}. */
+    public boolean hasImpliedCivs() {
+        return impliedCivs;
+    }
+
+    public @Nullable CivDef civ(CivId id) {
+        for (CivDef c : civs) {
+            if (c.id().equals(id)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     /** A copy of a template's flattened JSON, or null for an unknown id. */
     public @Nullable JsonObject flattened(TemplateId id) {
         UnitTemplate t = byId(id);
@@ -258,6 +348,61 @@ public final class TemplateSet {
     /** The token lists templates carry: string leaves of space-separated tokens, such as {@code Identity/classes}. */
     public ValuePaths tokenPaths() {
         return tokenPaths;
+    }
+
+    /** Every ability of the set, ascending by id: an ability's index here is its net index (UNIT-10). */
+    public List<AbilityDef> abilities() {
+        return abilities;
+    }
+
+    /** The ability {@code id}, or null. */
+    public @Nullable AbilityDef ability(String id) {
+        int at = abilityIndex(id);
+        return at < 0 ? null : abilities.get(at);
+    }
+
+    /** The index of ability {@code id} in {@link #abilities()}, or -1. */
+    public int abilityIndex(String id) {
+        int lo = 0;
+        int hi = abilities.size() - 1;
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            int c = abilities.get(mid).id().compareTo(id);
+            if (c == 0) {
+                return mid;
+            }
+            if (c < 0) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return -1;
+    }
+
+    /** Template {@code netIndex}'s abilities, ascending by id; none for a building or a retired index. */
+    public List<AbilityDef> abilitiesOf(int netIndex) {
+        return netIndex >= 0 && netIndex < abilitiesOf.size() ? abilitiesOf.get(netIndex) : List.of();
+    }
+
+    /** Template {@code netIndex}'s ranks (CMB-11), or null for a template that has none: most, and every building. */
+    public @Nullable PromotionDef promotion(int netIndex) {
+        return netIndex >= 0 && netIndex < promotionByIndex.length ? promotionByIndex[netIndex] : null;
+    }
+
+    /** Whether any template of the set has ranks; false makes experience crediting a no-op. */
+    public boolean hasPromotions() {
+        return hasRanks;
+    }
+
+    /** Template {@code netIndex}'s rank thresholds in milli-experience as primitives; null without ranks. */
+    public long @Nullable [] promotionThresholds(int netIndex) {
+        return netIndex >= 0 && netIndex < promotionMilli.length ? promotionMilli[netIndex] : null;
+    }
+
+    /** Whether some ability of the set is used by its idle owners by themselves. */
+    public boolean hasAutocast() {
+        return autocasts;
     }
 
     /** Template {@code netIndex}'s number at value path {@code path}, the typed default for a core path, else NaN. */

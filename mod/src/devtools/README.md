@@ -12,6 +12,12 @@ without one (`.github/workflows/scenario.yml`).
 
 - Scenarios are listed in `ScenarioRunner#scenarioNamed`. Output: `mod/build/scenario/out/`
   (`result.json` with `"ok"` and `"platform"`, the PNGs).
+- `m10_goldens`: M10's consent-batch frames (tech tree, rank insignia, idle cycling, orthographic view, night), about 5
+  minutes. Under a render mod the run checks that the orthographic view refuses by default, then opts in
+  (`orthographicWithRenderMods`): `result.json` says whether it drew or fell back to perspective after a fault, and only
+  a drawn view is shot.
+- `rts_frame_veterans`: PERF-14 on `rts_frame_battle`'s scene with every unit ranked, so the bars' timer holds the
+  insignia (M10).
 - `-Pcompat` adds the client set most players run (Sodium, Iris and others) to the run's `mods`.
 - `-Pscenario.jfr=profile` (or a `.jfc` file) records the run into `mod/build/scenario/scenario.jfr`.
 
@@ -51,7 +57,9 @@ mod/src/devtools/goldens-proposed/<platform>/<scenario>/       proposals waiting
   passes.
 - **Scenes for goldens** pin everything that varies between runs: a fixed anchor and seed, noon,
   no weather, the cursor mid-window, and `/tick freeze` once the units stand, so bodies draw at a
-  fixed partial tick (`rts_goldens`).
+  fixed partial tick (`rts_goldens`). The runner pins the client's light to noon on every tick; a scene about the
+  light itself calls `ctx.worldLight()`, and the client takes the server's time from its next time packet (`m10_night`,
+  the demo).
 
 ### Approving goldens
 

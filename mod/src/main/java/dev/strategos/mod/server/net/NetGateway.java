@@ -7,26 +7,35 @@ import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.AttackSpread;
+import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
+import dev.strategos.core.protocol.DeleteUnits;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.Follow;
+import dev.strategos.core.protocol.FormationMove;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.Garrison;
+import dev.strategos.core.protocol.Guard;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Patrol;
+import dev.strategos.core.protocol.PlaceWall;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
+import dev.strategos.core.protocol.UseAbility;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
@@ -42,6 +51,7 @@ import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import dev.strategos.mod.server.world.MatchSky;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -151,6 +161,14 @@ public final class NetGateway {
     }
 
     /**
+     * The civilisations a join lists: none when every faction plays the default, so such a join is the bytes a client
+     * from before civilisations reads (it rejects trailing bytes).
+     */
+    static List<String> civs(MatchConfig config) {
+        return config.hasCustomCivs() ? config.civs().stream().map(CivId::value).toList() : List.of();
+    }
+
+    /**
      * Tells {@code player}, just seated in {@code rt} at {@code slot}, which match it is in ({@code match_join}); the
      * next flush sends the match's state to its members, the player among them, as {@code match_state} goes only to a
      * match.
@@ -177,7 +195,8 @@ public final class NetGateway {
                         space.maxY(),
                         core.queries().config().factions(),
                         slot,
-                        rules)));
+                        rules,
+                        civs(core.queries().config()))));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
     }
@@ -208,7 +227,9 @@ public final class NetGateway {
             if (lastState.get(rt.id().value()) != rt.lifecycle()
                     || !looks.equals(lastLooks.get(rt.id().value()))
                     || tick % STATE_EVERY == 0) {
-                send(new Audience.Match(rt.id()), state(rt, looks));
+                send(
+                        new Audience.Match(rt.id()),
+                        state(rt, looks, MatchSky.of(rt, matches.get()) == MatchSky.Mode.TINT));
             }
         }
         lastState.clear();
@@ -327,7 +348,7 @@ public final class NetGateway {
         }
     }
 
-    private static MatchStatePayload state(MatchRuntime rt, List<FactionLook> looks) {
+    private static MatchStatePayload state(MatchRuntime rt, List<FactionLook> looks, boolean tint) {
         MatchStateMsg.Lifecycle lifecycle = switch (rt.lifecycle()) {
             case CREATED -> MatchStateMsg.Lifecycle.CREATED;
             case PREPARING -> MatchStateMsg.Lifecycle.PREPARING;
@@ -343,7 +364,7 @@ public final class NetGateway {
                 ? core.queries().matchResults()
                 : null;
         return new MatchStatePayload(
-                new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results, looks));
+                new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results, looks, tint));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {
@@ -366,6 +387,13 @@ public final class NetGateway {
             case AttackSpread spread -> spread.units().size();
             case SetStance stance -> stance.units().size();
             case Garrison garrison -> garrison.units().size();
+            case Capture capture -> capture.units().size();
+            case UseAbility use -> use.units().size();
+            case FormationMove formation -> formation.units().size();
+            case Patrol patrol -> patrol.units().size();
+            case Guard guard -> guard.units().size();
+            case DeleteUnits delete -> delete.units().size();
+            case PlaceWall wall -> wall.builders().size();
             case Ungarrison ungarrison ->
                 ungarrison.units().size() == 0
                         ? EVERYONE_INSIDE

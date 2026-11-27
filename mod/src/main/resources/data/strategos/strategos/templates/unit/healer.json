@@ -1,0 +1,29 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.healer", "icon": "minecraft:glistering_melon_slice", "classes": "+Healer +Organic" },
+  "Promotion": { "value": 130 },
+  "Loot": { "resources": { "food": 15, "iron": 3 } },
+  "Capture": { "strength": 1.0 },
+  "Health": { "max": 60 },
+  "Behaviour": { "flee": 8, "stance": "passive" },
+  "Attack": { "Melee": { "hack": 1, "reach": 1.2, "prepare": 10, "repeat": 20 } },
+  "Abilities": {
+    "heal": {
+      "target": "unit",
+      "range": 12,
+      "cooldown": 40,
+      "autocast": true,
+      "pick": "most_wounded_ally",
+      "icon": "minecraft:glistering_melon_slice",
+      "effects": [
+        { "kind": "heal", "params": { "amount": 5 } }
+      ]
+    }
+  },
+  "Cost": {
+    "resources": { "food": 100, "iron": 30 },
+    "population": 1,
+    "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training a healer takes as long as drilling a spearman" }
+  },
+  "Body": { "skin": "strategos:units/worker" }
+}

@@ -62,6 +62,9 @@ public final class StatService {
     /** The class token of units that gather (UNIT-04). */
     public static final String GATHERER = "Gatherer";
 
+    /** The class token of units that hunt (ECO-10): they gather what they have a rate for, though no worker. */
+    public static final String HUNTER = "Hunter";
+
     /** The class token of units that build and repair (UNIT-04). */
     public static final String BUILDER = "Builder";
 
@@ -405,6 +408,11 @@ public final class StatService {
     /** Whether unit {@code index} gathers: its classes hold {@value #GATHERER} (D-02, UNIT-04). */
     public boolean canGather(int index) {
         return classes(index).contains(GATHERER);
+    }
+
+    /** Whether unit {@code index} hunts: its classes hold {@value #HUNTER} (ECO-10). */
+    public boolean canHunt(int index) {
+        return classes(index).contains(HUNTER);
     }
 
     /** Whether unit {@code index} builds and repairs: its classes hold {@value #BUILDER} (D-02, UNIT-04). */

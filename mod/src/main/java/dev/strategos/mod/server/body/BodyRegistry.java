@@ -97,7 +97,7 @@ public final class BodyRegistry {
             if (!budget.tryTake()) {
                 return;
             }
-            UnitEntity body = spawn(level, handle, unit, q.templates());
+            UnitEntity body = spawn(level, handle, unit, q.templates(), q.rank(handle));
             if (body != null) {
                 bodies.put(handle, body);
                 wantedHandles.remove();
@@ -221,6 +221,14 @@ public final class BodyRegistry {
         }
     }
 
+    /** Unit {@code handle} reached {@code rank} (CMB-11): its body shows the insignia, vanilla syncs the change to its trackers. */
+    public void rank(int handle, int rank) {
+        UnitEntity body = bodies.get(handle);
+        if (body != null) {
+            body.setRank(rank);
+        }
+    }
+
     /** One death tick for each dying body; vanilla removes one at its twentieth. */
     public void tickDying() {
         dying.removeIf(body -> {
@@ -268,14 +276,16 @@ public final class BodyRegistry {
     }
 
     private @Nullable UnitEntity spawn(
-            ServerLevel level, int handle, UnitView unit, dev.strategos.core.content.TemplateSet templates) {
+            ServerLevel level, int handle, UnitView unit, dev.strategos.core.content.TemplateSet templates, int rank) {
         UnitEntity body =
                 ModEntityTypes.forTemplate(templates, unit.templateIndex()).create(level);
         if (body == null) {
             return null; // the type is disabled in this level
         }
         body.bind(new UnitSpawnData(
-                id.value(), handle, unit.templateIndex(), unit.faction().value(), UnitSpawnData.KINEMATIC));
+                id.value(), handle, unit.templateIndex(), unit.faction().value(), UnitSpawnData.KINEMATIC, (byte)
+                        rank));
+        body.setRank(rank);
         body.moveTo(space.worldX(unit.x()), unit.y(), space.worldZ(unit.z()), unit.yaw(), 0);
         body.setYHeadRot(unit.yaw());
         body.setYBodyRot(unit.yaw());

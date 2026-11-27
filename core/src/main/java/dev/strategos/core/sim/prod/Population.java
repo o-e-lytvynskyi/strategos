@@ -16,9 +16,6 @@ public final class Population {
     /** The path of a building's housing. */
     public static final String HOUSING = "Housing/capacity";
 
-    /** The civilisation's base housing, before any building: none until civilisations (CIV-01). */
-    public static final int BASE = 0;
-
     private int max;
     private final int[] used;
     private final int[] housing;
@@ -42,14 +39,9 @@ public final class Population {
         this.max = max;
     }
 
-    /** The most population the faction may use now. */
-    public int cap(int faction) {
-        return Math.min(housing[faction] + BASE, max);
-    }
-
-    /** Whether {@code amount} more fits under the faction's cap. */
-    public boolean fits(int faction, int amount) {
-        return used[faction] + amount <= cap(faction);
+    /** The match's population maximum, the ceiling of every cap. */
+    public int max() {
+        return max;
     }
 
     public void add(int faction, int amount) {

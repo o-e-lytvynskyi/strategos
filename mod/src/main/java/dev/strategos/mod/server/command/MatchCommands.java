@@ -12,12 +12,14 @@ import static dev.strategos.mod.server.command.StrategosCommands.withMatchAtSour
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.protocol.Resign;
 import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SkirmishSetup;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
@@ -36,6 +38,7 @@ import dev.strategos.mod.server.world.ArenaWorld;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -91,7 +94,13 @@ final class MatchCommands {
                 .then(Commands.literal("config")
                         .then(Commands.argument("key", StringArgumentType.word())
                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                        List.of("populationMax", "victory", "revealMap", "explored", "aiVision"),
+                                        List.of(
+                                                "populationMax",
+                                                "victory",
+                                                "revealMap",
+                                                "explored",
+                                                "aiVision",
+                                                "dayNight"),
                                         builder))
                                 .then(Commands.argument("value", StringArgumentType.word())
                                         .executes(ctx -> withMatchAtSource(ctx.getSource(), rt -> {
@@ -196,9 +205,13 @@ final class MatchCommands {
         }
         Scenario scenario;
         List<StartSlot> starts;
+        List<Herd> herds;
         try {
             scenario = Scenarios.load(source.getServer(), id);
-            starts = MapPackageLoader.load(source.getServer(), map).manifest().startSlots();
+            MapManifest manifest =
+                    MapPackageLoader.load(source.getServer(), map).manifest();
+            starts = manifest.startSlots();
+            herds = manifest.herds();
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
@@ -212,12 +225,13 @@ final class MatchCommands {
         int sent = Scenarios.apply(
                         source.getServer(), rt, scenario, starts, core.queries().templates())
                 .size();
+        sent += Scenarios.herds(rt, scenario, herds, core.queries().templates()).size();
         return rt.id() + " set up as " + id + ": " + sent + " commands";
     }
 
     /**
      * {@code skirmish <map> [level=easy|normal|hard] [visibility=fog|explored|revealed] [resources=map|low|high]
-     * [population=50..200]} (MATCH-02): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
+     * [population=50..200] [civ=<id>[,<id>]] [daynight=on|off]} (MATCH-02, CIV-01: one civilisation for every slot, or one per slot): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
      * skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one, with seed
      * {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it as its
      * observer.
@@ -257,6 +271,15 @@ final class MatchCommands {
         });
     }
 
+    /** {@code on} or {@code off} (MATCH-16's day and night); anything else is a bad option. */
+    private static boolean onOff(String value) {
+        return switch (value) {
+            case "ON" -> true;
+            case "OFF" -> false;
+            default -> throw new IllegalArgumentException("neither on nor off: " + value);
+        };
+    }
+
     /** The setup that {@code options} (space-separated {@code key=value}) make of the defaults. */
     static SkirmishSetup setup(ResourceLocation map, String options) {
         SkirmishSetup d = SkirmishSetup.DEFAULTS;
@@ -264,6 +287,8 @@ final class MatchCommands {
         SkirmishSetup.Visibility visibility = d.visibility();
         SkirmishSetup.StartResources resources = d.resources();
         int population = d.populationCap();
+        List<CivId> civs = d.civs();
+        boolean dayNight = d.dayNight();
         for (String token : options.trim().split("\\s+", -1)) {
             if (token.isEmpty()) {
                 continue;
@@ -277,6 +302,8 @@ final class MatchCommands {
                     case "visibility" -> visibility = SkirmishSetup.Visibility.valueOf(value);
                     case "resources" -> resources = SkirmishSetup.StartResources.valueOf(value);
                     case "population" -> population = Integer.parseInt(value);
+                    case "civ" -> civs = civs(token.substring(eq + 1));
+                    case "daynight" -> dayNight = onOff(value);
                     default -> throw new MatchRefusedException("unknown skirmish option " + key);
                 }
             } catch (IllegalArgumentException e) {
@@ -284,10 +311,23 @@ final class MatchCommands {
             }
         }
         try {
-            return new SkirmishSetup(map.toString(), level, resources, population, visibility);
+            return new SkirmishSetup(map.toString(), level, resources, population, visibility, civs, dayNight);
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
+    }
+
+    /** {@code a:b,c:d} as civilisation ids: one id is every slot's, else one per slot. */
+    private static List<CivId> civs(String list) {
+        List<CivId> out = new ArrayList<>();
+        for (String id : list.split(",", -1)) {
+            try {
+                out.add(new CivId(id.trim()));
+            } catch (IllegalArgumentException e) {
+                throw new MatchRefusedException("civ=" + list + ": " + e.getMessage());
+            }
+        }
+        return out;
     }
 
     private static int skirmish(CommandSourceStack source, ResourceLocation map, String seedArg) {

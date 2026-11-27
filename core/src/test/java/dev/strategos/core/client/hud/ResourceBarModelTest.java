@@ -44,7 +44,7 @@ class ResourceBarModelTest {
             FactionState held = model.faction();
             assertThat(held).isNotNull();
             income.accept(held);
-            ResourceBar bar = ResourceBar.of(model.faction(), IDS, income);
+            ResourceBar bar = ResourceBar.of(model.faction(), IDS, income, r -> true);
             for (int r = 0; r < IDS.size(); r++) {
                 ResourceBar.Entry e = bar.resources().get(r);
                 assertThat(e.id()).isEqualTo(IDS.get(r));
@@ -59,7 +59,20 @@ class ResourceBarModelTest {
                 assertThat(held.tick()).as("a stale state is ignored").isEqualTo(tick);
             }
         }
-        assertThat(ResourceBar.of(null, IDS, income)).isEqualTo(ResourceBar.EMPTY);
+        assertThat(ResourceBar.of(null, IDS, income, r -> true)).isEqualTo(ResourceBar.EMPTY);
+    }
+
+    @Test
+    void aResourceTheFactionDoesNotUseIsNotListed() {
+        Income income = new Income();
+        List<Long> four = List.of(0L, 0L, 0L, 0L);
+        FactionState state = new FactionState(2, 0, 100, four, four, four, 0, 0, 0, List.of(0, 0, 0, 0));
+        ResourceBar all = ResourceBar.of(state, IDS, income, r -> true);
+        ResourceBar some = ResourceBar.of(state, IDS, income, r -> r != 2);
+
+        assertThat(all.resources()).extracting(ResourceBar.Entry::id).containsExactlyElementsOf(IDS);
+        assertThat(some.resources()).extracting(ResourceBar.Entry::id).containsExactly("food", "wood", "iron");
+        assertThat(some.populationCap()).isEqualTo(all.populationCap());
     }
 
     @Test

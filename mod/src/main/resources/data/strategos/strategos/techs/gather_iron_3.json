@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_iron_3",
+  "icon": "minecraft:iron_block",
+  "cost": { "food": 300, "wood": 300, "stone": 150 },
+  "time": 70,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_iron_2" }] },
+  "supersedes": "strategos:gather_iron_2",
+  "effects": [
+    { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.6, "filter": "Worker" }
+  ]
+}

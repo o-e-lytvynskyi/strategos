@@ -46,7 +46,21 @@ public final class DemoCatalog {
             new RaidChapter(),
             new SiegeChapter(),
             new TowerChapter(),
-            new NoticesChapter());
+            new NoticesChapter(),
+            new TerritoryChapter(),
+            new CaptureChapter(),
+            new GarrisonHealChapter(),
+            new TowersChapter(),
+            new PalisadeChapter(),
+            new CityChapter(),
+            new TreeChapter(),
+            new HealersChapter(),
+            new VeteransChapter(),
+            new FormationsChapter(),
+            new PatrolChapter(),
+            new HuntChapter(),
+            new ChargeChapter(),
+            new NightChapter());
 
     private DemoCatalog() {}
 

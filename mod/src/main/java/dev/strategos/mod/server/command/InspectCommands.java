@@ -8,7 +8,9 @@ import static dev.strategos.mod.server.command.StrategosCommands.withMatchAtSour
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.ValuePath;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.TechId;
@@ -177,9 +179,11 @@ final class InspectCommands {
     /** One value's base, the modifiers that make it, and the result. */
     private static String showStat(MatchRuntime rt, int handle, String path) {
         MatchQueries q = coreOf(rt).queries();
-        if (q.unit(handle) == null) {
+        UnitView unit = q.unit(handle);
+        if (unit == null) {
             throw new MatchRefusedException(rt.id() + " has no unit " + Handle.toString(handle));
         }
+        FactionSlot owner = unit.faction();
         StatBreakdown b = q.stats(handle, path);
         if (b == null) {
             throw new MatchRefusedException("no value path '" + path + "'; /strategos stats " + handle + " lists them");
@@ -188,12 +192,13 @@ final class InspectCommands {
                 new StringBuilder(rt.id() + " " + Handle.toString(handle) + " " + path + ": base " + number(b.base()));
         for (Modifier m : b.modifiers()) {
             TechId tech = q.techOf(m.sourceId()); // a technology's modifiers name the tech (TECH-01)
+            CivDef civ = q.civOf(m.sourceId(), owner); // a civilisation's bonuses name it (CIV-01)
             line.append(", ")
                     .append(m.op().name().toLowerCase(Locale.ROOT))
                     .append(' ')
                     .append(number(m.value()))
                     .append(" (source ")
-                    .append(tech == null ? String.valueOf(m.sourceId()) : tech.value())
+                    .append(tech != null ? tech.value() : civ != null ? civ.id().value() : String.valueOf(m.sourceId()))
                     .append(", stage ")
                     .append(m.stage())
                     .append(')');

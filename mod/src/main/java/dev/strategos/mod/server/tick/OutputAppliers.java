@@ -26,6 +26,7 @@ import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitGear;
 import dev.strategos.core.sim.UnitHurt;
+import dev.strategos.core.sim.UnitRanked;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.UnitStruck;
@@ -210,6 +211,7 @@ public final class OutputAppliers {
                                                 gear.subtype()));
                     }
                 }
+                case UnitRanked ranked -> rt.bodies().rank(ranked.handle(), ranked.rank());
                 case Notice notice ->
                     StrategosServer.get()
                             .net()
@@ -272,6 +274,7 @@ public final class OutputAppliers {
                 WaveAnnounced.class,
                 TechResearched.class,
                 UnitGear.class,
+                UnitRanked.class,
                 WorldEffect.class,
                 Notice.class);
     }

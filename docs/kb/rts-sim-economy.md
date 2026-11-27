@@ -80,3 +80,19 @@ movement and measurements in general, see [rts-sim.md](rts-sim.md).
   The M3 perf baseline was taken this way, with idle workers.
 - The sign that "a block remains" is the counters (`gone < blocks`), not the sign of a coordinate.
   And test the AI with at least one L1 test with a strip below zero.
+
+## An AI that saves for a big price: what a reserve must hold
+
+M10's AI could not save for the City phase (600 food, 700 wood, 350 stone, 250 iron) until each of
+these held; each missing one kept City at 0 of 12 seeds in a match nobody contested (T25b):
+- The price is the reserve as soon as the phase heads the plan, even while its buildings are still
+  missing — not only once the phase can be researched; meanwhile everything else spent the iron.
+- No spend may take any resource of the price below its amount (`stock − cost ≥ held` for every
+  resource in the price). "A resource the reserve does not lack is free" lets one spend drop a
+  covered resource under the price (stone 510 → 100 against 350), and the next spend is blocked
+  too late.
+- An army floor beats the reserve only in resources the reserve lacks not; below half the floor the
+  cheapest soldier passes, so the army never sinks to nothing.
+- A build step the reserve blocks is skipped and caught up, not waited on: a second barracks (50
+  iron) before the phase's three Town buildings deadlocked the order.
+- Gatherers follow the reserve's lack, and a dropsite by the lacking resource is never held back.

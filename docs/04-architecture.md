@@ -438,6 +438,8 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Mixin | `LevelChunkMixin` (config `strategos.mixins.json`): RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
 | Mixin | `ServerPlayerMixin`: HEAD of `ServerPlayer#broadcastToPlayer(ServerPlayer)` (ServerPlayer.java:957) and HEAD of `ServerPlayer#attack(Entity)` (1767) | Hides enemy commanders always and enemy first-person bodies in fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
 | Mixin | `ServerGamePacketListenerImplMixin`: HEAD of `handleTeleportToEntityPacket` (ServerGamePacketListenerImpl.java:1204) | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
+| Mixin | `GameRendererMixin` (config `strategos.client.mixins.json`, client only, package `mod.client.mixin`): HEAD of `GameRenderer#getProjectionMatrix(double)` (GameRenderer.java:980) | Returns an orthographic matrix while the optional orthographic RTS view is on and RTS mode is active (CAM-06, D-09); vanilla runs untouched otherwise | M10 |
+| Mixin | `FrustumMixin` (config `strategos.client.mixins.json`, client only, package `mod.client.mixin`): HEAD of `Frustum#offsetToFullyIncludeCameraCube(int)` (Frustum.java:33; caller LevelRenderer.java:875) | Skips the widening loop that never ends under an orthographic matrix, only while the orthographic view is active (CAM-06) | M10 |
 | Access transformer | `public net.minecraft.server.level.ChunkMap entityMap` (ChunkMap.java:150) and `public net.minecraft.server.level.ChunkMap$TrackedEntity` (1278) | Targeted `TrackedEntity#updatePlayer` (1327) for flipped pairs and chunk-sent re-pairs | M8 |
 | Entity types | `strategos:unit_humanoid` (M0), `strategos:unit_fauna` (M4, ECO-16's animals), `strategos:unit_mount` (M5), `strategos:unit_large` (M6); reserve: `*_streamed` variants | Unit bodies (§6.1) | M0–M6 |
 | Damage types (data) | `strategos:unit_hack`, `unit_pierce`, `unit_crush`, tagged `minecraft:bypasses_cooldown` | Units hitting players and vanilla mobs (§6.7) | Deferred with CMB-08 (D-08 chose the observer avatar) |
@@ -446,8 +448,8 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), `strategos:vision_delta` and `strategos:skirmish` (M6), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
-| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05), `key.strategos.controls` (M6, UI-14); the command card's cells `key.strategos.card_1`, `key.strategos.card_2`, `key.strategos.card_3`, `key.strategos.card_4`, `key.strategos.card_5`, `key.strategos.card_6`, `key.strategos.card_7`, `key.strategos.card_8`, `key.strategos.card_9`, `key.strategos.card_10`, `key.strategos.card_11`, `key.strategos.card_12`, `key.strategos.card_13`, `key.strategos.card_14`, `key.strategos.card_15` (M4, UI-08: Alt and the grid); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), `strategos:vision_delta` and `strategos:skirmish` (M6), `strategos:territory` (M9), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05), `key.strategos.controls` (M6, UI-14); `key.strategos.capture` (M9, CMB-10); `key.strategos.formation_box`, `key.strategos.formation_line`, `key.strategos.patrol`, `key.strategos.guard` (M10, ORD-06); `key.strategos.next_idle_soldier`, `key.strategos.select_all_soldiers`, `key.strategos.select_all_workers`, `key.strategos.back_to_work`, `key.strategos.garrison`, `key.strategos.delete_selected`, `key.strategos.set_bookmark_1`, `key.strategos.set_bookmark_2`, `key.strategos.set_bookmark_3`, `key.strategos.set_bookmark_4`, `key.strategos.jump_bookmark_1`, `key.strategos.jump_bookmark_2`, `key.strategos.jump_bookmark_3`, `key.strategos.jump_bookmark_4` (M10, UI-17); the command card's cells `key.strategos.card_1`, `key.strategos.card_2`, `key.strategos.card_3`, `key.strategos.card_4`, `key.strategos.card_5`, `key.strategos.card_6`, `key.strategos.card_7`, `key.strategos.card_8`, `key.strategos.card_9`, `key.strategos.card_10`, `key.strategos.card_11`, `key.strategos.card_12`, `key.strategos.card_13`, `key.strategos.card_14`, `key.strategos.card_15` (M4, UI-08: Alt and the grid); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |
 | Gamerules | None registered | Per-match settings are `MatchRules`; world policy is config | – |
@@ -1503,6 +1505,56 @@ NeoForge data maps on `minecraft:block`, registered in `RegisterDataMapTypesEven
   provides. A new archetype needs Java (fact 23). An unknown model falls back to a placeholder with
   a client warning.
 
+### 8.9 Civilisations and rule seams
+
+[ADR-0028](adr/0028-civilisations-and-rule-seams.md); M10 builds it ([spec §2.1–2.6](milestones/M10-civilisations-and-depth.md)).
+
+- **Content.** `strategos/civs/<id>.json` compiles to `CivDef`: name and phase names, roster (the templates and
+  technologies its factions may own), roles (engine role → template), start kit, bonuses (faction modifiers under
+  `CivBonuses.SOURCE`), rules (per seam: variant id and parameters), AI profile. The default civilisation,
+  `strategos:default`, is today's content with every rule at its default.
+- **Binding.** `MatchConfig.civs` names each faction's civilisation (empty: the default for all);
+  `CivRules.bind` resolves them once at start, restore and content swap; `StateHasher` mixes them only when one is
+  not the default.
+- **Seams.** `core.sim.civ` holds eight rule interfaces — population, delivery, construction, upkeep,
+  resources, phase, placement, defeat — each with today's behaviour as its default, and the closed `RuleCatalogue`
+  of variants (M10: `fixed` population, `direct` delivery, `self` construction). Systems ask
+  `civRules().of(faction)`; nothing outside `core.sim.civ` and `core.content` reads a civilisation id, and core rules
+  name roles or class tokens, never template ids (ArchUnit). The placement seam is a parameter of the pure
+  `PlacementRules`, so the client preview runs the same variant.
+- **The engine's vocabulary.** The class tokens the core reads as words are engine words, fixed like the value
+  paths; template ids are content and appear in no rule (`TemplateIdLiteralTest`), only as a civilisation's roles
+  (`CivRoles`: `centre`, `house`, `worker`, `infantry`, `ranged`, `cavalry`, `siege`, and the content-side names).
+  Every token below is matched against a template's `Identity/classes`; a civilisation or a mod may add classes of its
+  own, which no engine code reads.
+
+  | Token | Read by | Meaning |
+  |---|---|---|
+  | `Gatherer` | `StatService` (`gathers`), `EconomyManager`, client `IdleWorkers` | the unit gathers resources; idle ones are sent to work and counted |
+  | `Builder` | `StatService` (`builds`), `Placing`, `BuildManager`, client `CommandCard` | the unit builds and repairs; the placement's builder check, the AI's free workers, the build menu |
+  | `Phase` | `TechDef` (`PHASE_CLASS`) | the tech is a phase: it has an ordinal, and no other tech has one |
+  | `CivicCentre` | `CivDef` (`DEFAULT_CENTRE_CLASS`) | a civilisation's default `centreClass`: its buildings are the centres that territory, placement, defeat and the AI read through `FactionCivs.centreClass` |
+  | `Field` | `ConquestCount`, `Base`, `MopUp` | a field: it does not count toward conquest and the AI does not mop it up or measure its base by it |
+  | `Decoration` | `ConquestCount`, `Base`, `MopUp` | a building of no consequence: the same three exclusions as `Field` |
+  | `Farmstead` | `EconomyManager` | a food dropsite the AI sends gatherers to |
+  | `Tower` | `DefenceManager`, `MopUp` | a defence the AI garrisons first and capturing it is a goal |
+  | `House` | `DefenceManager` | a building the AI garrisons for shelter, after towers |
+  | `Barracks` | `MopUp` | a building whose capture the mop-up seeks |
+  | `Wall` | `Breaching` | a building that units breach when it blocks their way |
+  | `Ram` | `MilitaryManager`, `MopUp` | a siege unit the AI sends with the army and keeps garrisoned until the strike |
+  | `Infantry` | `AiView` (role), `MilitaryManager`, `Tactics`, client `UnitLook` | a foot soldier: the army's core, the spearman's role |
+  | `Archer` | `AiView` (role), client `UnitLook` | a ranged soldier: the archer's role, kept behind the line |
+  | `Cavalry` | `AiView` (role), client `UnitLook` | a mounted soldier: the horseman's role |
+  | `Spearman`, `Organic` | client `UnitLook` | which body model a unit is drawn with |
+  | `Deposit` | client `CommandCard` | a building that is not buildable by the menu (a resource deposit) |
+  | `Worker` | `Bell` (`WORKER`, unread today) | the class the alarm bell calls in |
+
+  Value-path components (`Attack/Structure/*`, `Fauna/meat`, `ResourceGatherer`, `Trainer`, `Researcher`) and the
+  filter words a data file writes (`Structure`, `Village`) are content, read through the value-path and filter
+  tables, not engine vocabulary.
+- **A new civilisation** is data; a new mechanic is one variant class in the catalogue with its tests; a mechanic
+  that fits no seam is a new seam, reviewed as a change to `core.sim.civ`.
+
 ---
 
 ## 9. Pathfinding and movement
@@ -1872,7 +1924,9 @@ subtypes for rate keys ([mechanics §1.1](research/mechanics.md)). A match copie
 `MatchRules` when it is created, with each faction's starting amounts, so a reload changes only
 later matches. The treasury holds amounts per resource in thousandths and keeps income, spending
 and refund counters. Conservation is an invariant the core checks after every step: granted
-(starting resources and grants) + gathered + refunded = stock + spent (M3 spec §1.6 row 25).
+(starting resources and grants) + gathered + refunded + looted = stock + spent (M3 spec §1.6 row 25). Looted is
+what a kill pays its killer's faction from the victim's `Loot/resources` data, a source of its own (CMB-13); a unit
+victim's carry moves to the killer's stock as gathered income, so the resource ledger still balances.
 
 ### 11.2 Node types
 
@@ -2066,6 +2120,7 @@ placing; the events are the second line of defence.
 | `strategos:fx` | Swings, projectile launches and impacts, gather, build and death sounds, particles | Spatial audiences (§10.5) | Per tick, batched | M2 |
 | `strategos:match_event` | Alerts (faction), a defeat and the end of the match, a wave's notice (M3), a phase reached (`PHASE`, its ordinal in `ticks`, M6) | Match or faction | Event | M3 |
 | `strategos:vision_delta` | Visible and explored cells, run-length encoded | Own faction and vision-sharing allies | 2 Hz | M6; allies from M8 |
+| `strategos:territory` | Owner and connected bit per 8×8 tile; full runs at join, deltas after; parts ≤ 8 KB | Every player of the match (public, §1.6 row 9) | On change, one part a tick | M9 |
 | `strategos:motion` | Reserve tier 4: quantised motion deltas for streamed types | Per player | 10 Hz near the focus, 5 Hz beyond 64 blocks | Reserve |
 | `strategos:debug_feed` | Overlay data | Subscribed operators | 2–10 Hz | M1 |
 

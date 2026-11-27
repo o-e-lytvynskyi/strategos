@@ -5,12 +5,14 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
@@ -24,11 +26,9 @@ import java.util.List;
  */
 @CoreApi
 public final class Placing {
-    /** The class token of a civic centre (BLD-02's spacing and reach). */
-    public static final String CIVIC_CENTRE = "CivicCentre";
-
     public static final String SPACING = "Placement/spacing";
-    public static final String CIVIC_REACH = "Placement/civicReach";
+    /** Where a template may stand (TERR-02): {@link PlacementRules#OWN} by default, a civic centre own or neutral. */
+    public static final String TERRITORY = "Placement/territory";
 
     /** The token path of the buildings a worker may place: its build list (BLD-17, CMB-09). */
     public static final String BUILD_LIST = "Builder/buildings";
@@ -51,7 +51,10 @@ public final class Placing {
                     taken.set(x * bounds.sizeZ() + z);
                 }
             }
-            if (s.templates().byIndex(buildings.template(handle)).classes().contains(CIVIC_CENTRE)) {
+            if (s.templates()
+                    .byIndex(buildings.template(handle))
+                    .classes()
+                    .contains(s.civs().centreClass(buildings.faction(handle)))) {
                 centres.add(new PlacementRules.Centre(at, buildings.faction(handle)));
             }
         }
@@ -67,6 +70,9 @@ public final class Placing {
         }
         SurfaceGrid grid = s.surfaces();
         List<PlacementRules.Centre> civic = List.copyOf(centres);
+        TerritorySystem territorySystem = s.play().territorySystem();
+        TerritoryGrid land =
+                territorySystem == null || territorySystem.recomputes() == 0 ? null : territorySystem.grid();
         return new PlacementRules.World() {
             @Override
             public int sizeX() {
@@ -107,6 +113,11 @@ public final class Placing {
             @Override
             public List<PlacementRules.Centre> civicCentres() {
                 return civic;
+            }
+
+            @Override
+            public int territory(int x, int z) {
+                return land == null ? PlacementRules.NO_GRID : land.ownerAt(x, z);
             }
         };
     }
@@ -152,9 +163,9 @@ public final class Placing {
         UnitTemplate t = s.templates().byIndex(template);
         long[] cost = s.costs().of(s.stats(), template, faction);
         return new PlacementRules.Params(
-                t.classes().contains(CIVIC_CENTRE),
+                t.classes().contains(s.civs().centreClass(faction)), // its civilisation's centre class (CIV-01)
                 value(s, template, faction, SPACING),
-                value(s, template, faction, CIVIC_REACH),
+                (int) Math.round(value(s, template, faction, TERRITORY)),
                 s.treasury().missing(faction, cost) == null);
     }
 
@@ -173,9 +184,12 @@ public final class Placing {
 
     /**
      * Whether {@code faction} may place building {@code template}: the effective {@code Builder/buildings} of one of its
-     * builder templates names it, as the phase it has reached adds to it. A set with no build list gates nothing.
+     * builder templates names it, as the phase it has reached adds to it, and its civilisation's roster has it. A set with no build list gates nothing.
      */
     public static boolean listed(MatchState s, int template, int faction) {
+        if (!s.civs().hasTemplate(faction, template)) { // outside the faction's civilisation's roster (CIV-01)
+            return false;
+        }
         int path = s.stats().tokenPath(BUILD_LIST);
         if (path < 0) {
             return true;

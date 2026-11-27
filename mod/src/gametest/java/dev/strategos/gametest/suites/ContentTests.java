@@ -121,8 +121,10 @@ public final class ContentTests {
     public static void reloadMissingBuildingKeepsSetAndTable(GameTestHelper h) {
         StrategosServer server = StrategosServer.get();
         MatchRuntime rt = match(h);
-        TemplateId house = new TemplateId("strategos:building/house");
-        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 8, 8, 0));
+        // A large quarry: no role or tech names it, so the set may lose it (the default civilisation needs its roles).
+        TemplateId removed = new TemplateId("strategos:building/quarry_large");
+        rt.submit(
+                PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(removed, new FactionSlot(0), 8, 8, 0));
         var before = server.templates().set();
         var table = server.templates().table();
         h.startSequence()
@@ -130,11 +132,11 @@ public final class ContentTests {
                 .thenExecute(() -> {
                     List<TemplateProblem> problems = new ArrayList<>();
                     List<RawTemplate> raws = bundled(server, problems);
-                    raws.removeIf(raw -> raw.id().equals(house));
+                    raws.removeIf(raw -> raw.id().equals(removed));
                     var outcome = server.loadTemplates(raws, problems);
                     check(!outcome.accepted(), "reload dropped an occupied building template");
                     check(
-                            outcome.message().contains(house.value())
+                            outcome.message().contains(removed.value())
                                     && outcome.message().contains("in use"),
                             outcome.message());
                     check(server.templates().set() == before, "server set changed after refusal");
@@ -142,7 +144,7 @@ public final class ContentTests {
                 })
                 .thenExecuteAfter(2, () -> {
                     check(core(rt).queries().templates() == before, "match swapped after refusal");
-                    check(core(rt).queries().buildings().getFirst().template().equals(house), "building changed");
+                    check(core(rt).queries().buildings().getFirst().template().equals(removed), "building changed");
                 })
                 .thenSucceed();
     }
@@ -160,8 +162,9 @@ public final class ContentTests {
     private static void terminalMatchDoesNotBlockReload(GameTestHelper h, boolean faulted) {
         StrategosServer server = StrategosServer.get();
         MatchRuntime rt = match(h);
-        TemplateId house = new TemplateId("strategos:building/house");
-        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 4, 4, 0));
+        TemplateId removed = new TemplateId("strategos:building/quarry_large");
+        rt.submit(
+                PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(removed, new FactionSlot(0), 4, 4, 0));
         h.startSequence()
                 .thenWaitUntil(() -> check(core(rt).queries().buildings().size() == 1, "no building yet"))
                 .thenExecute(() -> {
@@ -173,18 +176,18 @@ public final class ContentTests {
                     var before = core(rt).queries().templates();
                     List<TemplateProblem> problems = new ArrayList<>();
                     List<RawTemplate> raws = bundled(server, problems);
-                    raws.removeIf(r -> r.id().equals(house));
+                    raws.removeIf(r -> r.id().equals(removed));
                     restoringBundled(server, () -> {
                         var outcome = server.loadTemplates(raws, problems);
                         check(outcome.accepted(), "terminal match blocked reload: " + outcome.message());
-                        check(server.templates().set().byId(house) == null, "server retained the removed template");
+                        check(server.templates().set().byId(removed) == null, "server retained the removed template");
                         check(core(rt).queries().templates() == before, "terminal match's frozen set changed");
                         check(
                                 core(rt).queries()
                                         .buildings()
                                         .getFirst()
                                         .template()
-                                        .equals(house),
+                                        .equals(removed),
                                 "frozen queries failed");
                     });
                 })
@@ -199,13 +202,13 @@ public final class ContentTests {
                 h,
                 dev.strategos.gametest.MatchFixture.options(dev.strategos.core.testkit.SimHarness.DEFAULT_SEED, h)
                         .withFaultPolicy(dev.strategos.mod.server.match.FaultPolicy.CONTAIN));
-        TemplateId house = new TemplateId("strategos:building/house");
+        TemplateId removed = new TemplateId("strategos:building/quarry_large");
         h.startSequence()
                 .thenExecute(() -> {
                     server.matches().pause(rt.id());
                     List<TemplateProblem> problems = new ArrayList<>();
                     List<RawTemplate> raws = bundled(server, problems);
-                    raws.removeIf(r -> r.id().equals(house));
+                    raws.removeIf(r -> r.id().equals(removed));
                     restoringBundled(server, () -> {
                         var outcome = server.loadTemplates(raws, problems);
                         check(outcome.accepted(), "unused template removal was refused: " + outcome.message());
@@ -219,16 +222,16 @@ public final class ContentTests {
                                         1000,
                                         tick,
                                         new dev.strategos.core.protocol.SpawnBuilding(
-                                                house, new FactionSlot(0), 4, 4, 0)))));
+                                                removed, new FactionSlot(0), 4, 4, 0)))));
                         check(c.queries().buildings().size() == 1, "race did not introduce the reference");
                         long before = c.queries().tick();
                         server.faults().run(rt, "published swap", () -> rt.tick(h.getLevel()));
                         check(rt.lifecycle() == dev.strategos.core.sim.MatchLifecycle.FAULTED, "match kept running");
                         check(c.queries().tick() == before, "invalid swap advanced simulation");
                         check(
-                                rt.faultMessage() != null && rt.faultMessage().contains(house.value()),
+                                rt.faultMessage() != null && rt.faultMessage().contains(removed.value()),
                                 "fault omitted id");
-                        check(c.queries().buildings().getFirst().template().equals(house), "old state unusable");
+                        check(c.queries().buildings().getFirst().template().equals(removed), "old state unusable");
                     });
                 })
                 .thenSucceed();

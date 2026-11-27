@@ -1,6 +1,8 @@
 package dev.strategos.core.client.hud;
 
 import dev.strategos.core.client.fog.ShroudExtract;
+import dev.strategos.core.shared.TerritoryGrid;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The minimap's terrain image (UI-11, D-16), one pixel a column, as vanilla's maps draw it: each column's map colour
@@ -84,6 +86,58 @@ public final class MinimapImage {
             }
         }
         return out;
+    }
+
+    /**
+     * The 16 × 16 pixels of chunk ({@code cx}, {@code cz}) under {@code fog} with the territory's borders over them
+     * (TERR-03): where a column lies on the outer pixel row or column of an owned tile and the tile beside it has
+     * another owner, the pixel is that owner's {@link HudTheme#faction faction colour}, whatever the fog. A null
+     * {@code grid} draws none.
+     */
+    public static int[] tile(
+            Columns columns,
+            Fog fog,
+            @Nullable TerritoryGrid grid,
+            HudTheme theme,
+            int cx,
+            int cz,
+            int sizeX,
+            int sizeZ) {
+        int[] out = tile(columns, fog, cx, cz, sizeX, sizeZ);
+        if (grid == null) {
+            return out;
+        }
+        for (int dz = 0; dz < 16; dz++) {
+            for (int dx = 0; dx < 16; dx++) {
+                int x = cx * 16 + dx;
+                int z = cz * 16 + dz;
+                if (x < sizeX && z < sizeZ) {
+                    int border = borderPixel(grid, theme, x, z);
+                    if (border != 0) {
+                        out[dz * 16 + dx] = border;
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Column ({@code x}, {@code z})'s border pixel, ARGB, or 0 when it lies on no border. */
+    public static int borderPixel(TerritoryGrid grid, HudTheme theme, int x, int z) {
+        int tx = x / TerritoryGrid.TILE;
+        int tz = z / TerritoryGrid.TILE;
+        int owner = grid.owner(tx, tz);
+        if (owner < 0) {
+            return 0;
+        }
+        int ox = x % TerritoryGrid.TILE;
+        int oz = z % TerritoryGrid.TILE;
+        int last = TerritoryGrid.TILE - 1;
+        boolean edge = (ox == 0 && grid.owner(tx - 1, tz) != owner)
+                || (ox == last && grid.owner(tx + 1, tz) != owner)
+                || (oz == 0 && grid.owner(tx, tz - 1) != owner)
+                || (oz == last && grid.owner(tx, tz + 1) != owner);
+        return edge ? theme.faction(owner) : 0;
     }
 
     /** The whole image, row by row, {@code sizeX} wide. */

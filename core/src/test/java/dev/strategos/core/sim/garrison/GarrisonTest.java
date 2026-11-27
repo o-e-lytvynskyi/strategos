@@ -27,6 +27,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.testkit.FakeAllies;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import java.util.ArrayList;
@@ -141,6 +142,26 @@ class GarrisonTest {
         assertThat(s.ai().state(Handle.index(out.get(0)))).isEqualTo(UnitState.IDLE);
     }
 
+    @Test
+    void anAlliesUnitMayGarrisonAndAnEnemysMayNot() {
+        // AFTER-M7: MATCH-06's teams replace FakeAllies in the allied GameTest.
+        s.setAllies(FakeAllies.twoAgainstRest(3));
+        int centre = building(0, 40, 30);
+        int[] ally = units(TemplateSet.WORKER, 1, 40.5, 40.5, 1);
+        int[] enemy = units(TemplateSet.WORKER, 2, 44.5, 40.5, 1);
+
+        assertThat(Garrisons.admits(s, Handle.index(ally[0]), centre)).isTrue();
+        assertThat(Garrisons.admits(s, Handle.index(enemy[0]), centre)).isFalse();
+        assertThat(send(new PlayerSlot(1), new Garrison(UnitSet.of(ally), centre))
+                        .outcome())
+                .isEqualTo(CommandOutcome.ACCEPTED);
+        assertThat(send(new PlayerSlot(2), new Garrison(UnitSet.of(enemy), centre))
+                        .firstReason())
+                .isEqualTo(RejectReason.NOT_OWNER);
+        assertThat(h.runUntil(() -> inside(ally[0]), 400)).isTrue();
+        assertThat(inside(enemy[0])).isFalse();
+    }
+
     /** The index of a worker that is not inside, or the first one. */
     private int lastOut(int[] workers) {
         for (int w : workers) {
@@ -170,16 +191,17 @@ class GarrisonTest {
                 .isEqualTo(2);
         assertThat(s.orders().kind(i)).isEqualTo(OrderKind.MOVE);
         assertThat(s.entities().handleAt(i)).isEqualTo(worker);
-        assertThat(s.health().damage(i)).isEqualTo(3.5);
         double xIn = s.motion().x(i);
         h.runTicks(30);
+        double hurt = s.health().damage(i); // the centre heals it a hit point a second (BLD-10)
+        assertThat(hurt).isLessThanOrEqualTo(3.5);
         assertThat(s.motion().x(i)).as("the queued move does not start inside").isEqualTo(xIn);
         assertThat(s.orders().saved(i)).isEqualTo(kept);
 
         send(P0, new Ungarrison(centre, UnitSet.of()));
         assertThat(inside(worker)).isFalse();
         assertThat(s.entities().handleAt(i)).as("the same handle").isEqualTo(worker);
-        assertThat(s.health().damage(i)).as("the same hit points").isEqualTo(3.5);
+        assertThat(s.health().damage(i)).as("the same hit points").isEqualTo(hurt);
         assertThat(s.orders().saved(i)).as("the same orders").isEqualTo(kept);
         assertThat(s.ai().state(i)).as("and it takes up the next one").isEqualTo(UnitState.WALKING);
         assertThat(h.runUntil(() -> s.orders().size(i) == 0, 600)).isTrue();
@@ -281,8 +303,8 @@ class GarrisonTest {
                         .firstReason())
                 .as("not the issuer's building")
                 .isEqualTo(RejectReason.NOT_OWNER);
-        int house = building(new TemplateId("strategos:building/house"), 0, 10, 10);
-        CommandResult notHolder = send(P0, new Garrison(UnitSet.of(workers), house));
+        int store = building(new TemplateId("strategos:building/storehouse"), 0, 10, 10);
+        CommandResult notHolder = send(P0, new Garrison(UnitSet.of(workers), store));
         assertThat(notHolder.outcome()).isEqualTo(CommandOutcome.REJECTED);
         assertThat(notHolder.firstReason()).as("a building that holds nobody").isEqualTo(RejectReason.UNSUPPORTED);
         int enemy = units(TemplateSet.WORKER, 1, 20, 20, 1)[0];

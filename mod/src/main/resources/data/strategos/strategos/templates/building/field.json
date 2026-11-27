@@ -5,6 +5,7 @@
   "Resistance": { "fire": 0 },
   "Footprint": { "obstructs": 0 },
   "Health": { "max": 200 },
+  "Loot": { "resources": { "wood": 12 } },
   "Cost": { "resources": { "wood": 60 }, "time": 20 },
   "Field": { "amount": 300, "ripenTime": 30, "reseed": { "wood": 40 } }
 }

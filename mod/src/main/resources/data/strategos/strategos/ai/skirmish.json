@@ -69,6 +69,14 @@
     {
       "building": "strategos:building/arsenal",
       "population": 24
+    },
+    {
+      "building": "strategos:building/tower",
+      "population": 24
+    },
+    {
+      "building": "strategos:building/temple",
+      "population": 24
     }
   ],
   "housingMargin": 3,

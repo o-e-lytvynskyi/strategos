@@ -22,11 +22,13 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
+import dev.strategos.core.sim.ability.AbilityStore;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.formation.FormationStore;
 import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
@@ -36,6 +38,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.order.StanceStore;
+import dev.strategos.core.sim.rank.ExperienceStore;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -90,7 +93,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG
                             .optionalFieldOf("lastRequest", PathStore.NEVER)
                             .forGetter(PathStore.UnitPath::lastRequest),
-                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath))
+                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath),
+                    Codec.BOOL.optionalFieldOf("wanted", false).forGetter(PathStore.UnitPath::wanted))
             .apply(i, PathStore.UnitPath::new));
 
     private static final Codec<PathRequest> REQUEST = RecordCodecBuilder.create(i -> i.group(
@@ -156,7 +160,10 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.optionalFieldOf("netZ", 0.0).forGetter(MotionStore.Ladder::netZ),
                     Codec.INT.optionalFieldOf("net", 0).forGetter(MotionStore.Ladder::net),
                     Codec.INT.optionalFieldOf("settle", 0).forGetter(MotionStore.Ladder::settle),
-                    Codec.LONG.optionalFieldOf("netOrder", 0L).forGetter(MotionStore.Ladder::netOrder))
+                    Codec.LONG.optionalFieldOf("netOrder", 0L).forGetter(MotionStore.Ladder::netOrder),
+                    Codec.DOUBLE.optionalFieldOf("netBest", 0.0).forGetter(MotionStore.Ladder::netBest),
+                    Codec.DOUBLE.optionalFieldOf("netAimX", 0.0).forGetter(MotionStore.Ladder::netAimX),
+                    Codec.DOUBLE.optionalFieldOf("netAimZ", 0.0).forGetter(MotionStore.Ladder::netAimZ))
             .apply(i, MotionStore.Ladder::new));
 
     /** Each field defaults to a unit that never touched terrain, the only motion an M0 save has. */
@@ -217,15 +224,16 @@ public final class MatchSnapshotCodec {
                     Vec2d.CODEC.fieldOf("target").forGetter(o -> new Vec2d(o.x(), o.z())),
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Order::group),
                     Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Order::slot),
-                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Order::target))
+                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Order::target),
+                    Vec2d.CODEC.listOf().optionalFieldOf("anchors", List.of()).forGetter(OrderQueues.Order::anchors))
             .apply(
                     i,
-                    (kind, target, group, slot, unit) ->
-                            new OrderQueues.Order(kind, target.x(), target.z(), group, slot, unit)));
+                    (kind, target, group, slot, unit, anchors) ->
+                            new OrderQueues.Order(kind, target.x(), target.z(), group, slot, unit, anchors)));
 
     /**
      * The rest of a unit's queue, inlined into the unit beside its {@code "target"}: the current order's kind, group,
-     * slot and attacked unit, and the orders after it, each written only when set, so M0's single order saves exactly
+     * slot, attacked unit and anchors, and the orders after it, each written only when set, so M0's single order saves exactly
      * as before.
      */
     private static final MapCodec<OrderQueues.Saved> ORDERS = RecordCodecBuilder.mapCodec(i -> i.group(
@@ -233,7 +241,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Saved::group),
                     Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Saved::slot),
                     Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Saved::target),
-                    ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next))
+                    ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next),
+                    Vec2d.CODEC.listOf().optionalFieldOf("anchors", List.of()).forGetter(OrderQueues.Saved::anchors))
             .apply(i, OrderQueues.Saved::new));
 
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
@@ -460,6 +469,54 @@ public final class MatchSnapshotCodec {
                     Codec.BOOL.optionalFieldOf("bell", false).forGetter(GarrisonStore.Saved::bell))
             .apply(i, GarrisonStore.Saved::new));
 
+    private static final Codec<AbilityStore.Saved> ABILITIES = RecordCodecBuilder.create(i -> i.group(
+                    Codec.STRING.listOf().optionalFieldOf("ids", List.of()).forGetter(AbilityStore.Saved::ids),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("cooldowns", List.of())
+                            .forGetter(AbilityStore.Saved::cooldowns),
+                    Codec.LONG.listOf().optionalFieldOf("timed", List.of()).forGetter(AbilityStore.Saved::timed))
+            .apply(i, AbilityStore.Saved::new));
+
+    private static final Codec<ExperienceStore.Saved> EXPERIENCE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.listOf().optionalFieldOf("earned", List.of()).forGetter(ExperienceStore.Saved::earned),
+                    Codec.LONG.listOf().optionalFieldOf("ranks", List.of()).forGetter(ExperienceStore.Saved::ranks))
+            .apply(i, ExperienceStore.Saved::new));
+
+    private static final Codec<FormationStore.Row> FORMATION_ROW = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("id").forGetter(FormationStore.Row::id),
+                    Codec.INT.fieldOf("shape").forGetter(FormationStore.Row::shape),
+                    Codec.DOUBLE.listOf().fieldOf("route").forGetter(FormationStore.Row::route),
+                    Codec.BOOL.optionalFieldOf("more", false).forGetter(FormationStore.Row::more),
+                    Codec.DOUBLE.fieldOf("goalX").forGetter(FormationStore.Row::goalX),
+                    Codec.DOUBLE.fieldOf("goalZ").forGetter(FormationStore.Row::goalZ),
+                    Codec.DOUBLE.fieldOf("along").forGetter(FormationStore.Row::along),
+                    Codec.DOUBLE.fieldOf("facingX").forGetter(FormationStore.Row::facingX),
+                    Codec.DOUBLE.fieldOf("facingZ").forGetter(FormationStore.Row::facingZ),
+                    Codec.BOOL.optionalFieldOf("holding", false).forGetter(FormationStore.Row::holding),
+                    Codec.BOOL.optionalFieldOf("advancing", false).forGetter(FormationStore.Row::advancing),
+                    Codec.INT.optionalFieldOf("waited", 0).forGetter(FormationStore.Row::waited),
+                    Codec.INT.listOf().fieldOf("members").forGetter(FormationStore.Row::members),
+                    Codec.DOUBLE.listOf().fieldOf("lateral").forGetter(FormationStore.Row::lateral),
+                    Codec.DOUBLE.listOf().fieldOf("forward").forGetter(FormationStore.Row::forward))
+            .apply(i, FormationStore.Row::new));
+
+    private static final Codec<FormationStore.Saved> FORMATIONS =
+            FORMATION_ROW.listOf().xmap(FormationStore.Saved::new, FormationStore.Saved::formations);
+
+    /** The M10 parts of a play, as fields of the play itself (see {@link MatchSnapshot.Play.Depth}). */
+    private static final MapCodec<MatchSnapshot.Play.Depth> DEPTH = RecordCodecBuilder.mapCodec(i -> i.group(
+                    ABILITIES
+                            .optionalFieldOf("abilities", AbilityStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::abilities),
+                    EXPERIENCE
+                            .optionalFieldOf("experience", ExperienceStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::experience),
+                    FORMATIONS
+                            .optionalFieldOf("formations", FormationStore.Saved.EMPTY)
+                            .forGetter(MatchSnapshot.Play.Depth::formations))
+            .apply(i, MatchSnapshot.Play.Depth::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
@@ -473,7 +530,15 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision),
                     SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
                     STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
-                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("territory", List.of())
+                            .forGetter(MatchSnapshot.Play::territory),
+                    Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture),
+                    Codec.LONG.listOf().optionalFieldOf("gates", List.of()).forGetter(MatchSnapshot.Play::gates),
+                    Codec.LONG.listOf().optionalFieldOf("breaches", List.of()).forGetter(MatchSnapshot.Play::breaches),
+                    DEPTH.forGetter(MatchSnapshot.Play::depth))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(

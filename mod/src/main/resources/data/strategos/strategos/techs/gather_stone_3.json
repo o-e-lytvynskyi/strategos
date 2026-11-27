@@ -1,0 +1,11 @@
+{
+  "name": "strategos.tech.gather_stone_3",
+  "icon": "minecraft:netherite_pickaxe",
+  "cost": { "food": 300, "wood": 300 },
+  "time": 65,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:gather_stone_2" }] },
+  "supersedes": "strategos:gather_stone_2",
+  "effects": [
+    { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.6, "filter": "Worker" }
+  ]
+}

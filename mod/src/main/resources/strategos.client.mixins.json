@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.strategos.mod.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FrustumMixin",
+    "GameRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,6 +1,8 @@
 package dev.strategos.mod.server.content;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivDef;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TechDef;
@@ -13,6 +15,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,11 +83,26 @@ public final class ServerTemplates {
             RegistryAccess registries,
             Collection<MatchRuntime> matches,
             Map<String, Blueprint> blueprints) {
+        return load(raws, techs, List.of(), readProblems, registries, matches, blueprints);
+    }
+
+    /** As above, with the civilisations (CIV-01): none means the implied default. */
+    public Outcome load(
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<RawCiv> civs,
+            List<TemplateProblem> readProblems,
+            RegistryAccess registries,
+            Collection<MatchRuntime> matches,
+            Map<String, Blueprint> blueprints) {
         loads++;
-        TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, table, techTable, blueprints);
+        TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, civs, table, techTable, blueprints);
         List<TemplateProblem> found = new ArrayList<>(readProblems);
         found.addAll(result.problems());
         found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t), t -> techFileOf(techs, t)));
+        for (CivDef civ : result.set().civs()) { // an unknown rule id or bad parameters never load (CIV-05)
+            found.addAll(RuleCatalogue.DEFAULT.problems(civ, civFileOf(civs, civ)));
+        }
         long errors = found.stream()
                 .filter(p -> p.severity() == TemplateProblem.Severity.ERROR)
                 .count();
@@ -128,6 +146,15 @@ public final class ServerTemplates {
             }
         }
         return null;
+    }
+
+    private static String civFileOf(List<RawCiv> civs, CivDef civ) {
+        for (RawCiv raw : civs) {
+            if (raw.id().equals(civ.id())) {
+                return raw.file();
+            }
+        }
+        return civ.id().value();
     }
 
     private static String techFileOf(List<RawTech> techs, TechDef t) {

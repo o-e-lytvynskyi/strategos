@@ -20,8 +20,15 @@ final class Ids {
     static final TemplateId BARRACKS = new TemplateId("strategos:building/barracks");
     static final TemplateId IRON_MINE = new TemplateId("strategos:building/iron_mine");
     static final TemplateId TOWER = new TemplateId("strategos:building/tower");
+    static final TemplateId SENTRY_TOWER = new TemplateId("strategos:building/sentry_tower");
     static final TemplateId ARSENAL = new TemplateId("strategos:building/arsenal");
     static final TemplateId RAM = new TemplateId("strategos:unit/ram");
+    static final TemplateId HEALER = new TemplateId("strategos:unit/healer");
+    static final TemplateId WILD_BOAR = new TemplateId("strategos:unit/wild_boar");
+    static final TemplateId TEMPLE = new TemplateId("strategos:building/temple");
+    static final TechId PHALANX = new TechId("strategos:phalanx");
+    static final TechId SKIRMISH_DRILL = new TechId("strategos:skirmish_drill");
+    static final TechId PHASE_CITY = new TechId("strategos:phase_city");
     static final TechId WOOD_1 = new TechId("strategos:gather_wood_1");
     static final TechId PHASE_TOWN = new TechId("strategos:phase_town");
     static final TemplateId QUARRY = new TemplateId("strategos:building/quarry");

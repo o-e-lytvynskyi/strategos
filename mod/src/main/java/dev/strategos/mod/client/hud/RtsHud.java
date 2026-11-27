@@ -17,6 +17,8 @@ import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
+import dev.strategos.core.client.hud.TechTreeModel;
+import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TechDef;
@@ -25,6 +27,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UiQuery;
@@ -34,6 +37,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.civ.ResourceRule;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -112,6 +116,8 @@ public final class RtsHud {
     private SelectionPanel panel = SelectionPanel.EMPTY;
     private CommandCard card = CommandCard.EMPTY;
     private final CardController controller = new CardController();
+    private Map<Integer, Integer> templateOfUnit =
+            Map.of(); // the selection's bodies' templates, for the card's abilities
     private CommandCard.@Nullable Button hovered;
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
@@ -195,6 +201,10 @@ public final class RtsHud {
         }
         HudLayout l = layout();
         int pad = theme.padding();
+        if (button == 0 && buildingCard.treeButtonAt(x, y)) {
+            openTechTree(); // TECH-05: the phase panel's button
+            return true;
+        }
         MatchJoin join = StrategosClient.match();
         if (join != null && minimap.ready() && l.minimap().contains(x, y)) {
             Minimap m = new Minimap(l.minimap(), join.sizeX(), join.sizeZ());
@@ -259,12 +269,19 @@ public final class RtsHud {
         CardController.Click c = controller.click(
                 b,
                 mode.selection().handles(),
+                h -> templateOfUnit.getOrDefault(h, -1),
                 ownBuilding(),
                 StrategosClient.templates(),
                 mode::send,
                 net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
-        if (c.effect() == CardController.Effect.ARM) {
-            mode.armPlacement(c.template());
+        switch (c.effect()) {
+            case ARM -> mode.armPlacement(c.template());
+            case TARGET -> mode.armAbility(c.template()); // the next click aims it (UNIT-10)
+            case FORMATION ->
+                mode.armFormation(FormationShape.ofCode(c.template())); // the next ground click marches (ORD-06)
+            case PATROL -> mode.standing().armPatrol(); // the next ground clicks are its points (ORD-07)
+            case GUARD -> mode.standing().armGuard(); // the next click on a friendly unit or building is the charge
+            default -> {}
         }
         build();
     }
@@ -340,19 +357,26 @@ public final class RtsHud {
         List<Integer> unitTemplates = new ArrayList<>();
         List<Stance> stances = new ArrayList<>();
         Map<Integer, Stance> received = new HashMap<>();
+        Map<Integer, List<UnitDetail.Cooldown>> resting = new HashMap<>();
         for (UnitDetail.Unit u : StrategosClient.model().details()) {
             Stance sent = u.stance() == UnitDetail.NO_STANCE ? null : Stance.of(u.stance());
             if (sent != null) {
                 received.put(u.handle(), sent);
             }
+            resting.put(u.handle(), u.cooldowns());
         }
+        List<List<UnitDetail.Cooldown>> restingOf = new ArrayList<>();
+        Map<Integer, Integer> templateOf = new HashMap<>();
         for (int h : selection.handles()) {
             UnitSpawnData d = bodies.get(h);
             if (d != null) {
                 unitTemplates.add(d.templateIndex());
+                templateOf.put(h, d.templateIndex());
+                restingOf.add(resting.getOrDefault(h, List.of()));
                 stances.add(CardController.stanceOf(templates, d.templateIndex(), received.get(h)));
             }
         }
+        templateOfUnit = templateOf;
         BuildingState.Entry own = selection.building() == null ? null : shown;
         card = CommandCard.of(
                 new CommandCard.Input(
@@ -363,14 +387,17 @@ public final class RtsHud {
                         controller.buildPage(),
                         StrategosClient.model().buildings(),
                         own != null && controller.demolishAsked(own.handle()),
-                        CardController.shared(stances)),
+                        CardController.shared(stances),
+                        StrategosClient.viewerCiv(),
+                        CommandCard.cooldowns(templates, unitTemplates, restingOf)),
                 own);
         phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
                 templates,
                 new ClientFactionView(
                         templates,
                         StrategosClient.model().faction(),
-                        StrategosClient.model().buildings()),
+                        StrategosClient.model().buildings(),
+                        StrategosClient.viewerCiv()),
                 own);
         overlays.update(
                 !selection.handles().isEmpty() || selection.building() != null,
@@ -384,7 +411,9 @@ public final class RtsHud {
             news.notices().population(faction.populationUsed(), faction.populationCap());
         }
         shownNotices = news.notices().shown(clientTicks);
-        resources = ResourceBar.of(faction, StrategosClient.resources(), income);
+        ResourceRule used = StrategosClient.viewerRules().resource();
+        int slot = faction == null ? 0 : faction.faction();
+        resources = ResourceBar.of(faction, StrategosClient.resources(), income, r -> used.uses(slot, r));
         segments = ResourceBarSegments.of(mc.font, layout().resourceBar(), resources);
         barHover = null;
         for (ResourceBarSegments.Segment s : segments) {
@@ -470,7 +499,16 @@ public final class RtsHud {
         }
         int health = StrategosClient.model().health(Handle.index(d.handle()));
         return new SelectionPanel.Unit(
-                d.handle(), d.templateIndex(), d.faction(), health, UnitHud.WHOLE, -1, -1, 0, false);
+                d.handle(),
+                d.templateIndex(),
+                d.faction(),
+                health,
+                UnitHud.WHOLE,
+                -1,
+                -1,
+                0,
+                false,
+                UnitDetail.Standing.NONE);
     }
 
     /** The selection's details, asked for again when it changes, at most every {@value #QUERY_EVERY} ticks (NET-08). */
@@ -608,7 +646,8 @@ public final class RtsHud {
                         state += " · " + u.load() / 1000 + " "
                                 + (u.carried() < resources.size() ? resources.get(u.carried()) : "?");
                     }
-                    paint.text(g, font, r, 2, state, theme.dimText());
+                    String rank = SelectionPanel.rankLine(u.standing());
+                    paint.text(g, font, r, 2, rank.isEmpty() ? state : state + " · " + rank, theme.dimText());
                 }
             }
             case BUILDING ->
@@ -679,6 +718,42 @@ public final class RtsHud {
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
                     }
                 }
+                case ABILITY -> {
+                    cardPresentation.abilityIcon(g, font, templates, b.template(), cell);
+                    if (b.template() == mode.abilityArmed()) { // waiting for its target: framed
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
+                    }
+                    if (b.cooldown() > 0) { // the sweep: what is left of the rest darkens the cell from the top
+                        int total = Math.max(
+                                1, templates.abilities().get(b.template()).cooldown());
+                        int h = (int) Math.ceil(cell.height() * Math.min(1.0, (double) b.cooldown() / total));
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.y() + h, 0xA0101010);
+                        String left = String.valueOf((b.cooldown() + 19) / 20);
+                        g.drawString(
+                                font,
+                                left,
+                                cell.x() + (cell.width() - font.width(left)) / 2,
+                                cell.y() + (cell.height() - font.lineHeight) / 2 + 1,
+                                theme.text(),
+                                true);
+                    }
+                }
+                case FORMATION -> {
+                    paint.item(
+                            g,
+                            b.template() == FormationShape.BOX.code() ? "minecraft:white_banner" : "minecraft:lead",
+                            cell);
+                    if (b.template() == mode.formationArmed()) { // waiting for its ground click: framed
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
+                    }
+                }
+                case PATROL, GUARD -> {
+                    boolean patrol = b.kind() == CommandCard.Kind.PATROL;
+                    paint.item(g, patrol ? "minecraft:compass" : "minecraft:shield", cell);
+                    if (patrol ? mode.standing().patrolArmed() : mode.standing().guardArmed()) { // waiting for clicks
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), theme.accent());
+                    }
+                }
                 case RESEARCH -> {
                     TechDef tech = templates.techByIndex(b.template());
                     paint.item(g, tech == null || tech.icon().isBlank() ? "minecraft:book" : tech.icon(), cell);
@@ -714,6 +789,21 @@ public final class RtsHud {
     /** Under the first-person crosshair: a panel with the unit's name, faction swatch and what is known of it. */
     private void drawInspect(GuiGraphics g, DeltaTracker delta) {
         tooltips.inspect(g, inspect, mode.active());
+    }
+
+    /** The technology tree screen over the HUD (TECH-05); the screen closes with Esc or the key that opened it. */
+    public void openTechTree() {
+        TechTreeModel tree = TechTreeModel.of(
+                StrategosClient.templates(),
+                new ClientFactionView(
+                        StrategosClient.templates(),
+                        StrategosClient.model().faction(),
+                        StrategosClient.model().buildings(),
+                        StrategosClient.viewerCiv()),
+                StrategosClient.viewerCiv(),
+                StrategosClient.model().buildings());
+        Minecraft.getInstance()
+                .setScreen(new TechTreeScreen(tree, (key, scan) -> mode.isKey(Action.TECH_TREE, key, scan)));
     }
 
     /** UI-14's overlay on or off (its key, K by default). */

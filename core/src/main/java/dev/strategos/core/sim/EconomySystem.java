@@ -37,5 +37,9 @@ final class EconomySystem implements MatchSystem {
                 }
             }
         }
+        int factions = state.config().factions();
+        for (int f = 0; f < factions; f++) {
+            state.civs().rules(f).upkeep().step(state, f); // CIV-05: each faction's own economy, after the step's work
+        }
     }
 }

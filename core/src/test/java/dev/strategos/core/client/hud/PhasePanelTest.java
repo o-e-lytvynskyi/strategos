@@ -73,7 +73,7 @@ class PhasePanelTest {
         FactionState wireFaction = WireCodec.decode(
                 FactionState.WIRE,
                 WireCodec.encode(FactionState.WIRE, ReplicationService.factionState(h.queries(), MATCH, F0)));
-        ClientFactionView client = new ClientFactionView(T, wireFaction, wireBuildings.buildings());
+        ClientFactionView client = new ClientFactionView(T, wireFaction, wireBuildings.buildings(), null);
         MatchFactionView server = new MatchFactionView(dev.strategos.core.sim.KernelAccess.state(h.core()), 0);
         TechDef town = T.tech(TOWN);
         List<Requirements.Leaf> expected = Requirements.checklist(town.requires(), server);
@@ -89,7 +89,8 @@ class PhasePanelTest {
                 .orElseThrow();
         PhasePanel panel = PhasePanel.of(T, client, centre);
         if (!phaseAhead) {
-            assertThat(panel).as(name).isNull();
+            assertThat(panel).as(name).isNotNull(); // TECH-05: Town's tokens list City on the centre, so it shows
+            assertThat(panel.phase().id().value()).isEqualTo("strategos:phase_city");
             return;
         }
         assertThat(panel).as(name).isNotNull();
@@ -140,7 +141,7 @@ class PhasePanelTest {
         List<PhasePanel.Row> rows = new ArrayList<>();
         BuildingState wire = ReplicationService.buildingState(h.queries(), MATCH, F0);
         BuildingState.Entry centre = wire.buildings().get(0);
-        PhasePanel panel = PhasePanel.of(T, new ClientFactionView(T, null, wire.buildings()), centre);
+        PhasePanel panel = PhasePanel.of(T, new ClientFactionView(T, null, wire.buildings(), null), centre);
         rows.addAll(panel.rows());
         assertThat(rows).hasSize(1);
         assertThat(rows.get(0).have()).isEqualTo(4);

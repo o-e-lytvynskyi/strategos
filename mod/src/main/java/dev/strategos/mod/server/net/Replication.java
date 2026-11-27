@@ -8,6 +8,7 @@ import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
@@ -22,6 +23,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -75,6 +77,7 @@ public final class Replication {
     private final NetGateway net;
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
     private final Map<Long, VisionDeltaTracker> visionTrackers = new HashMap<>();
+    private final TerritoryFeed territoryFeed = new TerritoryFeed();
 
     private final Map<UUID, FactionState> factions = new HashMap<>();
     private final Map<UUID, BuildingState> buildings = new HashMap<>();
@@ -138,10 +141,12 @@ public final class Replication {
         factions.remove(player);
         buildings.remove(player);
         deposits.remove(player);
+        territoryFeed.forget(player);
     }
 
     public void tick() {
         int now = server.getTickCount();
+        sendTerritory();
         if (now % HUD_EVERY == 0) {
             sendHuds();
         }
@@ -158,6 +163,7 @@ public final class Replication {
         if (now % SUMMARY_EVERY != 0) {
             return;
         }
+        territoryFeed.retain(this::inRunningMatch);
         visibility.keySet().removeIf(id -> matches.get().get(id) == null);
         visionTrackers.keySet().removeIf(key -> matches.get().get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : matches.get().all()) {
@@ -184,6 +190,43 @@ public final class Replication {
                             new Audience.Faction(rt.id(), faction),
                             new VisionDeltaPayload(tracker.delta(
                                     rt.id().value(), core.queries().tick(), grid)));
+                }
+            }
+        }
+    }
+
+    private boolean inRunningMatch(UUID player) {
+        MatchRegistry.Seat seat = matches.get().seatOf(player);
+        return seat != null
+                && seat.match().lifecycle() == MatchLifecycle.RUNNING
+                && server.getPlayerList().getPlayer(player) != null;
+    }
+
+    /**
+     * The territory (TERR-01), public: each online member of a running match gets the next part of its version, one a
+     * tick; a version that moved, or a player new to the match, queues the parts first ({@link TerritoryFeed}).
+     */
+    private void sendTerritory() {
+        for (MatchRuntime rt : matches.get().all()) {
+            MatchCore core = rt.core();
+            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+                continue;
+            }
+            TerritoryGrid grid = core.territory();
+            if (grid == null) {
+                continue;
+            }
+            long version = core.territoryVersion();
+            long tick = core.queries().tick();
+            for (UUID player : rt.roster().members()) {
+                ServerPlayer online = server.getPlayerList().getPlayer(player);
+                if (online == null) {
+                    continue;
+                }
+                territoryFeed.offer(player, rt.id().value(), tick, version, grid);
+                var part = territoryFeed.poll(player);
+                if (part != null) {
+                    net.send(new Audience.Player(online), new TerritoryPayload(part));
                 }
             }
         }

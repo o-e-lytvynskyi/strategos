@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
@@ -8,6 +9,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -51,6 +53,19 @@ public interface MatchQueries {
     /** The stance a player gave a live unit (CMB-05), or null when it fights as its template says or is dead. */
     @Nullable Stance explicitStance(int handle);
 
+    /** The ticks until live unit {@code handle} may use ability {@code ability} again (UNIT-10); 0 when it is ready or dead. */
+    int abilityCooldown(int handle, String ability);
+
+    /** Live unit {@code handle}'s rank (CMB-11): 0 for none, or when it is dead. */
+    default int rank(int handle) {
+        return 0;
+    }
+
+    /** Live unit {@code handle}'s experience in thousandths of a point (CMB-11); 0 when it has none or is dead. */
+    default long experience(int handle) {
+        return 0;
+    }
+
     /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
     int carriedResource(int handle);
 
@@ -74,6 +89,24 @@ public interface MatchQueries {
     boolean isAlive(int handle);
 
     @Nullable UnitView unit(int handle);
+
+    /** The formation a live unit keeps a place in (ORD-06): its id, a group id of the match; 0 for none. */
+    default int formationOf(int handle) {
+        return 0;
+    }
+
+    /** Whether a live unit's current order is a patrol or a guard (ORD-07, UI-17): a guard whose charge died holds none. */
+    default boolean holdsStandingOrder(int handle) {
+        return false;
+    }
+
+    /**
+     * How far a live unit stands from its place in its formation, in blocks (ORD-06); NaN for a unit in none, which
+     * tests and the debug overlay read.
+     */
+    default double formationSlotError(int handle) {
+        return Double.NaN;
+    }
 
     /** A sorted copy; cold path. */
     int[] unitHandles();
@@ -126,8 +159,43 @@ public interface MatchQueries {
         return List.of();
     }
 
+    /** {@code faction}'s phase ordinal, as its civilisation's phase rule tells it (CIV-05); 0 is Village. */
+    int phase(FactionSlot faction);
+
+    /** The class token of {@code faction}'s centres, from its civilisation (CIV-01). */
+    String centreClass(FactionSlot faction);
+
+    /** The template {@code faction}'s civilisation gives {@code role} (CIV-05), null when it has none. */
+    @Nullable TemplateId role(FactionSlot faction, String role);
+
+    /**
+     * Whether a {@code building} of {@code faction} trains {@code unit}: its effective {@code Trainer/units} for that
+     * faction (technologies and civilisation bonuses included) names it, and the faction's roster has it — the rule
+     * production applies (CIV-05: the probe civilisation found the computer player reading the static list).
+     */
+    boolean trains(FactionSlot faction, TemplateId building, TemplateId unit);
+
+    /**
+     * What the rules {@code faction} plays imply for its computer player, a mask of {@code AiHint}s (CIV-05); every hint
+     * for a faction outside the match.
+     */
+    default int aiHints(FactionSlot faction) {
+        return dev.strategos.core.sim.civ.AiHint.ALL;
+    }
+
+    /** Whether {@code faction}'s civilisation uses resource {@code resource} (an id of the match's economy), CIV-05. */
+    boolean usesResource(FactionSlot faction, String resource);
+
     /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
     default @Nullable TechId techOf(int sourceId) {
+        return null;
+    }
+
+    /**
+     * The civilisation whose bonuses carry {@code sourceId} for {@code faction} (CIV-01), or null for any other source:
+     * what a stat breakdown names instead of the number.
+     */
+    default @Nullable CivDef civOf(int sourceId, FactionSlot faction) {
         return null;
     }
 
@@ -154,6 +222,11 @@ public interface MatchQueries {
         return List.of();
     }
 
+    /** The finished palisade gates and their doors' state now (BLD-13): for the mod's fence gates. */
+    default List<dev.strategos.core.sim.build.GateDoor> gateDoors() {
+        return List.of();
+    }
+
     /** The blocks the core owns, as they must stand (MATCH-04): what a resumed match's reconciler puts back. */
     default List<WorldEffect> worldClaims() {
         return List.of();
@@ -166,6 +239,67 @@ public interface MatchQueries {
      */
     default @Nullable String placementRefusal(int template, int x, int z, int faction) {
         return null;
+    }
+
+    /** Building {@code building}'s capture points in thousandths, 0 for one that cannot be captured or is dead (AI-08). */
+    default long captureTotal(int building) {
+        return 0;
+    }
+
+    /** Building {@code building}'s owner's regeneration a second in thousandths, its garrison's included; 0 for none (AI-08). */
+    default long captureRegen(int building) {
+        return 0;
+    }
+
+    /** Live unit {@code unit}'s capture strength in thousandths a second, 0 for none or a dead unit (AI-08). */
+    default long captureStrength(int unit) {
+        return 0;
+    }
+
+    /** The places free in building {@code building} for live unit {@code unit}: 0 when it does not admit it or is full (AI-08). */
+    default int garrisonRoom(int unit, int building) {
+        return 0;
+    }
+
+    /**
+     * Whether the research command's rule would take {@code tech} at {@code building} but for the price and the queue's
+     * room: the building's effective list, the roster, what is researched, queued, superseded or excluded, and the
+     * requirements (AI-09).
+     */
+    default boolean researchable(int building, dev.strategos.core.content.TechDef tech) {
+        return false;
+    }
+
+    /**
+     * Whether only {@code tech}'s requirements keep the research command from taking it at {@code building}: the
+     * building is finished and holds it in its effective list, it is in the owner's roster, and nothing else refuses it
+     * (AI-09's phase saved for before its buildings stand).
+     */
+    default boolean researchBlockedByRequirements(int building, dev.strategos.core.content.TechDef tech) {
+        return false;
+    }
+
+    /**
+     * Resource node {@code node}'s work slots, the cells round its base where gatherers stand, each packed as
+     * {@code x << 16 | z} in match-local columns; none for an unknown node (AI-02's sites keep them free).
+     */
+    default int[] nodeSlotCells(int node) {
+        return new int[0];
+    }
+
+    /** The live units inside building {@code building}, as handles; none for a dead building (AI-09's healing). */
+    default int[] garrisonOccupants(int building) {
+        return new int[0];
+    }
+
+    /** The faction owning the territory tile of match-local column ({@code x}, {@code z}), -1 for neutral or no grid (AI-08). */
+    default int territoryOwner(int x, int z) {
+        return -1;
+    }
+
+    /** The most buildings of template {@code template} faction {@code faction} may have, 0 for no limit (AI-08). */
+    default int buildingLimit(int template, int faction) {
+        return 0;
     }
 
     /** The standing height of match-local column ({@code x}, {@code z}), NaN for none: for reachability (AI-02). */
@@ -181,6 +315,16 @@ public interface MatchQueries {
     /** PERF-08's combat systems' times so far. */
     default dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
         return new dev.strategos.core.sim.combat.CombatTimes.Stats(0, 0, 0, 0, 0);
+    }
+
+    /** PERF-16's territory, join, garrison and capture times so far. */
+    default dev.strategos.core.diag.SystemTimes.Stats systemTimes() {
+        return new dev.strategos.core.diag.SystemTimes.Stats(0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /** How many territory grids were delivered so far (0 before the first): PERF-16's cadence check. */
+    default long territoryRecomputes() {
+        return 0;
     }
 
     /** PERF-07.4's node index and dropsite query times so far. */

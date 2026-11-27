@@ -3,6 +3,7 @@ package dev.strategos.mod;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
@@ -31,6 +32,7 @@ import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.MatchSky;
 import dev.strategos.mod.server.world.MaterialTable;
 import dev.strategos.mod.server.world.Protection;
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ public final class StrategosServer {
     private final TemplateSync templateSync = new TemplateSync();
     private final CommanderService commanders = new CommanderService();
     private final Skirmishes skirmishes = new Skirmishes();
+    private final MatchSky sky = new MatchSky();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -163,6 +166,11 @@ public final class StrategosServer {
         return templates;
     }
 
+    /** The levels whose time a match with day and night drives (MATCH-16). */
+    public MatchSky sky() {
+        return sky;
+    }
+
     /** The skirmishes waiting for their import to be set up (QA-11.5). */
     public Skirmishes skirmishes() {
         return skirmishes;
@@ -185,16 +193,21 @@ public final class StrategosServer {
         TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
         addNew(problems, read.problems());
         List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
-        return loadTemplates(raws, techs, problems, TemplateFiles.blueprints(read, problems));
+        List<RawCiv> civs = TemplateFiles.rawCivs(read, conditionalOps(), problems);
+        return loadTemplates(raws, techs, civs, problems, TemplateFiles.blueprints(read, problems));
     }
 
-    /** As {@link #loadTemplates(List, List)}, with the blueprints and the technologies the reload read (BLD-01, TECH-01). */
+    /**
+     * As {@link #loadTemplates(List, List)}, with the blueprints, technologies and civilisations the reload read
+     * (BLD-01, TECH-01, CIV-01).
+     */
     public ServerTemplates.Outcome loadTemplates(
             List<RawTemplate> raws,
             List<RawTech> techs,
+            List<RawCiv> civs,
             List<TemplateProblem> problems,
             Map<String, Blueprint> blueprints) {
-        return report(templates.load(raws, techs, problems, server.registryAccess(), matches.all(), blueprints));
+        return report(templates.load(raws, techs, civs, problems, server.registryAccess(), matches.all(), blueprints));
     }
 
     /** The blueprints of the loaded data packs, read now on this thread. */
@@ -254,8 +267,15 @@ public final class StrategosServer {
         problems.addAll(read.problems());
         List<RawTemplate> raws = TemplateFiles.raws(read, conditionalOps(), problems);
         List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
+        List<RawCiv> civs = TemplateFiles.rawCivs(read, conditionalOps(), problems);
         report(templates.load(
-                raws, techs, problems, server.registryAccess(), List.of(), TemplateFiles.blueprints(read, problems)));
+                raws,
+                techs,
+                civs,
+                problems,
+                server.registryAccess(),
+                List.of(),
+                TemplateFiles.blueprints(read, problems)));
     }
 
     /** The technologies of the loaded data packs, read now on this thread; the files' problems go to {@code problems}. */

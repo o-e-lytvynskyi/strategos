@@ -21,7 +21,7 @@ final class LivestockChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.FARMSTEAD, 0, -10, 0);
                     st.units(Ids.SHEEP, Ids.GAIA, 8, -4, 3, 2);

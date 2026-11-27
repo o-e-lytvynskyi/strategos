@@ -1,5 +1,7 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.client.order.AbilityIntents;
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
@@ -16,6 +18,7 @@ import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.Target;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.TrainBatch;
 import dev.strategos.core.protocol.UnitSet;
@@ -23,13 +26,16 @@ import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /**
  * What a click on the command card or on the selection panel's queue does (UI-06): one click sends at most one
  * command through {@code send} (train, reseed, stop, or cancelling a queue entry), turns the card's page, or arms
  * placement with a building. It keeps whether the build page is open and whether a demolish waits for its
- * confirming second click (BLD-09); a new selection drops both.
+ * confirming second click (BLD-09); a new selection drops both. An ability button (UNIT-10) fires at once when its
+ * ability takes no target, and otherwise asks the caller to arm targeting ({@link Effect#TARGET}), whose click sends
+ * the command ({@link AbilityIntents}).
  */
 public final class CardController {
     /** What a click did. */
@@ -37,7 +43,15 @@ public final class CardController {
         NONE,
         SENT,
         PAGE,
-        ARM
+        ARM,
+        /** An ability that takes a target: {@link Click#template} is its index; the next click aims it. */
+        TARGET,
+        /** A formation march: {@link Click#template} is the shape's code; the next ground click sends it (ORD-06). */
+        FORMATION,
+        /** A patrol: the next ground clicks are its points, Shift-click keeping on, a right click or Enter sending (ORD-07). */
+        PATROL,
+        /** A guard: the next click on a friendly unit or building names the charge (ORD-07). */
+        GUARD
     }
 
     /** A click's effect, and for {@link Effect#ARM} the building template to place. */
@@ -82,6 +96,22 @@ public final class CardController {
     public Click click(
             CommandCard.@Nullable Button button,
             List<Integer> units,
+            BuildingState.@Nullable Entry building,
+            TemplateSet templates,
+            Consumer<Command> send,
+            boolean batch) {
+        return click(button, units, h -> -1, building, templates, send, batch);
+    }
+
+    /**
+     * As {@link #click(CommandCard.Button, List, BuildingState.Entry, TemplateSet, Consumer, boolean)}, knowing each
+     * selected unit's template ({@code templateOf}: its index, -1 for none), which an ability button needs to name its
+     * users.
+     */
+    public Click click(
+            CommandCard.@Nullable Button button,
+            List<Integer> units,
+            IntUnaryOperator templateOf,
             BuildingState.@Nullable Entry building,
             TemplateSet templates,
             Consumer<Command> send,
@@ -173,6 +203,24 @@ public final class CardController {
                         UnitSet.of(units.stream().mapToInt(Integer::intValue).toArray()), stance));
                 yield new Click(Effect.SENT, -1);
             }
+            case ABILITY -> {
+                AbilityDef def = button.template() >= 0
+                                && button.template() < templates.abilities().size()
+                        ? templates.abilities().get(button.template())
+                        : null;
+                int[] owners = def == null ? new int[0] : AbilityIntents.owners(templates, units, templateOf, def);
+                if (def == null || owners.length == 0) {
+                    yield Click.NONE;
+                }
+                if (def.aim() != AbilityDef.Aim.NONE) {
+                    yield new Click(Effect.TARGET, button.template());
+                }
+                send.accept(java.util.Objects.requireNonNull(AbilityIntents.use(owners, def, Target.none(), batch)));
+                yield new Click(Effect.SENT, -1);
+            }
+            case FORMATION -> units.size() < 2 ? Click.NONE : new Click(Effect.FORMATION, button.template());
+            case PATROL -> units.isEmpty() ? Click.NONE : new Click(Effect.PATROL, -1);
+            case GUARD -> units.isEmpty() ? Click.NONE : new Click(Effect.GUARD, -1);
             case BUILD_PAGE -> {
                 buildPage = true;
                 yield new Click(Effect.PAGE, -1);

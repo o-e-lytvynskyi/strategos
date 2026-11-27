@@ -4,6 +4,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.DetMath;
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Members' paths from their group's (PATH-09, 04 §9.4, spec §5.11), built in the group's job. Each member joins the
@@ -25,7 +26,7 @@ public final class GroupPaths {
 
     private GroupPaths() {}
 
-    /** The group's result with each member's path; the joins' expansions are added to the group's. */
+    /** The group's result with each member's path, where no gate is crossed. */
     static PathResult members(
             SurfaceGrid grid,
             PathRequest request,
@@ -34,6 +35,22 @@ public final class GroupPaths {
             int joinCap,
             int maxJoins,
             GridAStar search) {
+        return members(grid, request, group, members, joinCap, maxJoins, search, null);
+    }
+
+    /**
+     * The group's result with each member's path; the joins' expansions are added to the group's. The group may cross
+     * the gates {@code gates} holds (PATH-12), as its path does, and so may its members' lines of walk.
+     */
+    static PathResult members(
+            SurfaceGrid grid,
+            PathRequest request,
+            PathResult group,
+            List<Member> members,
+            int joinCap,
+            int maxJoins,
+            GridAStar search,
+            GateLinks.@Nullable Pass gates) {
         PathStore.Waypoints w = group.waypoints();
         List<MemberPath> out = new ArrayList<>(members.size());
         if (group.status() == PathStatus.NO_PATH || w.count() == 0) {
@@ -58,7 +75,7 @@ public final class GroupPaths {
         double facing = DetMath.length(fx, fz);
         double leftX = facing == 0 ? 0 : -fz / facing;
         double leftZ = facing == 0 ? 0 : fx / facing;
-        Assembly a = new Assembly(grid, px, pz, n, reaches, w.x(w.count() - 1), w.z(w.count() - 1));
+        Assembly a = new Assembly(grid, px, pz, n, reaches, w.x(w.count() - 1), w.z(w.count() - 1), gates);
         int joins = maxJoins;
         int expansions = group.expansions();
         for (Member m : members) {
@@ -88,6 +105,7 @@ public final class GroupPaths {
         private final boolean reaches;
         private final double goalX;
         private final double goalZ;
+        private final GateLinks.@Nullable Pass gates;
         private final double[] xs = new double[PathStore.Waypoints.MAX];
         private final double[] zs = new double[PathStore.Waypoints.MAX];
         private final int[] floors = new int[PathStore.Waypoints.MAX];
@@ -99,7 +117,16 @@ public final class GroupPaths {
         private double z;
         int searched;
 
-        Assembly(SurfaceGrid grid, double[] px, double[] pz, int n, boolean reaches, double goalX, double goalZ) {
+        Assembly(
+                SurfaceGrid grid,
+                double[] px,
+                double[] pz,
+                int n,
+                boolean reaches,
+                double goalX,
+                double goalZ,
+                GateLinks.@Nullable Pass gates) {
+            this.gates = gates;
             this.grid = grid;
             this.px = px;
             this.pz = pz;
@@ -134,7 +161,7 @@ public final class GroupPaths {
                     qz = cz;
                 }
             }
-            int at = LineOfWalk.walk(grid, m.fromNode(), m.x(), m.z(), qx, qz);
+            int at = LineOfWalk.walk(grid, m.fromNode(), m.x(), m.z(), qx, qz, gates);
             if (at >= 0) {
                 x = m.x();
                 z = m.z();
@@ -182,9 +209,10 @@ public final class GroupPaths {
                     // the whole offset, else half or a quarter of it, so lanes close up in a narrow way
                     double sx = px[k] - dz / length * lateral * part;
                     double sz = pz[k] + dx / length * lateral * part;
-                    int shifted = inside(sx, sz) ? LineOfWalk.walk(grid, node, x, z, sx, sz) : -1;
+                    int shifted = inside(sx, sz) ? LineOfWalk.walk(grid, node, x, z, sx, sz, gates) : -1;
                     if (shifted >= 0
-                            && (k + 1 >= n || LineOfWalk.walk(grid, shifted, sx, sz, px[k + 1], pz[k + 1]) >= 0)) {
+                            && (k + 1 >= n
+                                    || LineOfWalk.walk(grid, shifted, sx, sz, px[k + 1], pz[k + 1], gates) >= 0)) {
                         add(sx, sz, shifted);
                         laned = true;
                     }
@@ -197,10 +225,10 @@ public final class GroupPaths {
                 truncated = true; // short of the place: the unit asks again from the end
                 return;
             }
-            int at = LineOfWalk.walk(grid, node, x, z, placeX, placeZ);
+            int at = LineOfWalk.walk(grid, node, x, z, placeX, placeZ, gates);
             for (; at < 0 && k < n && !truncated; k++) { // the place is not in sight: on along the path first
                 step(px[k], pz[k]);
-                at = LineOfWalk.walk(grid, node, x, z, placeX, placeZ);
+                at = LineOfWalk.walk(grid, node, x, z, placeX, placeZ, gates);
             }
             if (at >= 0 && !truncated) {
                 add(placeX, placeZ, at);
@@ -221,7 +249,7 @@ public final class GroupPaths {
 
         /** The group path's own point, from the one reached; truncated where even that is not in line of walk. */
         private void step(double tx, double tz) {
-            int on = LineOfWalk.walk(grid, node, x, z, tx, tz);
+            int on = LineOfWalk.walk(grid, node, x, z, tx, tz, gates);
             if (on < 0) {
                 truncated = true;
                 return;

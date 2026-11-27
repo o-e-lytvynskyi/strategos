@@ -23,15 +23,24 @@ public final class PlacementRules {
     /** No standing floor in a column: water, or no ground at all. */
     public static final double NO_LAND = Double.NaN;
 
+    /** A world that has no territory grid yet: the territory rule passes (the server, once it has one, decides). */
+    public static final int NO_GRID = -2;
+
+    /** {@code Placement/territory}: no territory rule, the builder's own land only, or its own or neutral land. */
+    public static final int ANYWHERE = 0;
+
+    public static final int OWN = 1;
+    public static final int OWN_OR_NEUTRAL = 2;
+
     /** The rules, in the order a verdict tells the first that fails. */
     public enum Rule {
         INSIDE,
         FREE,
         LAND,
         EXPLORED,
+        TERRITORY,
         FLAT,
         SPACING,
-        REACH,
         AFFORDABLE;
 
         /** Where it comes in the order rules are told, 0 first; the declaration order, written out. */
@@ -41,16 +50,16 @@ public final class PlacementRules {
                 case FREE -> 1;
                 case LAND -> 2;
                 case EXPLORED -> 3;
-                case FLAT -> 4;
-                case SPACING -> 5;
-                case REACH -> 6;
+                case TERRITORY -> 4;
+                case FLAT -> 5;
+                case SPACING -> 6;
                 case AFFORDABLE -> 7;
             };
         }
 
         /** Whether the rule is judged per footprint column. */
         public boolean perCell() {
-            return this == INSIDE || this == LAND || this == FREE || this == EXPLORED;
+            return this == INSIDE || this == LAND || this == FREE || this == EXPLORED || this == TERRITORY;
         }
     }
 
@@ -73,14 +82,19 @@ public final class PlacementRules {
 
         /** Every civic centre of the match, foundations included. */
         List<Centre> civicCentres();
+
+        /** The faction owning column (x, z)'s territory tile, -1 for neutral, {@link #NO_GRID} without a grid (TERR-02). */
+        default int territory(int x, int z) {
+            return NO_GRID;
+        }
     }
 
     /**
      * What the template being placed asks: whether it is a civic centre, the spacing civic centres keep between their
-     * centres, how far from an own civic centre's footprint it may stand (0 for no such rule), and whether its faction
-     * can pay for it.
+     * centres, where it may stand ({@link #ANYWHERE}, {@link #OWN} or {@link #OWN_OR_NEUTRAL} territory, TERR-02), and
+     * whether its faction can pay for it.
      */
-    public record Params(boolean civicCentre, double spacing, double civicReach, boolean affordable) {}
+    public record Params(boolean civicCentre, double spacing, int territory, boolean affordable) {}
 
     /**
      * A verdict: the first rule that fails, null for a placement that may go ahead, and per footprint column ({@code
@@ -99,8 +113,14 @@ public final class PlacementRules {
 
     private PlacementRules() {}
 
-    /** The verdict for blueprint {@code b} at {@code at} for {@code faction}, as {@code params} asks. */
-    public static Verdict check(World world, Blueprint b, Footprint at, int faction, Params params) {
+    /** The verdict of {@code rule}, a civilisation's placement rule (CIV-05), for blueprint {@code b} at {@code at}. */
+    public static Verdict check(
+            PlacementRule rule, World world, Blueprint b, Footprint at, int faction, Params params) {
+        return rule.check(world, b, at, faction, params);
+    }
+
+    /** Today's checks, the placement seam's default ({@link PlacementRule#DEFAULT}). */
+    public static Verdict standard(World world, Blueprint b, Footprint at, int faction, Params params) {
         if (at.anchorX() < 0 || at.anchorZ() < 0) {
             return new Verdict(Rule.INSIDE, List.of(), List.of()); // columns are packed unsigned: none to tell
         }
@@ -128,6 +148,8 @@ public final class PlacementRules {
             high = Math.max(high, floor);
             if (!world.explored(x, z)) {
                 rules[k] = Rule.EXPLORED;
+            } else if (outside(world.territory(x, z), faction, params.territory())) {
+                rules[k] = Rule.TERRITORY;
             }
         }
         Rule failed = null;
@@ -141,8 +163,6 @@ public final class PlacementRules {
             whole = Rule.FLAT;
         } else if (params.civicCentre() && tooClose(world, at, params.spacing())) {
             whole = Rule.SPACING;
-        } else if (!params.civicCentre() && params.civicReach() > 0 && !inReach(world, at, faction, params)) {
-            whole = Rule.REACH;
         } else if (!params.affordable()) {
             whole = Rule.AFFORDABLE;
         }
@@ -172,14 +192,12 @@ public final class PlacementRules {
         return false;
     }
 
-    /** Whether this footprint comes within the reach of one of the faction's civic centres' footprints. */
-    private static boolean inReach(World world, Footprint at, int faction, Params params) {
-        for (Centre c : world.civicCentres()) {
-            if (c.faction() == faction && gap(c.at(), at) <= params.civicReach() + 1e-9) {
-                return true;
-            }
+    /** Whether a column whose tile {@code owner} holds is outside where {@code mode} lets {@code faction} build. */
+    static boolean outside(int owner, int faction, int mode) {
+        if (owner == NO_GRID || mode == ANYWHERE) {
+            return false;
         }
-        return false;
+        return owner != faction && !(mode == OWN_OR_NEUTRAL && owner < 0);
     }
 
     /** The distance between two footprints' edges, 0 where they touch or overlap. */

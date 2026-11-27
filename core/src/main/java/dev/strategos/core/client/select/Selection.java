@@ -10,7 +10,8 @@ import org.jspecify.annotations.Nullable;
  * The player's selection (UI-03, 04 §13.4): own units only, at most {@value #MOST}, in handle order. A click selects one
  * own unit or inspects an enemy without selecting it; Shift with a click adds or removes it; a box takes the own
  * units whose feet or head project inside it, Shift adding to what is selected; a double click takes every own unit
- * of that template on screen. An empty click or box clears, unless Shift is held. A click on a building (UI-06) selects
+ * of that template on screen; an Alt click takes every own unit on screen that keeps a place in the clicked unit's
+ * formation (ORD-06), where a plain click takes that unit alone. An empty click or box clears, unless Shift is held. A click on a building (UI-06) selects
  * an own one alone, or inspects another faction's; a click on a deposit (ECO-08) shows it alone; taking units drops
  * either.
  */
@@ -98,6 +99,24 @@ public final class Selection {
             }
         }
         replaceOrAdd(same, shift);
+    }
+
+    /**
+     * Alt with a click on {@code unit} (ORD-06): every own unit among {@code seen} in its formation; a unit in none,
+     * or an enemy's, is clicked as a plain click would.
+     */
+    public void clickFormation(List<Seen> seen, Seen unit, boolean shift) {
+        if (unit.faction() != faction || unit.formation() == 0) {
+            click(unit, shift);
+            return;
+        }
+        List<Seen> members = new ArrayList<>();
+        for (Seen s : seen) {
+            if (s.faction() == faction && s.formation() == unit.formation()) {
+                members.add(s);
+            }
+        }
+        replaceOrAdd(members, shift);
     }
 
     /** Replaces the selection with {@code handles}, own ones as given, as a control group recalls it. */

@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.order;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.Vec2d;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +11,8 @@ import java.util.List;
  * a kind ({@link OrderKind}), a target on the ground plane, a group id (0 for an order given to one unit alone) and the
  * unit's slot in its group (0 until ORD-03's slots). An attack also holds the unit it attacks, and its slot is the
  * attacker's place round that unit (CMB-02); its place on the ground is where the attacker walks to, which the machine
- * moves as the target does. The first is the current order, which the unit's machine carries out; the others wait
+ * moves as the target does. A patrol also holds the points it loops through, its anchors, and its slot is the leg it is
+ * on (ORD-07). The first is the current order, which the unit's machine carries out; the others wait
  * their turn. Replaces M0's single order, which is a queue of one.
  */
 public final class OrderQueues {
@@ -25,10 +27,21 @@ public final class OrderQueues {
     private int[] groups = new int[0];
     private int[] slots = new int[0];
     private int[] targets = new int[0];
+    private Vec2d[][] anchors = new Vec2d[0][]; // per order like kinds; empty for an order with none
+    private final Vec2d[] none = new Vec2d[0]; // the anchors of an order with none, shared
 
     /** One order as a save keeps it; {@code target} is the attacked unit's handle, 0 for any other kind. */
     @CoreApi
-    public record Order(int kind, double x, double z, int group, int slot, int target) {
+    public record Order(int kind, double x, double z, int group, int slot, int target, List<Vec2d> anchors) {
+        public Order {
+            anchors = List.copyOf(anchors);
+        }
+
+        /** An order that has no anchors. */
+        public Order(int kind, double x, double z, int group, int slot, int target) {
+            this(kind, x, z, group, slot, target, List.of());
+        }
+
         /** An order that attacks no unit. */
         public Order(int kind, double x, double z, int group, int slot) {
             this(kind, x, z, group, slot, 0);
@@ -40,8 +53,13 @@ public final class OrderQueues {
      * attacked unit, and the orders after it. {@link #NONE} for M0's single order, a move.
      */
     @CoreApi
-    public record Saved(int kind, int group, int slot, int target, List<Order> next) {
+    public record Saved(int kind, int group, int slot, int target, List<Order> next, List<Vec2d> anchors) {
         public static final Saved NONE = new Saved(OrderKind.MOVE, 0, 0, 0, List.of());
+
+        /** A current order with no anchors. */
+        public Saved(int kind, int group, int slot, int target, List<Order> next) {
+            this(kind, group, slot, target, next, List.of());
+        }
 
         /** A current move's rest, as M1 saved it. */
         public Saved(int group, int slot, List<Order> next) {
@@ -50,6 +68,7 @@ public final class OrderQueues {
 
         public Saved {
             next = List.copyOf(next);
+            anchors = List.copyOf(anchors);
             if (next.size() >= MAX) {
                 throw new IllegalArgumentException(
                         next.size() + " orders after the current one, more than " + (MAX - 1));
@@ -68,6 +87,9 @@ public final class OrderQueues {
             groups = Arrays.copyOf(groups, capacity * MAX);
             slots = Arrays.copyOf(slots, capacity * MAX);
             targets = Arrays.copyOf(targets, capacity * MAX);
+            int held = anchors.length;
+            anchors = Arrays.copyOf(anchors, capacity * MAX);
+            Arrays.fill(anchors, held, anchors.length, none);
         }
     }
 
@@ -102,6 +124,21 @@ public final class OrderQueues {
         return count[i] == 0 ? 0 : targets[at(i, 0)];
     }
 
+    /** How many anchors the current order holds: a patrol's points, 0 for any other order. */
+    public int anchorCount(int i) {
+        return count[i] == 0 ? 0 : anchors[at(i, 0)].length;
+    }
+
+    /** The {@code k}th anchor of the current order. */
+    public Vec2d anchor(int i, int k) {
+        return anchors[at(i, 0)][k];
+    }
+
+    /** The current order's slot is {@code slot}: a patrol's leg. */
+    public void setSlot(int i, int slot) {
+        slots[at(i, 0)] = slot;
+    }
+
     /** The current order's place on the ground moves to (x, z): an attacker's walk follows its target. */
     public void setPlace(int i, double x, double z) {
         int at = at(i, 0);
@@ -122,7 +159,7 @@ public final class OrderQueues {
             throw new IndexOutOfBoundsException("order " + k + " of a queue of " + count[i]);
         }
         int at = at(i, k);
-        return new Order(kinds[at], xs[at], zs[at], groups[at], slots[at], targets[at]);
+        return new Order(kinds[at], xs[at], zs[at], groups[at], slots[at], targets[at], anchorList(at));
     }
 
     /** The current order finishes and the queue is cleared; the new order is the only one. */
@@ -132,8 +169,13 @@ public final class OrderQueues {
 
     /** As {@link #replace(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
     public void replace(int i, int kind, double x, double z, int group, int slot, int target) {
+        replace(i, kind, x, z, group, slot, target, List.of());
+    }
+
+    /** As {@link #replace(int, int, double, double, int, int, int)}, for an order that holds {@code anchors}. */
+    public void replace(int i, int kind, double x, double z, int group, int slot, int target, List<Vec2d> anchors) {
         clear(i);
-        put(i, 0, kind, x, z, group, slot, target);
+        put(i, 0, kind, x, z, group, slot, target, anchors);
         count[i] = 1;
     }
 
@@ -164,10 +206,15 @@ public final class OrderQueues {
 
     /** As {@link #queue(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
     public boolean queue(int i, int kind, double x, double z, int group, int slot, int target) {
+        return queue(i, kind, x, z, group, slot, target, List.of());
+    }
+
+    /** As {@link #queue(int, int, double, double, int, int, int)}, for an order that holds {@code anchors}. */
+    public boolean queue(int i, int kind, double x, double z, int group, int slot, int target, List<Vec2d> anchors) {
         if (count[i] == MAX) {
             return false;
         }
-        put(i, count[i], kind, x, z, group, slot, target);
+        put(i, count[i], kind, x, z, group, slot, target, anchors);
         count[i]++;
         return true;
     }
@@ -182,12 +229,18 @@ public final class OrderQueues {
 
     /** As {@link #pushFront(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
     public boolean pushFront(int i, int kind, double x, double z, int group, int slot, int target) {
+        return pushFront(i, kind, x, z, group, slot, target, List.of());
+    }
+
+    /** As {@link #pushFront(int, int, double, double, int, int, int)}, for an order that holds {@code anchors}. */
+    public boolean pushFront(
+            int i, int kind, double x, double z, int group, int slot, int target, List<Vec2d> anchors) {
         if (count[i] == MAX) {
             return false;
         }
         head[i] = (head[i] + MAX - 1) % MAX;
         count[i]++;
-        put(i, 0, kind, x, z, group, slot, target);
+        put(i, 0, kind, x, z, group, slot, target, anchors);
         return true;
     }
 
@@ -223,20 +276,29 @@ public final class OrderQueues {
         for (int k = 1; k < count[i]; k++) {
             next.add(order(i, k));
         }
-        return new Saved(kind, group(i), slot(i), target(i), next);
+        return new Saved(kind, group(i), slot(i), target(i), next, count[i] == 0 ? List.of() : anchorList(at(i, 0)));
     }
 
     /** Unit {@code i}'s queue as saved: the current order to (x, z), if any, then the saved orders after it. */
     public void restore(int i, double x, double z, Saved saved) {
         clear(i);
-        replace(i, saved.kind(), x, z, saved.group(), saved.slot(), saved.target());
+        replace(i, saved.kind(), x, z, saved.group(), saved.slot(), saved.target(), saved.anchors());
         for (Order o : saved.next()) {
-            queue(i, o.kind(), o.x(), o.z(), o.group(), o.slot(), o.target());
+            queue(i, o.kind(), o.x(), o.z(), o.group(), o.slot(), o.target(), o.anchors());
         }
     }
 
+    private List<Vec2d> anchorList(int at) {
+        return anchors[at].length == 0 ? List.of() : List.of(anchors[at]);
+    }
+
     private void put(int i, int k, int kind, double x, double z, int group, int slot, int target) {
+        put(i, k, kind, x, z, group, slot, target, List.of());
+    }
+
+    private void put(int i, int k, int kind, double x, double z, int group, int slot, int target, List<Vec2d> held) {
         int at = at(i, k);
+        anchors[at] = held.isEmpty() ? none : held.toArray(none);
         kinds[at] = (byte) kind;
         xs[at] = x;
         zs[at] = z;

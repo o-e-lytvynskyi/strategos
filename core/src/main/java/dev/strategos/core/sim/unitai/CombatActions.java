@@ -48,6 +48,34 @@ final class CombatActions {
         } else if (stance == Stance.STAND_GROUND) {
             qr += Stances.searchSlack(s, i);
         }
+        return scan(ctx, stance, qx, qz, qr, radius);
+    }
+
+    /**
+     * As {@link #nearestEnemy}, for a guard (ORD-07): among the enemies the unit's stance lets it notice, those within
+     * its stance's radius of the charge at ({@code cx}, {@code cz}), not of the unit itself.
+     */
+    static int nearestEnemyNear(Context<MatchState> ctx, double cx, double cz) {
+        MatchState s = ctx.host();
+        int i = ctx.unit();
+        if (!s.stats().canAttack(i)) return -1;
+        Stance stance = Stances.of(s, i);
+        if (stance == Stance.PASSIVE) return -1;
+        double radius = Stances.radius(s, i, stance);
+        double qr = stance == Stance.STAND_GROUND ? radius + Stances.searchSlack(s, i) : radius;
+        long start = s.combatTimes().start();
+        int found = scan(ctx, stance, cx, cz, qr, radius);
+        s.combatTimes().targeted(start);
+        return found;
+    }
+
+    /** The enemy within {@code qr} of (qx, qz) that unit {@code ctx} takes up, by the rules of {@link #nearestEnemy}. */
+    private static int scan(Context<MatchState> ctx, Stance stance, double qx, double qz, double qr, double radius) {
+        MatchState s = ctx.host();
+        int i = ctx.unit();
+        MotionStore motion = s.motion();
+        double x = motion.x(i);
+        double z = motion.z(i);
         boolean stand = stance == Stance.STAND_GROUND;
         List<String> preferred = s.stats().preferredClasses(i, s.stats().canRanged(i));
         boolean melee = !s.stats().canRanged(i); // only a melee attack restricts its targets (CMB-09)
@@ -103,6 +131,9 @@ final class CombatActions {
         boolean engagement = s.orders().kind(i) == OrderKind.ENGAGE;
         if ((engagement || chasing) && Engagement.gap(s, i, t) > s.stats().vision(i)) {
             return true;
+        }
+        if (engagement && Guarding.beyondLeash(s, i)) {
+            return true; // a guard lets an enemy go that draws it far from its charge
         }
         if (engagement && Stances.of(s, i) == Stance.DEFENSIVE && s.stances().hasSpot(i)) {
             double d = DetMath.length(

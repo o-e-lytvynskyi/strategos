@@ -1,29 +1,37 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.capture.CaptureSystem;
+import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.GatherSlots;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.econ.ResourceDef;
+import dev.strategos.core.sim.formation.FormationController;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTier;
@@ -82,24 +90,94 @@ final class QueriesImpl implements MatchQueries {
                             ? List.of()
                             : List.of(drops.trim().split("\\s+")),
                     Double.isFinite(house) ? house : 0,
-                    java.util.Arrays.stream(b.queue(handle)).boxed().toList(),
+                    java.util.Arrays.stream(b.queues().queue(handle)).boxed().toList(),
                     trainedThousandths(handle),
-                    b.rallyKind(handle),
-                    b.rallyX(handle),
-                    b.rallyZ(handle),
+                    b.queues().rallyKind(handle),
+                    b.queues().rallyX(handle),
+                    b.queues().rallyZ(handle),
                     b.field(handle) == 0 ? -1 : state.nodes().amount(b.field(handle)),
                     b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle)),
                     b.autoReseed(handle),
-                    java.util.stream.IntStream.range(0, b.queueSize(handle))
-                            .mapToObj(k -> b.batch(handle, k))
-                            .toList()));
+                    java.util.stream.IntStream.range(0, b.queues().queueSize(handle))
+                            .mapToObj(k -> b.queues().batch(handle, k))
+                            .toList(),
+                    captureShares(handle)));
         }
         return out;
+    }
+
+    /** Each faction's share of building {@code handle}'s capture points in 255ths; empty with no capture open. */
+    private List<Integer> captureShares(int handle) {
+        long[] points = state.play().capture().points(handle);
+        long total = CaptureSystem.total(state, handle);
+        if (points == null || total <= 0) {
+            return List.of();
+        }
+        int[] shares = new int[Math.min(points.length, BuildingState.MAX_CAPTURE_FACTIONS)];
+        int end = 0;
+        for (int f = 0; f < shares.length; f++) {
+            double share = points[f] * (double) BuildingState.WHOLE_SHARE / total;
+            shares[f] = (int) Math.max(0, Math.min(BuildingState.WHOLE_SHARE, Math.round(share)));
+            if (shares[f] > 0) {
+                end = f + 1; // trailing zeros are left off
+            }
+        }
+        return Arrays.stream(shares, 0, end).boxed().toList();
+    }
+
+    @Override
+    public String centreClass(FactionSlot faction) {
+        return state.civs().centreClass(faction.value());
+    }
+
+    @Override
+    public @Nullable TemplateId role(FactionSlot faction, String role) {
+        CivDef def = state.civs().of(faction.value());
+        return def == null ? null : def.roles().get(role);
+    }
+
+    @Override
+    public boolean trains(FactionSlot faction, TemplateId building, TemplateId unit) {
+        dev.strategos.core.content.UnitTemplate b = state.templates().byId(building);
+        dev.strategos.core.content.UnitTemplate u = state.templates().byId(unit);
+        if (b == null || u == null || !state.civs().hasTemplate(faction.value(), u.netIndex())) {
+            return false;
+        }
+        int path = state.stats().tokenPath(dev.strategos.core.sim.prod.Production.TRAINER);
+        List<String> units = path < 0 ? null : state.stats().blockTokens(b.netIndex(), faction.value(), path);
+        return units != null && units.contains(unit.value());
+    }
+
+    @Override
+    public int aiHints(FactionSlot faction) {
+        return state.civs().rules(faction.value()).hints();
+    }
+
+    @Override
+    public boolean usesResource(FactionSlot faction, String resource) {
+        List<dev.strategos.core.sim.econ.ResourceDef> all =
+                state.config().rules().economy().resources();
+        for (int r = 0; r < all.size(); r++) {
+            if (all.get(r).id().equals(resource)) {
+                return state.civs().rules(faction.value()).resource().uses(faction.value(), r);
+            }
+        }
+        return true; // not a resource of the match: nothing to refuse
+    }
+
+    @Override
+    public int phase(FactionSlot faction) {
+        return dev.strategos.core.sim.prod.Techs.phase(state, faction.value());
     }
 
     @Override
     public List<TechId> researched(FactionSlot faction) {
         return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
+    }
+
+    @Override
+    public @Nullable CivDef civOf(int sourceId, FactionSlot faction) {
+        return sourceId == CivBonuses.SOURCE ? state.civs().of(faction.value()) : null;
     }
 
     @Override
@@ -139,12 +217,12 @@ final class QueriesImpl implements MatchQueries {
     /** The head entry's progress, in thousandths of its training. */
     private long trainedThousandths(int handle) {
         BuildingStore b = state.buildings();
-        if (b.queueSize(handle) == 0) {
+        if (b.queues().queueSize(handle) == 0) {
             return 0;
         }
-        long ticks =
-                dev.strategos.core.sim.prod.Production.ticks(state, handle, b.queue(handle)[0], b.batch(handle, 0));
-        return Math.min(BuildingStore.FULL, b.trained(handle) * BuildingStore.FULL / ticks);
+        long ticks = dev.strategos.core.sim.prod.Production.ticks(
+                state, handle, b.queues().queue(handle)[0], b.queues().batch(handle, 0));
+        return Math.min(BuildingStore.FULL, b.queues().trained(handle) * BuildingStore.FULL / ticks);
     }
 
     @Override
@@ -154,7 +232,7 @@ final class QueriesImpl implements MatchQueries {
 
     @Override
     public int populationCap(FactionSlot faction) {
-        return state.population().cap(faction.value());
+        return state.populationCap(faction.value());
     }
 
     @Override
@@ -187,6 +265,25 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable Stance explicitStance(int handle) {
         return state.entities().isAlive(handle) ? state.stances().explicit(Handle.index(handle)) : null;
+    }
+
+    @Override
+    public int abilityCooldown(int handle, String ability) {
+        if (!state.entities().isAlive(handle)) {
+            return 0;
+        }
+        long left = state.play().abilities().readyAt(handle, ability) - state.tick();
+        return left <= 0 ? 0 : (int) Math.min(left, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public int rank(int handle) {
+        return state.entities().isAlive(handle) ? Ranks.effectiveRank(state, Handle.index(handle)) : 0;
+    }
+
+    @Override
+    public long experience(int handle) {
+        return state.entities().isAlive(handle) ? state.play().experience().experience(Handle.index(handle)) : 0;
     }
 
     @Override
@@ -256,6 +353,42 @@ final class QueriesImpl implements MatchQueries {
                 motion.yaw(i),
                 state.ai().state(i),
                 orders.kind(i) != OrderKind.NONE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
+    }
+
+    @Override
+    public int formationOf(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return 0;
+        }
+        int i = Handle.index(handle);
+        return state.orders().kind(i) == OrderKind.FORMATION ? state.orders().target(i) : 0;
+    }
+
+    @Override
+    public boolean holdsStandingOrder(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return false;
+        }
+        int kind = state.orders().kind(Handle.index(handle));
+        return kind == OrderKind.PATROL || kind == OrderKind.GUARD;
+    }
+
+    @Override
+    public double formationSlotError(int handle) {
+        int id = formationOf(handle);
+        FormationController c = id == 0 ? null : state.play().formations().byId(id);
+        if (c == null) {
+            return Double.NaN;
+        }
+        for (int k = 0; k < c.size(); k++) {
+            if (c.member(k) == handle) {
+                int i = Handle.index(handle);
+                double dx = state.motion().x(i) - c.slotX(k);
+                double dz = state.motion().z(i) - c.slotZ(k);
+                return Math.sqrt(dx * dx + dz * dz);
+            }
+        }
+        return Double.NaN;
     }
 
     @Override
@@ -464,6 +597,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<dev.strategos.core.sim.build.GateDoor> gateDoors() {
+        return dev.strategos.core.sim.build.WallGates.doors(state);
+    }
+
+    @Override
     public List<WorldEffect> worldClaims() {
         return WorldClaims.of(state);
     }
@@ -476,6 +614,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
+                        state.civs().rules(faction).placement(),
                         placementWorld(faction),
                         b,
                         at,
@@ -511,6 +650,78 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public long captureTotal(int building) {
+        return state.buildings().alive(building) ? CaptureSystem.total(state, building) : 0;
+    }
+
+    @Override
+    public long captureRegen(int building) {
+        return state.buildings().alive(building) && CaptureSystem.total(state, building) > 0
+                ? CaptureSystem.regen(state, building, state.buildings().faction(building))
+                : 0;
+    }
+
+    @Override
+    public long captureStrength(int unit) {
+        return state.entities().isAlive(unit) ? CaptureSystem.strength(state, Handle.index(unit)) : 0;
+    }
+
+    @Override
+    public int garrisonRoom(int unit, int building) {
+        if (!state.entities().isAlive(unit)
+                || !state.buildings().alive(building)
+                || !Garrisons.admits(state, Handle.index(unit), building)) {
+            return 0;
+        }
+        return Math.max(
+                0, Garrisons.capacity(state, building) - state.garrison().count(building));
+    }
+
+    @Override
+    public boolean researchable(int building, dev.strategos.core.content.TechDef tech) {
+        return state.buildings().alive(building)
+                && dev.strategos.core.sim.prod.Techs.refusal(state, building, tech) == null;
+    }
+
+    @Override
+    public boolean researchBlockedByRequirements(int building, dev.strategos.core.content.TechDef tech) {
+        return state.buildings().alive(building)
+                && dev.strategos.core.sim.prod.Techs.refusal(state, building, tech)
+                        == dev.strategos.core.protocol.RejectReason.REQUIREMENTS;
+    }
+
+    @Override
+    public int[] nodeSlotCells(int node) {
+        dev.strategos.core.sim.econ.NodeStore n = state.nodes();
+        if (node < 1 || node > n.count()) {
+            return new int[0];
+        }
+        int[] out = new int[n.slotCount(node)];
+        for (int s = 0; s < out.length; s++) {
+            out[s] = n.slot(node, s);
+        }
+        return out;
+    }
+
+    @Override
+    public int[] garrisonOccupants(int building) {
+        return state.buildings().alive(building) ? state.garrison().occupants(building) : new int[0];
+    }
+
+    @Override
+    public int buildingLimit(int template, int faction) {
+        return dev.strategos.core.sim.build.Placing.limit(state, template, faction);
+    }
+
+    @Override
+    public int territoryOwner(int x, int z) {
+        var territory = state.play().territorySystem();
+        return territory == null || territory.recomputes() == 0
+                ? -1
+                : territory.grid().ownerAt(x, z);
+    }
+
+    @Override
     public double floorAt(int x, int z) {
         return dev.strategos.core.sim.build.Placing.floor(
                 state.surfaces(), state.config().bounds(), x, z);
@@ -524,6 +735,17 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
         return state.combatTimes().stats();
+    }
+
+    @Override
+    public dev.strategos.core.diag.SystemTimes.Stats systemTimes() {
+        return state.systemTimes().stats();
+    }
+
+    @Override
+    public long territoryRecomputes() {
+        var territory = state.play().territorySystem();
+        return territory == null ? 0 : territory.recomputes();
     }
 
     @Override

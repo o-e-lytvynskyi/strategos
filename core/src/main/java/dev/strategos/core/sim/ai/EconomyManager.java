@@ -1,10 +1,13 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.CivRoles;
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -29,6 +32,14 @@ final class EconomyManager implements AiModule {
     /** How far from its centre a field is its own. */
     static final double OWN_FIELD = 32;
 
+    /**
+     * Farther than this from its centre no node is gathered at: a load carried that far home is minutes of walking, and
+     * the gatherer's slot at a near node stays claimed meanwhile (QA-12, a fourth stone worker sent 300 blocks across the
+     * map). It is the economy's reach: a remote dropsite goes up at most {@link BuildManager#REMOTE_REACH} from the
+     * centre, and a node a few blocks beyond it.
+     */
+    static final double FAR_NODE = 128;
+
     /** A stock under this is low, over that piled up, in thousandths. */
     static final long LOW = 100_000;
 
@@ -40,6 +51,9 @@ final class EconomyManager implements AiModule {
     private final StrategyScript script;
     private final AiMemory memory;
     private final Map<String, Long> stocks = new TreeMap<>(); // this think's, by resource
+    private final java.util.Set<String> lacking =
+            new java.util.TreeSet<>(); // this think's: short for what is saved for
+    private double[] centres = new double[0]; // this think's finished own centres, (x, z) pairs
 
     EconomyManager(StrategyScript script, AiMemory memory) {
         this.script = script;
@@ -49,13 +63,21 @@ final class EconomyManager implements AiModule {
     @Override
     public void think(AiView view, AiBudget budget, CommandSink sink) {
         Base base = Base.of(view);
+        centres = ownCentres(view);
         List<String> resources = view.resources();
         stocks.clear();
         for (String r : resources) {
             stocks.put(r, view.stock(r));
         }
+        lacks(view);
         int[] gatherers = view.gatherers();
-        List<NodeView> everyNode = view.nodes();
+        List<NodeView> everyNode = new java.util.ArrayList<>();
+        for (NodeView n : view.nodes()) {
+            if (view.uses(
+                    n.resource())) { // the AI plays the rules it is given: no node of a resource its faction lacks
+                everyNode.add(n);
+            }
+        }
         int walker = scout(
                 view, budget, sink, everyNode, base,
                 gatherers); // AI-18: nodes in the dark are explored first, by the worker it returns
@@ -249,13 +271,56 @@ final class EconomyManager implements AiModule {
         return shape(
                 script.ratio().getOrDefault(resource, 0),
                 stocks.getOrDefault(resource, 0L),
-                script.battle().finish());
+                script.battle().finish(),
+                lacking.contains(resource));
+    }
+
+    /**
+     * AI-09 (T25b), in the depth path's late game only: the resources the stock is short of for what the AI saves for
+     * (the active reserve's building or technology) or queues (the ram, while rams are wanted). Gatherers go to these.
+     */
+    private void lacks(AiView view) {
+        lacking.clear();
+        if (!script.depth().late(view.tick())) {
+            return;
+        }
+        BuildManager.Due due = BuildManager.due(view, script, memory);
+        BuildManager.Due phase = TechManager.due(view, script, memory); // the same source as the production's
+        boolean phaseSaved = TechManager.savingPhase(phase);
+        TemplateId ram = view.civRole(CivRoles.SIEGE);
+        boolean rams = false;
+        if (ram != null && script.battle().rams() > 0 && !phaseSaved) {
+            int have = 0;
+            for (UnitView u : view.units()) {
+                have += u.template().equals(ram) ? 1 : 0;
+            }
+            rams = have < script.battle().rams();
+        }
+        for (String r : view.resources()) {
+            long stock = stocks.getOrDefault(r, 0L);
+            if ((due != null && stock < due.cost(view, r))
+                    || (phaseSaved && phase != null && stock < phase.cost(view, r))
+                    || (ram != null && rams && stock < view.cost(ram, r))) {
+                lacking.add(r);
+            }
+        }
     }
 
     /** {@code weight} shaped by {@code stock} (thousandths) when {@code finish} is on; unchanged otherwise. */
     static double shape(double weight, long stock, boolean finish) {
+        return shape(weight, stock, finish, false);
+    }
+
+    /**
+     * As above, and {@code lacking}: the resource is short for what the reserve or the queue wants, so its weight grows
+     * (tripled while the stock is also low).
+     */
+    static double shape(double weight, long stock, boolean finish, boolean lacking) {
         if (weight <= 0 || !finish) {
             return weight;
+        }
+        if (lacking) {
+            return stock < LOW ? weight * 3 : weight * 2;
         }
         return stock < LOW ? weight * 2 : stock > HIGH ? weight / 2 : weight;
     }
@@ -376,10 +441,41 @@ final class EconomyManager implements AiModule {
                 || n.freeSlots() + free.getOrDefault(n.id(), 0) <= 0) {
             return false;
         }
+        if (centres.length > 0 && farFromEveryCentre(n.anchorX(), n.anchorZ())) { // AI-08: a second centre reaches too
+            return false;
+        }
         if (n.kind() == MaterialKind.CROP
                 && (base == null || DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z()) > OWN_FIELD)) {
             return false;
         }
         return !(script.balance() && base != null && base.enemyHome(n.anchorX(), n.anchorZ())); // AI-02 leaves it
+    }
+
+    private static double[] ownCentres(AiView view) {
+        int count = 0;
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == 2 && view.isCentre(b)) {
+                count++;
+            }
+        }
+        double[] out = new double[count * 2];
+        int i = 0;
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == 2 && view.isCentre(b)) {
+                Footprint f = b.footprint();
+                out[i++] = f.anchorX() + f.spanX() / 2.0;
+                out[i++] = f.anchorZ() + f.spanZ() / 2.0;
+            }
+        }
+        return out;
+    }
+
+    private boolean farFromEveryCentre(double x, double z) {
+        for (int i = 0; i < centres.length; i += 2) {
+            if (DetMath.length(x - centres[i], z - centres[i + 1]) <= FAR_NODE) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -2,22 +2,28 @@ package dev.strategos.mod.client.rts;
 
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.input.Action;
+import dev.strategos.core.client.order.AbilityIntents;
 import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.FocusTargets;
+import dev.strategos.core.content.AbilityDef;
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.Target;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.protocol.UseAbility;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode.Pick;
@@ -56,6 +62,8 @@ final class RtsOrders {
     private static final DustParticleOptions GATHER_MARKER =
             new DustParticleOptions(new Vector3f(0.3f, 0.9f, 0.3f), 4f);
 
+    private static final int NO_ABILITY = -1;
+
     private final RtsMode mode;
     private boolean previewing;
     private int clientSeq = 1;
@@ -63,20 +71,169 @@ final class RtsOrders {
     private final List<double[]> markers =
             new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
     private boolean attackMove;
+    private @Nullable FormationShape formation; // the armed formation march's shape (ORD-06)
+    private int ability = NO_ABILITY; // the armed ability's index in the template set (UNIT-10)
     private final FocusTargets focus = new FocusTargets();
     private @Nullable Command lastCommand;
 
+    private final StandingTargeting standing;
+
     RtsOrders(RtsMode mode) {
         this.mode = mode;
+        this.standing = new StandingTargeting(mode, this);
+    }
+
+    /** The patrol and guard targeting (ORD-07). */
+    StandingTargeting standing() {
+        return standing;
+    }
+
+    /** Another targeting arms: attack-move, a formation march and an ability drop out. */
+    void disarmOthers() {
+        attackMove = false;
+        formation = null;
+        ability = NO_ABILITY;
+    }
+
+    /** A marker of {@code kind} (see {@code markers}) at the world place, for the targeting's clicks. */
+    void mark(double x, double y, double z, int kind) {
+        markers.add(new double[] {x, y, z, 40, kind});
     }
 
     /** Attack-move arms for the next right click; cancelling or selecting disarms it. */
     void fired(Action action) {
+        standing.fired(action);
         if (action == Action.ATTACK_MOVE) {
             attackMove = true; // for the next right click
+            ability = NO_ABILITY;
+            formation = null;
+        } else if (action == Action.FORMATION_BOX || action == Action.FORMATION_LINE) {
+            armFormation(action == Action.FORMATION_BOX ? FormationShape.BOX : FormationShape.LINE);
         } else if (action == Action.CANCEL || action == Action.SELECT || action == Action.BOX_SELECT) {
             attackMove = false;
+            if (action != Action.SELECT) {
+                formation = null; // a click fires it, in the screen's handler; cancel and a box drop it
+            } // an armed ability keeps through a click, which fires it, and goes with cancel or a box
+            if (action != Action.SELECT) {
+                ability = NO_ABILITY;
+            }
         }
+    }
+
+    /** The next click on the ground marches the selection in a formation of {@code shape} (ORD-06). */
+    void armFormation(FormationShape shape) {
+        standing.disarm();
+        formation = shape;
+        attackMove = false;
+        ability = NO_ABILITY;
+    }
+
+    /** The armed formation's shape code, -1 for none. */
+    int formationArmed() {
+        FormationShape shape = formation;
+        return shape == null ? -1 : shape.code();
+    }
+
+    /**
+     * The click that ends a formation march's targeting (ORD-06): the selection marches to the ground the cursor at
+     * window points picks, in one formation of the armed shape, replacing its orders (Shift is not offered). It
+     * disarms; false when none was armed.
+     */
+    boolean fireFormation(double x, double y) {
+        FormationShape shape = formation;
+        formation = null;
+        if (shape == null) {
+            return false;
+        }
+        Pick pick = mode.pick(x, y);
+        MatchJoin join = StrategosClient.match();
+        if (pick == null || join == null) {
+            return true;
+        }
+        double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+        double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+        Command command =
+                OrderIntents.formation(mode.selection().handles(), wx - join.originX(), wz - join.originZ(), shape);
+        if (command != null && send(command)) {
+            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, 40, 2});
+        }
+        return true;
+    }
+
+    /** Targeting arms with the ability at {@code index} of the set (UNIT-10): the next click aims it. */
+    void armAbility(int index) {
+        standing.disarm();
+        ability = index;
+        attackMove = false;
+        formation = null;
+    }
+
+    /** The armed ability's index in the template set, -1 for none. */
+    int abilityArmed() {
+        return ability;
+    }
+
+    /**
+     * The click that aims the armed ability (UNIT-10): a point on the ground for a point or area ability, the unit
+     * under the cursor for a unit ability, as one {@code UseAbility} of the selected units that have it, queued with
+     * Shift for an aimed ability. It disarms; false when none was armed.
+     */
+    boolean fireAbility(double x, double y, boolean shift) {
+        int index = ability;
+        ability = NO_ABILITY;
+        if (index == NO_ABILITY) {
+            return false;
+        }
+        TemplateSet templates = StrategosClient.templates();
+        Pick pick = mode.pick(x, y);
+        MatchJoin join = StrategosClient.match();
+        Minecraft mc = Minecraft.getInstance();
+        if (pick == null
+                || join == null
+                || mc.level == null
+                || index >= templates.abilities().size()) {
+            return true;
+        }
+        AbilityDef def = templates.abilities().get(index);
+        Map<Integer, Integer> templateOf = new HashMap<>();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().matchId() == join.matchId()) {
+                templateOf.put(body.spawnData().handle(), body.spawnData().templateIndex());
+            }
+        }
+        Target target;
+        if (def.aim() == AbilityDef.Aim.UNIT) {
+            Integer unit = pick.entityId() >= 0
+                            && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
+                            && body.spawnData() != null
+                            && body.spawnData().matchId() == join.matchId()
+                    ? body.spawnData().handle()
+                    : null;
+            if (unit == null) {
+                return true; // not on a unit: nothing is sent
+            }
+            target = Target.unit(unit);
+        } else {
+            double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+            double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+            target = Target.point(wx - join.originX(), wz - join.originZ());
+        }
+        int[] owners =
+                AbilityIntents.owners(templates, mode.selection().handles(), h -> templateOf.getOrDefault(h, -1), def);
+        UseAbility use = AbilityIntents.use(owners, def, target, shift);
+        if (use != null && send(use)) {
+            double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+            double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, shift ? 200 : 40, 2});
+        }
+        return true;
+    }
+
+    /** The click that fires an armed ability, formation march or patrol or guard; false when none is armed. */
+    boolean fireArmed(double x, double y, boolean shift) {
+        return fireAbility(x, y, shift) || fireFormation(x, y) || standing.fire(x, y, shift);
     }
 
     void preview(boolean on) {
@@ -122,10 +279,17 @@ final class RtsOrders {
      * enemy's body or building, a Build on an own unfinished building, else a Move to the block or unit there, or with
      * attack-move armed an AttackMove there, match-local, queued with Shift; one command per click. Attack-move disarms with the click.
      * With {@code force} (Ctrl) an own unit or building under the cursor is attacked too, and with {@code spread} (Alt)
-     * an enemy's attack is shared over the enemies round it (ORD-05).
+     * an enemy's attack is shared over the enemies round it (ORD-05); with {@code capture} (the capture key held) an
+     * enemy's building is captured instead of attacked (CMB-10).
      */
-    void order(double x, double y, boolean shift, boolean force, boolean spread) {
+    void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
         previewing = false;
+        if (standing.rightClick()) { // a patrol being targeted is sent, or a targeting cancelled
+            return;
+        }
+        if (fireAbility(x, y, shift) || fireFormation(x, y)) { // an armed ability or formation takes the click
+            return;
+        }
         boolean armed = attackMove;
         attackMove = false;
         Pick pick = mode.pick(x, y);
@@ -183,30 +347,42 @@ final class RtsOrders {
                 ? struck // an own foundation: the builders help (M4 T2); a damaged building: they repair it (BLD-06)
                 : null;
         boolean help = site != null;
-        Command command = modified
-                ? OrderIntents.attack(
-                        mode.selection().handles(), ownTarget != 0 ? ownTarget : enemy, shift, ownTarget != 0, spread)
-                : site != null
-                        ? new Build(
-                                UnitSet.of(mode.selection().handles().stream()
-                                        .mapToInt(Integer::intValue)
-                                        .toArray()),
-                                site.handle(),
-                                shift ? QueueMode.QUEUE : QueueMode.REPLACE)
-                        : resource
-                                ? OrderIntents.gather(
-                                        mode.selection().handles(),
-                                        (int) Math.floor(pick.x()) - join.originX(),
-                                        (int) Math.floor(pick.y()),
-                                        (int) Math.floor(pick.z()) - join.originZ(),
-                                        shift)
-                                : OrderIntents.context(
-                                        mode.selection().handles(),
-                                        enemy,
-                                        wx - join.originX(),
-                                        wz - join.originZ(),
-                                        shift,
-                                        armed);
+        BuildingState.Entry taken = capture
+                        && !armed
+                        && struck != null
+                        && struck.faction() != join.slot().value()
+                ? struck
+                : null;
+        Command command = taken != null
+                ? OrderIntents.capture(mode.selection().handles(), taken.handle())
+                : modified
+                        ? OrderIntents.attack(
+                                mode.selection().handles(),
+                                ownTarget != 0 ? ownTarget : enemy,
+                                shift,
+                                ownTarget != 0,
+                                spread)
+                        : site != null
+                                ? new Build(
+                                        UnitSet.of(mode.selection().handles().stream()
+                                                .mapToInt(Integer::intValue)
+                                                .toArray()),
+                                        site.handle(),
+                                        shift ? QueueMode.QUEUE : QueueMode.REPLACE)
+                                : resource
+                                        ? OrderIntents.gather(
+                                                mode.selection().handles(),
+                                                (int) Math.floor(pick.x()) - join.originX(),
+                                                (int) Math.floor(pick.y()),
+                                                (int) Math.floor(pick.z()) - join.originZ(),
+                                                shift)
+                                        : OrderIntents.context(
+                                                mode.selection().handles(),
+                                                enemy,
+                                                wx - join.originX(),
+                                                wz - join.originZ(),
+                                                shift,
+                                                armed);
         if (command == null) {
             return;
         }

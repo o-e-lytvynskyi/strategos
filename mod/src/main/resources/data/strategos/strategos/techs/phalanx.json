@@ -1,0 +1,12 @@
+{
+  "name": "strategos.tech.phalanx",
+  "icon": "minecraft:shield",
+  "cost": { "food": 250, "wood": 150, "iron": 100 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "excludes": ["strategos:skirmish_drill"],
+  "effects": [
+    { "path": "Resistance/hack", "op": "add", "value": 2, "filter": "Spearman" },
+    { "path": "Resistance/pierce", "op": "add", "value": 2, "filter": "Spearman" }
+  ]
+}

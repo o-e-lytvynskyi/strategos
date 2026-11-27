@@ -9,6 +9,7 @@ import dev.strategos.core.client.input.ScreenKeys;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.client.select.UnitRole;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.MatchControl;
@@ -66,7 +67,7 @@ public final class RtsScreen extends Screen {
             return;
         }
         double[] from = in.dragFrom();
-        if (from.length == 2) {
+        if (from.length == 2 && !mode.placement().isWall()) { // a wall's drag is its ghost, not a selection box
             int x0 = (int) Math.min(from[0], mouseX);
             int y0 = (int) Math.min(from[1], mouseY);
             int x1 = (int) Math.max(from[0], mouseX);
@@ -100,7 +101,11 @@ public final class RtsScreen extends Screen {
                 mode.placement().cancel();
                 in.context(ActionContext.RTS);
             }
-            case PAUSE -> mc.pauseGame(false);
+            case PAUSE -> {
+                if (!mode.standing().cancel()) { // Escape drops a patrol or guard being targeted first
+                    mc.pauseGame(false);
+                }
+            }
             case ACTIONS -> {
                 return actionKey(mc, in, keyCode, scanCode, modifiers);
             }
@@ -184,12 +189,16 @@ public final class RtsScreen extends Screen {
     /** Selection (UI-03), control groups (UI-04) and orders (UI-05). */
     private void handle(List<InputState.Event> events) {
         Selection selection = mode.selection();
+        InputState keys = mode.input();
         for (InputState.Event e : events) {
             mode.fired(e.action());
             boolean shift = Modifiers.shift(e.modifiers());
             switch (e.action()) {
                 case SELECT -> {
-                    if (!mode.placement().place(shift)) {
+                    if (mode.fireArmed(x(e.x()), y(e.y()), shift)) {
+                        // an armed ability (UNIT-10), formation march (ORD-06) or patrol or guard (ORD-07) took the
+                        // click
+                    } else if (!mode.placement().place(shift)) {
                         RtsMode.Pick pick = pickAt(e.x(), e.y());
                         Seen unit = mode.seenAt(pick);
                         BuildingState.Entry building = unit == null ? mode.buildingAt(pick) : null;
@@ -199,6 +208,8 @@ public final class RtsScreen extends Screen {
                             selection.clickBuilding(building.handle(), building.faction());
                         } else if (deposit != null) {
                             selection.clickDeposit(deposit.node());
+                        } else if (unit != null && Modifiers.alt(e.modifiers())) {
+                            selection.clickFormation(onScreen(mode.seen()), unit, shift); // Alt: its whole formation
                         } else {
                             selection.click(unit, shift);
                         }
@@ -210,14 +221,23 @@ public final class RtsScreen extends Screen {
                         selection.allOfType(onScreen(mode.seen()), unit, shift);
                     }
                 }
-                case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                case BOX_SELECT -> {
+                    if (!mode.placement().drag(pickAt(e.x(), e.y()), pickAt(e.toX(), e.toY()), shift)) {
+                        selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                    }
+                }
                 case ORDER_PREVIEW -> mode.preview(true);
                 case ORDER_CONTEXT -> {
                     if (mode.placement().armed()) {
                         mode.placement().cancel(); // a right click while placing disarms, as in the classics
                     } else {
                         mode.order(
-                                x(e.x()), y(e.y()), shift, Modifiers.ctrl(e.modifiers()), Modifiers.alt(e.modifiers()));
+                                x(e.x()),
+                                y(e.y()),
+                                shift,
+                                Modifiers.ctrl(e.modifiers()),
+                                Modifiers.alt(e.modifiers()),
+                                keys != null && keys.held(Action.CAPTURE));
                     }
                 }
                 case BUILD -> mode.placement().cycle();
@@ -244,9 +264,20 @@ public final class RtsScreen extends Screen {
                         CARD_13,
                         CARD_14,
                         CARD_15 -> StrategosClient.hud().pressCard(e.action().cardSlot());
-                case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
+                case NEXT_IDLE_WORKER -> mode.hotkeys().nextIdle(UnitRole.WORKER);
+                case NEXT_IDLE_SOLDIER -> mode.hotkeys().nextIdle(UnitRole.SOLDIER);
+                case SELECT_ALL_SOLDIERS -> mode.hotkeys().selectAll(UnitRole.SOLDIER);
+                case SELECT_ALL_WORKERS -> mode.hotkeys().selectAll(UnitRole.WORKER);
+                case BACK_TO_WORK -> mode.hotkeys().backToWork();
+                case GARRISON -> mode.hotkeys().garrison();
+                case DELETE_SELECTED -> mode.hotkeys().delete();
+                case SET_BOOKMARK_1, SET_BOOKMARK_2, SET_BOOKMARK_3, SET_BOOKMARK_4 ->
+                    mode.hotkeys().setBookmark(e.action().setsBookmark());
+                case JUMP_BOOKMARK_1, JUMP_BOOKMARK_2, JUMP_BOOKMARK_3, JUMP_BOOKMARK_4 ->
+                    mode.hotkeys().jumpToBookmark(e.action().jumpsToBookmark());
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
                 case CONTROLS -> StrategosClient.hud().toggleControls();
+                case TECH_TREE -> StrategosClient.hud().openTechTree();
                 case PAUSE_MATCH -> {
                     MatchStateMsg state = StrategosClient.state();
                     boolean paused = state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED;

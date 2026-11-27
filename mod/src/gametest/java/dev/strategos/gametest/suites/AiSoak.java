@@ -4,13 +4,17 @@ import static dev.strategos.gametest.suites.Units.check;
 
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.sim.command.ScenarioSetup;
+import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.testkit.JournalFiles;
+import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
@@ -19,6 +23,7 @@ import dev.strategos.mod.server.content.MapPackageLoader;
 import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,8 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * QA-12.4, the AI-versus-AI soak (spec §2.21): {@value #SEEDS} seeds of the skirmish script at Normal against itself on
- * the first skirmish map, in the real skirmish's rules (Conquest under Fog), all under {@code /tick sprint}, which is
+ * QA-12.4 and QA-16.4, the AI-versus-AI soak (spec §2.21): {@value #SEEDS} seeds of the skirmish script against itself,
+ * the levels in rotation (easy, normal, hard: the mirrors of {@code :core:balanceMatrix}), on the first skirmish map, in the real skirmish's rules (Conquest under Fog), all under {@code /tick sprint}, which is
  * {@code runGameTestSoak}'s alone ({@code verifySoak}). It asserts no win rate, and no ending: a match runs to its
  * conquest or to the 45-minute limit, and each journal replays to its hash with no match faulted. The wall time is the
  * run's, in the report line {@code L3 wall time}; the matches' outcomes are in the log lines {@code aisoak seed}.
@@ -52,26 +57,28 @@ public final class AiSoak {
 
     private static final class Game {
         final long seed;
+        final String level;
         final MatchRuntime rt;
         final MapManifest manifest;
         boolean started;
         boolean done;
 
-        Game(long seed, MatchRuntime rt, MapManifest manifest) {
+        Game(long seed, String level, MatchRuntime rt, MapManifest manifest) {
             this.seed = seed;
+            this.level = level;
             this.rt = rt;
             this.manifest = manifest;
         }
     }
 
     @StrategosTest(batch = BATCH, solo = true, timeoutTicks = 2_000_000)
-    public static void twentySeedsOfNormalAgainstNormal(GameTestHelper h) {
+    public static void twentySeedsOfTheMirrorsAcrossTheLevels(GameTestHelper h) {
         StrategosServer server = StrategosServer.get();
         MapManifest manifest = MapPackageLoader.load(h.getLevel().getServer(), MapTests.FIRST_SKIRMISH)
                 .manifest();
         String shipped = Objects.requireNonNull(
                 Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json");
-        String normal = Levels.resolve(shipped, "normal");
+        List<String> levels = Levels.names();
         Scenario scenario = Scenarios.load(h.getLevel().getServer(), Ids.id("first_skirmish"));
         List<Scenario.Slot> slots = new ArrayList<>();
         for (Scenario.Slot s : scenario.slots()) {
@@ -102,7 +109,7 @@ public final class AiSoak {
                             .withMap(
                                     MapTests.FIRST_SKIRMISH,
                                     origin.getY() + manifest.startSlots().get(0).y()));
-            Game g = new Game(seed, rt, manifest);
+            Game g = new Game(seed, levels.get(k % levels.size()), rt, manifest);
             games[k] = g;
         };
         server.server().tickRateManager().requestGameToSprint(Integer.MAX_VALUE); // /tick sprint
@@ -142,7 +149,7 @@ public final class AiSoak {
                             computers,
                             g.manifest.startSlots(),
                             core.queries().templates(),
-                            profile -> normal);
+                            profile -> Levels.resolve(shipped, g.level));
                     open++;
                     continue;
                 }
@@ -174,16 +181,19 @@ public final class AiSoak {
                     }
                 }
                 LOG.info(
-                        "aisoak seed {}: {} at tick {} ({} min), civic centres {}/{}, buildings {}/{}; the journal"
-                                + " replays to its hash",
+                        "aisoak seed {} ({} mirror): {} at tick {} ({} min), civic centres {}/{}, buildings {}/{}, phases {}/{}"
+                                + " (2 is City); the journal replays to its hash",
                         g.seed,
+                        g.level,
                         ended ? "conquered" : "no conquest by the limit",
                         tick,
                         String.format("%.1f", tick / 1200.0),
                         centres[0],
                         centres[1],
                         buildings[0],
-                        buildings[1]);
+                        buildings[1],
+                        core.queries().phase(new FactionSlot(0)),
+                        core.queries().phase(new FactionSlot(1)));
                 StrategosServer.get().matches().dispose(g.rt.id()); // its lane is free of bodies and chunks
             }
             if (open == 0 && next[0] == seeds) {
@@ -196,6 +206,88 @@ public final class AiSoak {
                 server.server().tickRateManager().stopSprinting();
                 h.succeed();
             }
+        });
+    }
+
+    /** The sample's limit: 15 game minutes, past the minute the script's Normal reaches Town at (11 to 14). */
+    static final long SAMPLE_LIMIT = 15L * 60 * 20;
+
+    private static final int SAMPLE_LANE = 19;
+
+    /**
+     * AI-09 acceptance 3: an L3 sample reaches the hash of its L1 run. One skirmish of two computer players at Normal on
+     * the first skirmish map, in the skirmish's rules, plays under {@code /tick sprint} until both stand in Town (or the
+     * limit); its journal replays in the test to the match's own hash and is exported to the journals directory, where
+     * {@code :core:replayJournals} replays it in plain JUnit to the same hash ({@code GameTestJournalReplayTest}).
+     */
+    @StrategosTest(batch = "ai_sample", solo = true, timeoutTicks = 200_000)
+    public static void aSampleOfTheAiReachesTownAndItsJournalReplays(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        MapManifest manifest = MapPackageLoader.load(h.getLevel().getServer(), MapTests.FIRST_SKIRMISH)
+                .manifest();
+        String shipped = Objects.requireNonNull(
+                Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json");
+        String normal = Levels.resolve(shipped, "normal");
+        Scenario scenario = Scenarios.load(h.getLevel().getServer(), Ids.id("first_skirmish"));
+        List<Scenario.Slot> slots = new ArrayList<>();
+        for (Scenario.Slot s : scenario.slots()) {
+            slots.add(new Scenario.Slot(ScenarioSetup.AI + Levels.PROFILE, s.resources(), s.entities()));
+        }
+        Scenario computers = new Scenario(scenario.map(), scenario.victory(), slots);
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(corner.getX() + SAMPLE_LANE * FAR, corner.getY(), corner.getZ());
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(),
+                origin,
+                manifest.sizeX(),
+                manifest.sizeZ(),
+                origin.getY(),
+                origin.getY() + manifest.height() - 1);
+        MatchRuntime rt = MatchFixture.create(
+                h,
+                space,
+                MatchFixture.options(SimHarness.DEFAULT_SEED, h)
+                        .withPlay(PlayRules.DEFAULTS)
+                        .withMap(
+                                MapTests.FIRST_SKIRMISH,
+                                origin.getY() + manifest.startSlots().get(0).y()));
+        server.server().tickRateManager().requestGameToSprint(Integer.MAX_VALUE);
+        boolean[] started = {false};
+        h.onEachTick(() -> {
+            MatchLifecycle life = rt.lifecycle();
+            check(life != MatchLifecycle.FAULTED, "the sample faulted: " + rt.faultMessage());
+            if (life == MatchLifecycle.PREPARING) {
+                return;
+            }
+            MatchCore core = Objects.requireNonNull(rt.core(), "the sample has no core");
+            if (!started[0]) {
+                started[0] = true;
+                Scenarios.apply(
+                        rt, computers, manifest.startSlots(), core.queries().templates(), profile -> normal);
+                return;
+            }
+            long tick = core.queries().tick();
+            boolean town = core.queries().phase(new FactionSlot(0)) >= 1
+                    && core.queries().phase(new FactionSlot(1)) >= 1;
+            if (!town && tick < SAMPLE_LIMIT && life != MatchLifecycle.ENDED) {
+                return;
+            }
+            server.server().tickRateManager().stopSprinting();
+            check(town, "not both computer players reached Town by tick " + tick);
+            long hash = core.stateHash();
+            ReplayResult replay =
+                    ReplayDriver.replay(core.journal(), core.queries().templates());
+            check(replay.matches(), "the sample's replay diverged: " + replay);
+            check(replay.finalHash() == hash, "the sample's replay ends at another hash");
+            String dir = System.getProperty("strategos.gametest.journals");
+            if (dir != null && !dir.isBlank()) { // :core:replayJournals replays it at L1 to the same hash
+                JournalFiles.write(
+                        Path.of(dir, "aisample_town" + JournalFiles.EXTENSION),
+                        new JournalExport(core.journal(), tick, hash));
+            }
+            LOG.info("aisample: both computer players in Town at tick {} ({} min)", tick, tick / 1200.0);
+            server.matches().dispose(rt.id());
+            h.succeed();
         });
     }
 }

@@ -9,9 +9,9 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Where a computer player's base is in a think: its first finished civic centre's middle, the nearest enemy civic
- * centre (or the enemy start when none is visible, AI-18), and which way its sites mirror (the second start slot of a
- * point-mirrored map turns them round).
+ * Where a computer player's base is in a think: the middle of its finished civic centre nearest its own start (its
+ * first one when the start is unknown), the nearest enemy civic centre (or the enemy start when none is visible,
+ * AI-18), and which way its sites mirror (the second start slot of a point-mirrored map turns them round).
  */
 record Base(
         BuildingView centre,
@@ -22,17 +22,9 @@ record Base(
         double aimX,
         double aimZ,
         boolean fallen) {
-    static final String CENTRE = "CivicCentre";
-
     /** The base in {@code view}, or null while the player holds no finished centre. */
     static @Nullable Base of(AiView view) {
-        BuildingView own = null;
-        for (BuildingView b : view.buildings()) {
-            if (b.state() == 2 && view.is(b.template(), CENTRE)) {
-                own = b;
-                break;
-            }
-        }
+        BuildingView own = homeCentre(view);
         if (own == null) {
             return null;
         }
@@ -42,7 +34,7 @@ record Base(
         BuildingView enemy = null;
         double best = Double.POSITIVE_INFINITY;
         for (BuildingView b : view.enemyBuildings()) {
-            if (view.is(b.template(), CENTRE)) {
+            if (view.isCentre(b)) {
                 Footprint e = b.footprint();
                 double d = DetMath.length(e.anchorX() + e.spanX() / 2.0 - x, e.anchorZ() + e.spanZ() / 2.0 - z);
                 if (d < best) {
@@ -87,6 +79,35 @@ record Base(
         }
         int mirror = x < view.bounds().sizeX() / 2.0 ? 1 : -1;
         return new Base(own, x, z, enemy, mirror, aimX, aimZ, fallen);
+    }
+
+    /**
+     * The player's finished civic centre nearest its own start slot (slots indexed by faction), else its first. A player
+     * that took the fallen enemy's start with a second centre keeps its base at home: the first centre found would put
+     * the base, and the front a wave marches to, on that building's footprint.
+     */
+    private static @Nullable BuildingView homeCentre(AiView view) {
+        List<StartSlot> starts = view.startPositions();
+        int faction = view.faction();
+        StartSlot home = faction >= 0 && faction < starts.size() && starts.size() > 1 ? starts.get(faction) : null;
+        BuildingView best = null;
+        double bestD = Double.POSITIVE_INFINITY;
+        for (BuildingView b : view.buildings()) {
+            if (b.state() != 2 || !view.isCentre(b)) {
+                continue;
+            }
+            if (home == null) {
+                return b;
+            }
+            Footprint f = b.footprint();
+            double d = DetMath.length(
+                    f.anchorX() + f.spanX() / 2.0 - home.x() - 0.5, f.anchorZ() + f.spanZ() / 2.0 - home.z() - 0.5);
+            if (d < bestD) {
+                bestD = d;
+                best = b;
+            }
+        }
+        return best;
     }
 
     /** How near the enemy's start a soldier of ours stands to see its centre, if one stands there: blocks. */

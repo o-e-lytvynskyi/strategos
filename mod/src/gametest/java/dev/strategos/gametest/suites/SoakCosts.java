@@ -25,6 +25,63 @@ final class SoakCosts {
     private final EconomyTimes.Stats economy;
     private final @Nullable Combat combat;
     private final long[] trackers;
+    private final @Nullable Territory territory;
+    private final @Nullable Depth depth;
+
+    /**
+     * PERF-17: per sampled tick in nanoseconds, the formation system's run, the wild animals' thinking and the ability
+     * system's run; and the scene's own account: the share of the formations' members that stood formed, the marches,
+     * charges and researches it ordered, and each faction's phase at the end of the window.
+     */
+    record Depth(
+            long[] formation,
+            long[] fauna,
+            long[] ability,
+            double formed,
+            long marches,
+            long charges,
+            long researches,
+            String[] phases) {}
+
+    /**
+     * PERF-16: per sampled tick in nanoseconds, the territory system's run, the tick thread's wait on its recompute job,
+     * the garrison system's and the capture system's runs; and the territory grids delivered that tick.
+     */
+    static final class Territory {
+        private final long[] territory;
+        private final long[] join;
+        private final long[] garrison;
+        private final long[] capture;
+        private final long[] recomputes;
+
+        Territory(long[] territory, long[] join, long[] garrison, long[] capture, long[] recomputes) {
+            this.territory = territory;
+            this.join = join;
+            this.garrison = garrison;
+            this.capture = capture;
+            this.recomputes = recomputes;
+        }
+
+        long[] territory() {
+            return territory;
+        }
+
+        long[] join() {
+            return join;
+        }
+
+        long[] garrison() {
+            return garrison;
+        }
+
+        long[] capture() {
+            return capture;
+        }
+
+        long[] recomputes() {
+            return recomputes;
+        }
+    }
 
     /**
      * PERF-08: per sampled tick in nanoseconds, the units' enemy searches (targeting), the centres' volleys, the shot
@@ -54,7 +111,9 @@ final class SoakCosts {
             long saveNanos,
             EconomyTimes.Stats economy,
             @Nullable Combat combat,
-            long[] trackers) {
+            long[] trackers,
+            @Nullable Territory territory,
+            @Nullable Depth depth) {
         this.writer = writer;
         this.fx = fx;
         this.adapter = adapter;
@@ -69,6 +128,8 @@ final class SoakCosts {
         this.economy = economy;
         this.combat = combat;
         this.trackers = trackers;
+        this.territory = territory;
+        this.depth = depth;
     }
 
     long[] writer() {
@@ -133,5 +194,15 @@ final class SoakCosts {
      */
     long[] trackers() {
         return trackers;
+    }
+
+    /** PERF-16: the territory and garrison systems' times; null for the other scenes. */
+    @Nullable Territory territory() {
+        return territory;
+    }
+
+    /** PERF-17: the formation, fauna and ability costs; null for the other scenes. */
+    @Nullable Depth depth() {
+        return depth;
     }
 }

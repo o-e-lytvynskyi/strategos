@@ -1,13 +1,16 @@
 package dev.strategos.core.sim.prod;
 
+import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.NoticeKind;
+import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.TechId;
+import dev.strategos.core.sim.MatchFactionView;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.Progress;
@@ -40,10 +43,54 @@ public final class Techs {
     }
 
     /**
-     * {@code faction}'s phase: the highest ordinal among the phase techs it has researched, 0 (Village) for none (spec
-     * row 19: Village is never researched, so a match without research keeps its hash).
+     * Why {@code tech} may not be researched at {@code building} now, or null when only its price or the queue's room
+     * could still refuse it (the research command's rule, and the computer player's reading of it, TECH-01, TECH-05): a
+     * Village phase, a building that is unfinished or does not hold the tech in its effective list, a tech outside the
+     * owner's roster, one the faction has or queues, or one a researched or queued tech supersedes (all {@code LIMIT}
+     * or {@code UNSUPPORTED}), its pair taken, and requirements unmet ({@code REQUIREMENTS}).
      */
+    public static @Nullable RejectReason refusal(MatchState s, int building, TechDef tech) {
+        BuildingStore b = s.buildings();
+        if (tech.isPhase() && tech.ordinal() == 0) { // Village is the phase of a faction with none (row 19)
+            return RejectReason.UNSUPPORTED;
+        }
+        if (b.state(building) != BuildingStore.COMPLETE || !researches(s, building, tech)) {
+            return RejectReason.UNSUPPORTED;
+        }
+        int faction = b.faction(building);
+        if (!s.civs().hasTech(faction, tech.netIndex())) { // outside the owner's civilisation's roster (CIV-01)
+            return RejectReason.UNSUPPORTED;
+        }
+        if (s.progress().researched(faction, tech.id()) || pending(s, faction, tech)) {
+            return RejectReason.LIMIT;
+        }
+        for (TechDef later : s.templates().techs()) { // a tech a researched or pending one supersedes is moot
+            if (tech.id().equals(later.supersedes())
+                    && (s.progress().researched(faction, later.id()) || pending(s, faction, later))) {
+                return RejectReason.LIMIT;
+            }
+        }
+        for (TechId other : tech.excludes()) { // its pair is taken: researched, or queued anywhere (TECH-05)
+            TechDef pair = s.templates().tech(other);
+            if (s.progress().researched(faction, other) || (pair != null && pending(s, faction, pair))) {
+                return RejectReason.LIMIT;
+            }
+        }
+        return Requirements.evaluate(tech.requires(), new MatchFactionView(s, faction))
+                ? null
+                : RejectReason.REQUIREMENTS;
+    }
+
+    /** {@code faction}'s phase, as its civilisation's phase rule tells it (CIV-05): by default the highest researched. */
     public static int phase(MatchState s, int faction) {
+        return s.civs().rules(faction).phase().phase(s, faction);
+    }
+
+    /**
+     * The phase rule's default: the highest ordinal among the phase techs {@code faction} has researched, 0 (Village)
+     * for none (spec row 19: Village is never researched, so a match without research keeps its hash).
+     */
+    public static int highestResearchedPhase(MatchState s, int faction) {
         int phase = 0;
         for (TechId id : s.progress().of(faction)) {
             TechDef t = s.templates().tech(id);
@@ -62,7 +109,7 @@ public final class Techs {
             if (b.faction(handle) != faction) {
                 continue;
             }
-            for (int e : b.queue(handle)) {
+            for (int e : b.queues().queue(handle)) {
                 if (e == entry) {
                     return true;
                 }
@@ -169,7 +216,7 @@ public final class Techs {
     public static void dropRetired(MatchState s, TemplateSet old) {
         BuildingStore b = s.buildings();
         for (int handle : b.handles()) {
-            int[] queue = b.queue(handle);
+            int[] queue = b.queues().queue(handle);
             for (int k = queue.length - 1; k >= 0; k--) {
                 if (!QueueEntry.isTech(queue[k])) {
                     continue;
@@ -178,7 +225,7 @@ public final class Techs {
                 TechDef was = old.techByIndex(index);
                 TechDef now = s.templates().techByIndex(index);
                 if (was == null || now == null || !was.id().equals(now.id())) {
-                    b.dequeue(handle, k);
+                    b.queues().dequeue(handle, k);
                 }
             }
         }

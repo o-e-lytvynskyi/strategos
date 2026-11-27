@@ -41,6 +41,19 @@ final class TechChecks {
                     problems.add(TemplateProblem.error(file, e.pointer(), "unknown tech '" + e.target() + "'"));
                 }
             }
+            for (int i = 0; i < t.excludes().size(); i++) { // a pair is symmetric: each side names the other (TECH-05)
+                TechId other = t.excludes().get(i);
+                TechDef theirs = techs.stream()
+                        .filter(o -> o.id().equals(other))
+                        .findFirst()
+                        .orElse(null);
+                if (!declared.contains(other.value())) {
+                    problems.add(TemplateProblem.error(file, "/excludes/" + i, "unknown tech '" + other + "'"));
+                } else if (theirs != null && !theirs.excludes().contains(t.id())) {
+                    problems.add(TemplateProblem.error(
+                            file, "/excludes/" + i, "'" + other + "' does not exclude '" + t.id() + "' back"));
+                }
+            }
             if (problems.size() == before) {
                 kept.add(t);
             }

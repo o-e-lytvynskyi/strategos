@@ -10,6 +10,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.PlaceMoved;
+import dev.strategos.core.sim.civ.DeliveryRule;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.Dropsites;
@@ -63,8 +64,8 @@ final class Gathering {
             s.dropLoad(i); // a load of something else is lost, as in the games
         }
         if (carry.resource(i) != CarryStore.NONE
-                && carry.amount(i) >= s.gatherRates().capacity(s.stats(), i, carry.resource(i))) {
-            ctx.go(UnitAi.GATHER_RETURNING); // back to work with a full load, after a flight say: home first
+                && carry.amount(i) >= s.gatherRates().capacity(s.stats(), i, carry.resource(i))
+                && turnHome(ctx)) { // back to work with a full load, after a flight say: home first
             return;
         }
         if (carry.claimed(i) != node) {
@@ -142,7 +143,7 @@ final class Gathering {
         CarryStore carry = s.carry();
         long room = rates.capacity(s.stats(), i, resource) - carry.amount(i);
         if (room <= 0) {
-            ctx.go(UnitAi.GATHER_RETURNING);
+            turnHome(ctx);
             return;
         }
         if (nodes.kind(node) == MaterialKind.CARCASS && Livestock.alive(s, node)) { // slaughtered first (ECO-16)
@@ -171,11 +172,26 @@ final class Gathering {
                 s.ledger().taken(resource, taken);
             }
         }
-        if (carry.amount(i) >= rates.capacity(s.stats(), i, resource)) {
-            ctx.go(UnitAi.GATHER_RETURNING);
-        } else if (nodes.exhausted(node)) {
+        if (carry.amount(i) >= rates.capacity(s.stats(), i, resource) && turnHome(ctx)) {
+            return;
+        }
+        if (nodes.exhausted(node)) {
             next(ctx, node);
         }
+    }
+
+    /**
+     * The one way a load turns toward a dropsite: the faction's {@link DeliveryRule} either credits it where the unit
+     * stands (the load is gone, false) or the unit goes home ({@link #headHome} runs on entry, true).
+     */
+    private static boolean turnHome(Context<MatchState> ctx) {
+        MatchState s = ctx.host();
+        int i = ctx.unit();
+        if (s.civs().rules(s.identity().faction(i)).delivery().creditInPlace(s, i)) {
+            return false;
+        }
+        ctx.go(UnitAi.GATHER_RETURNING);
+        return true;
     }
 
     /**
@@ -211,7 +227,9 @@ final class Gathering {
         int resource = s.carry().resource(i);
         if (resource == CarryStore.NONE
                 || !Dropsites.takes(s, ctx.data0(), s.identity().faction(i), resource)) {
-            ctx.go(UnitAi.GATHER_RETURNING);
+            if (!turnHome(ctx)) {
+                backToWork(ctx);
+            }
         }
     }
 
@@ -223,7 +241,9 @@ final class Gathering {
         int faction = s.identity().faction(i);
         int resource = s.carry().resource(i);
         if (resource == CarryStore.NONE || !Dropsites.takes(s, drop, faction, resource)) {
-            ctx.go(UnitAi.GATHER_RETURNING);
+            if (!turnHome(ctx)) {
+                backToWork(ctx);
+            }
             return;
         }
         Footprint at = s.footprintOf(drop);
@@ -281,8 +301,9 @@ final class Gathering {
             return;
         }
         orders.retarget(i, 0, 0);
-        if (s.carry().resource(i) != CarryStore.NONE && !ctx.in(UnitAi.GATHER_RETURNING)) {
-            ctx.go(UnitAi.GATHER_RETURNING); // home with what it has; then nothing to go back to
+        if (s.carry().resource(i) != CarryStore.NONE
+                && !ctx.in(UnitAi.GATHER_RETURNING)
+                && turnHome(ctx)) { // home with what it has; then nothing to go back to
             return;
         }
         idle(ctx, "no node");
@@ -308,7 +329,7 @@ final class Gathering {
         if (node < 1 || node > nodes.count() || nodes.exhausted(node)) {
             return false;
         }
-        return s.gatherRates().gathers(s.stats(), i, nodes.resource(node), nodes.subtype(node))
+        return s.canGather(i, nodes.resource(node), nodes.subtype(node))
                 && nodes.hasRoom(node, handle, standable(s, node));
     }
 

@@ -7,7 +7,9 @@ import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.protocol.SkirmishSetup.Level;
 import dev.strategos.core.protocol.SkirmishSetup.StartResources;
 import dev.strategos.core.protocol.SkirmishSetup.Visibility;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.mod.server.match.MatchRefusedException;
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +38,16 @@ class SkirmishOptionsTest {
     }
 
     @Test
+    void dayNightIsOffByDefaultAndSetByOnOrOff() {
+        assertThat(MatchCommands.setup(MAP, "").dayNight()).isFalse();
+        assertThat(MatchCommands.setup(MAP, "daynight=on level=easy").dayNight())
+                .isTrue();
+        assertThat(MatchCommands.setup(MAP, "daynight=OFF").dayNight()).isFalse();
+        assertThatThrownBy(() -> MatchCommands.setup(MAP, "daynight=maybe")).isInstanceOf(MatchRefusedException.class);
+        assertThatThrownBy(() -> MatchCommands.setup(MAP, "daynight")).isInstanceOf(MatchRefusedException.class);
+    }
+
+    @Test
     void badOptionsAreRefusedNotThrownRaw() {
         for (String bad : new String[] {
             "level=insane",
@@ -46,9 +58,23 @@ class SkirmishOptionsTest {
             "population=201",
             "population=99999999999",
             "colour=red",
-            "resources=lots"
+            "resources=lots",
+            "civ=",
+            "civ=Settlers",
+            "civ=t:a,",
+            "civ=t:a,,t:b"
         }) {
             assertThatThrownBy(() -> MatchCommands.setup(MAP, bad)).as(bad).isInstanceOf(MatchRefusedException.class);
         }
+    }
+
+    @Test
+    void civIsOneIdForEverySlotOrOnePerSlot() {
+        assertThat(MatchCommands.setup(MAP, "civ=t:lean").civs()).containsExactly(new CivId("t:lean"));
+        SkirmishSetup two = MatchCommands.setup(MAP, "level=hard civ=strategos:default,t:lean");
+        assertThat(two.civs()).containsExactly(CivId.DEFAULT, new CivId("t:lean"));
+        assertThat(two.level()).isEqualTo(Level.HARD);
+        assertThat(two.civ(1)).isEqualTo(new CivId("t:lean"));
+        assertThat(MatchCommands.setup(MAP, "").civs()).isEqualTo(List.of());
     }
 }

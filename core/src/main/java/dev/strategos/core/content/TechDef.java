@@ -21,7 +21,9 @@ import org.jspecify.annotations.Nullable;
  * template's {@code Cost/time}; {@code requires} is a requirement tree; {@code supersedes} names the tech this one
  * replaces; {@code effects} are modifiers research hands to the stat service. A tech of the class {@code Phase} has an
  * {@code ordinal} (TECH-02: 0 Village, 1 Town), and no other does; {@code unlocks} lists the templates and techs its
- * {@code TOKENS} effects make available, which the compiler checks against the effects.
+ * {@code TOKENS} effects make available, which the compiler checks against the effects. {@code excludes} names the
+ * techs this one locks out (TECH-05, choose one of two): researching or queueing one refuses the others, and the
+ * compiler checks that each side of a pair names the other.
  */
 @CoreApi
 public record TechDef(
@@ -36,7 +38,8 @@ public record TechDef(
         @Nullable TechId supersedes,
         List<TechEffect> effects,
         int ordinal,
-        List<String> unlocks) {
+        List<String> unlocks,
+        List<TechId> excludes) {
     /** The ordinal of a tech that is no phase. */
     public static final int NO_ORDINAL = -1;
 
@@ -47,7 +50,7 @@ public record TechDef(
     public static final String PHASE_CLASS = "Phase";
 
     private static final String KEYS =
-            "name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks";
+            "name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks, excludes";
     private static final String EFFECT_KEYS = "path, op, value, tokens, filter, stage, priority";
 
     public TechDef {
@@ -55,6 +58,24 @@ public record TechDef(
         cost = Collections.unmodifiableMap(new TreeMap<>(cost));
         effects = List.copyOf(effects);
         unlocks = List.copyOf(unlocks);
+        excludes = List.copyOf(excludes);
+    }
+
+    /** A tech that excludes no other: the form before TECH-05. */
+    public TechDef(
+            TechId id,
+            int netIndex,
+            String name,
+            String icon,
+            List<String> classes,
+            Map<String, Double> cost,
+            double time,
+            Requirement requires,
+            @Nullable TechId supersedes,
+            List<TechEffect> effects,
+            int ordinal,
+            List<String> unlocks) {
+        this(id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks, List.of());
     }
 
     /** A tech that is no phase and unlocks nothing: the form before TECH-02. */
@@ -83,7 +104,8 @@ public record TechDef(
     }
 
     public TechDef atIndex(int index) {
-        return new TechDef(id, index, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
+        return new TechDef(
+                id, index, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks, excludes);
     }
 
     /** The canonical JSON the set hashes and ships: defaults written out, the id and index left to the key. */
@@ -104,21 +126,7 @@ public record TechDef(
         if (supersedes != null) {
             o.addProperty("supersedes", supersedes.value());
         }
-        JsonArray list = new JsonArray();
-        for (TechEffect e : effects) {
-            JsonObject fx = new JsonObject();
-            fx.addProperty("path", e.path());
-            fx.addProperty("op", e.op().name().toLowerCase(Locale.ROOT));
-            if (e.op() == TechEffect.Op.TOKENS) {
-                fx.addProperty("tokens", e.tokens());
-            } else {
-                fx.addProperty("value", e.value());
-            }
-            fx.addProperty("filter", e.filter());
-            fx.addProperty("stage", e.stage());
-            fx.addProperty("priority", e.priority());
-            list.add(fx);
-        }
+        JsonArray list = effectsJson(effects);
         o.add("effects", list);
         if (ordinal != NO_ORDINAL) {
             o.addProperty("ordinal", ordinal);
@@ -127,6 +135,11 @@ public record TechDef(
             JsonArray names = new JsonArray();
             unlocks.forEach(names::add);
             o.add("unlocks", names);
+        }
+        if (!excludes.isEmpty()) {
+            JsonArray names = new JsonArray();
+            excludes.forEach(e -> names.add(e.value()));
+            o.add("excludes", names);
         }
         return o;
     }
@@ -209,20 +222,7 @@ public record TechDef(
                 }
             }
         }
-        List<TechEffect> effects = new ArrayList<>();
-        JsonElement fx = json.get("effects");
-        if (fx != null) {
-            if (!fx.isJsonArray()) {
-                problems.add(TemplateProblem.error(file, "/effects", "expected an array of effects"));
-            } else {
-                for (int i = 0; i < fx.getAsJsonArray().size(); i++) {
-                    TechEffect e = effect(fx.getAsJsonArray().get(i), file, "/effects/" + i, problems);
-                    if (e != null) {
-                        effects.add(e);
-                    }
-                }
-            }
-        }
+        List<TechEffect> effects = effects(json.get("effects"), file, "/effects", problems);
         int ordinal = NO_ORDINAL;
         JsonElement ord = json.get("ordinal");
         if (ord != null) {
@@ -240,11 +240,57 @@ public record TechDef(
             problems.add(TemplateProblem.error(file, "/ordinal", "only a tech of the class Phase has an ordinal"));
         }
         List<String> unlocks = unlocks(json, effects, file, problems);
+        List<TechId> excludes = excludes(json, id, file, problems);
         if (problems.size() > before) {
             return null;
         }
         return new TechDef(
-                id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
+                id,
+                netIndex,
+                name,
+                icon,
+                classes,
+                cost,
+                time,
+                requires,
+                supersedes,
+                effects,
+                ordinal,
+                unlocks,
+                excludes);
+    }
+
+    /** The {@code excludes} list: tech ids, none twice and none this tech's own; the pair is checked by the compiler. */
+    private static List<TechId> excludes(JsonObject json, TechId self, String file, List<TemplateProblem> problems) {
+        List<TechId> out = new ArrayList<>();
+        JsonElement raw = json.get("excludes");
+        if (raw == null) {
+            return out;
+        }
+        if (!raw.isJsonArray()) {
+            problems.add(TemplateProblem.error(file, "/excludes", "expected an array of tech ids"));
+            return out;
+        }
+        for (int i = 0; i < raw.getAsJsonArray().size(); i++) {
+            JsonElement e = raw.getAsJsonArray().get(i);
+            if (!isString(e)) {
+                problems.add(TemplateProblem.error(file, "/excludes/" + i, "expected a tech id string, got " + e));
+                continue;
+            }
+            try {
+                TechId other = new TechId(e.getAsString());
+                if (other.equals(self)) {
+                    problems.add(TemplateProblem.error(file, "/excludes/" + i, "a tech cannot exclude itself"));
+                } else if (out.contains(other)) {
+                    problems.add(TemplateProblem.error(file, "/excludes/" + i, "'" + other + "' is listed twice"));
+                } else {
+                    out.add(other);
+                }
+            } catch (IllegalArgumentException x) {
+                problems.add(TemplateProblem.error(file, "/excludes/" + i, String.valueOf(x.getMessage())));
+            }
+        }
+        return out;
     }
 
     /**
@@ -295,6 +341,45 @@ public record TechDef(
     /** Whether the unlocks added to token list {@code path} name templates, not techs. */
     static boolean unlockingTemplates(String path) {
         return path.equals("Trainer/units") || path.equals("Builder/buildings");
+    }
+
+    /** The effects array {@code fx} at pointer {@code at} (null when the key is absent); each bad entry is a problem. */
+    static List<TechEffect> effects(@Nullable JsonElement fx, String file, String at, List<TemplateProblem> problems) {
+        List<TechEffect> effects = new ArrayList<>();
+        if (fx == null) {
+            return effects;
+        }
+        if (!fx.isJsonArray()) {
+            problems.add(TemplateProblem.error(file, at, "expected an array of effects"));
+            return effects;
+        }
+        for (int i = 0; i < fx.getAsJsonArray().size(); i++) {
+            TechEffect e = effect(fx.getAsJsonArray().get(i), file, at + "/" + i, problems);
+            if (e != null) {
+                effects.add(e);
+            }
+        }
+        return effects;
+    }
+
+    /** The canonical JSON of {@code effects}: every field written out. */
+    static JsonArray effectsJson(List<TechEffect> effects) {
+        JsonArray list = new JsonArray();
+        for (TechEffect e : effects) {
+            JsonObject fx = new JsonObject();
+            fx.addProperty("path", e.path());
+            fx.addProperty("op", e.op().name().toLowerCase(Locale.ROOT));
+            if (e.op() == TechEffect.Op.TOKENS) {
+                fx.addProperty("tokens", e.tokens());
+            } else {
+                fx.addProperty("value", e.value());
+            }
+            fx.addProperty("filter", e.filter());
+            fx.addProperty("stage", e.stage());
+            fx.addProperty("priority", e.priority());
+            list.add(fx);
+        }
+        return list;
     }
 
     private static @Nullable TechEffect effect(

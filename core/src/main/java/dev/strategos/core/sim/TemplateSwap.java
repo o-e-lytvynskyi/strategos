@@ -3,7 +3,11 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.sim.ability.AbilitySwap;
+import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.FactionCivs;
 import dev.strategos.core.sim.prod.Techs;
+import dev.strategos.core.sim.rank.Ranks;
 import org.jspecify.annotations.Nullable;
 
 /** INGEST's template swap (DATA-03) and its guard: every template the live state refers to must survive it unchanged. */
@@ -28,6 +32,9 @@ final class TemplateSwap {
         Techs.reapply(state, old); // the researched techs' effects, from the new set (spec row 22)
         Techs.dropRetired(state, old);
         AiHandicap.reapply(state); // the computer players' open handicaps, from the new set (AI-05)
+        CivBonuses.reapply(state); // the civilisations' bonuses, from the new set (CIV-01)
+        NightFactor.reapply(state); // night's vision, from the new set (MATCH-16)
+        Ranks.reapply(state); // the ranks' sets, from the new set (CMB-11)
         state.costs().swap(state.stats());
         state.gatherRates().swap(state.stats());
         state.spatial().swap(set);
@@ -35,6 +42,15 @@ final class TemplateSwap {
 
     /** Why {@code next} cannot replace the match's set, or null when it can. */
     static @Nullable String problem(MatchState state, TemplateSet next) {
+        String civ = FactionCivs.problem(
+                state.config(), next, state.catalogue()); // a civilisation in use must survive the swap
+        if (civ != null) {
+            return civ;
+        }
+        String ability = AbilitySwap.problem(state, next); // an ability in use must keep its index (UNIT-10)
+        if (ability != null) {
+            return ability;
+        }
         EntityStore entities = state.entities();
         for (int i = 0; i < entities.highWater(); i++) {
             if (entities.aliveAt(i)) {
@@ -50,7 +66,7 @@ final class TemplateSwap {
             if (problem != null) {
                 return problem;
             }
-            for (int queued : buildings.queue(handle)) {
+            for (int queued : buildings.queues().queue(handle)) {
                 problem = referenceProblem(state, next, queued);
                 if (problem != null) {
                     return problem;

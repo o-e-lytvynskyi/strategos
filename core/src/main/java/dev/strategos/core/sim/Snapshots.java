@@ -8,6 +8,9 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ability.AbilitySwap;
+import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -15,6 +18,8 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.prod.Techs;
+import dev.strategos.core.sim.rank.ExperienceStore;
+import dev.strategos.core.sim.rank.Ranks;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
@@ -53,6 +58,7 @@ final class Snapshots {
                     orders.saved(i),
                     s.health().damage(i)));
         }
+        ExperienceStore.Saved ranked = s.play().experience().save(entities);
         return new MatchSnapshot(
                 s.config(),
                 s.tick(),
@@ -86,7 +92,17 @@ final class Snapshots {
                         s.visionSystem() != null ? s.visionSystem().save() : List.of(),
                         s.shots().save(),
                         s.stances().save(),
-                        s.garrison().save()),
+                        s.garrison().save(),
+                        s.play().territorySystem() != null
+                                ? s.play().territorySystem().save()
+                                : List.of(),
+                        s.play().capture().save(),
+                        s.play().gates().save(),
+                        s.play().breaches().save(entities::isAlive),
+                        new MatchSnapshot.Play.Depth(
+                                s.play().abilities().save(s),
+                                ranked,
+                                s.play().formations().save())),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -143,12 +159,18 @@ final class Snapshots {
      * stays unpublished with its slice hash known, and a slice that does not hash to its reference throws.
      */
     static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log, SliceSource slices) {
+        return restore(snapshot, templates, RuleCatalogue.DEFAULT, log, slices);
+    }
+
+    /** As {@link #restore(MatchSnapshot, TemplateSet, MatchLog, SliceSource)}, the civilisations' rules made by {@code catalogue}. */
+    static MatchState restore(
+            MatchSnapshot snapshot, TemplateSet templates, RuleCatalogue catalogue, MatchLog log, SliceSource slices) {
         int[] alive = new int[snapshot.units().size()];
         for (int i = 0; i < alive.length; i++) {
             alive[i] = snapshot.units().get(i).handle();
         }
         EntityStore entities = EntityStore.restore(snapshot.slots(), alive);
-        MatchState state = new MatchState(snapshot.config(), templates, entities, log);
+        MatchState state = new MatchState(snapshot.config(), templates, catalogue, entities, log);
         state.setTick(snapshot.tick());
         state.setNextGroup(snapshot.nextGroup());
         state.progress().restore(snapshot.play().progress());
@@ -156,11 +178,16 @@ final class Snapshots {
         Techs.reapply(state, null); // the stats start empty: the researched techs' effects, before anything reads them
         long[] counters =
                 new long[state.treasury().factions() * state.treasury().resources() * 5];
-        if (!snapshot.treasury().isEmpty() && snapshot.treasury().size() != counters.length) {
+        if (!snapshot.treasury().isEmpty()
+                && snapshot.treasury().size() != counters.length
+                && snapshot.treasury().size() != counters.length / 5 * 6) { // the looted block (CMB-13) is optional
             throw new IllegalArgumentException(
                     "a saved treasury of " + snapshot.treasury().size() + " counters for "
                             + state.treasury().factions() + " factions and "
                             + state.treasury().resources() + " resources");
+        }
+        if (snapshot.treasury().size() > counters.length) {
+            counters = new long[snapshot.treasury().size()];
         }
         for (int k = 0; k < snapshot.treasury().size(); k++) {
             counters[k] = snapshot.treasury().get(k);
@@ -183,7 +210,16 @@ final class Snapshots {
             state.ai().restore(index, unit.ai());
             Vec2d target = unit.target();
             if (target != null) {
-                state.orders().restore(index, target.x(), target.z(), unit.orders());
+                state.orders()
+                        .restore(
+                                index,
+                                target.x(),
+                                target.z(),
+                                AbilitySwap.remap(
+                                        unit.orders(),
+                                        snapshot.play().abilities().ids(),
+                                        templates,
+                                        unit.handle()));
             } else {
                 state.orders().clear(index);
             }
@@ -205,13 +241,21 @@ final class Snapshots {
             state.restoreBuildings(SavedTemplates.buildings(
                     snapshot, templates)); // before the pages, so their footprints are laid over them
         }
+        state.play().restoreGates(snapshot.play().gates()); // before the pages too (PATH-12)
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)
+        CivBonuses.reapply(state); // and each civilisation's bonuses (CIV-01)
+        NightFactor.reapply(state); // and night's vision at the restored tick (MATCH-16)
         state.alerts().restore(snapshot.play().alerts());
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);
         Garrisons.restore(state, snapshot.play().garrisons());
+        state.play().capture().restore(snapshot.play().capture());
+        state.play().breaches().restore(snapshot.play().breaches());
+        state.play().abilities().restore(snapshot.play().abilities(), templates, state.stats(), state.entities());
+        Ranks.restore(state, snapshot.play().experience());
+        state.play().formations().restore(snapshot.play().formations());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(
@@ -240,7 +284,7 @@ final class Snapshots {
         }
         state.publishAll(pages);
         state.paths().restore(snapshot.paths()); // after the pages, whose publication must not count as a change
-        state.spatial().rebuild(state); // as the saved tick's movement left it
+        state.spatial().rebuild(state); // from the poses, as each tick's first rebuild does (spec M9 §1.6 row 24)
         if (missing > 0) {
             log.info(
                     snapshot.tick(),

@@ -100,7 +100,7 @@ class CancelTest {
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(HOUSE, new FactionSlot(0), 30, 30, 0));
         h.step();
         int house = house(s);
-        int cap = s.population().cap(0);
+        int cap = s.populationCap(0);
         long wood = s.treasury().stock(0, 1);
         h.submit(P0, new CancelBuilding(house));
         assertThat(result(h, "strategos:cancel_building").firstReason()).isEqualTo(RejectReason.UNSUPPORTED);
@@ -109,7 +109,7 @@ class CancelTest {
         h.submit(P0, new Demolish(house));
         assertThat(result(h, "strategos:demolish").accepted()).isOne();
         assertThat(house(s)).as("gone").isZero();
-        assertThat(s.population().cap(0)).as("its housing with it").isEqualTo(cap - 5);
+        assertThat(s.populationCap(0)).as("its housing with it").isEqualTo(cap - 5);
         assertThat(s.treasury().stock(0, 1)).as("no refund").isEqualTo(wood);
         assertThat(s.buildings().handles()).as("the centre stands").hasSize(1);
         assertThat(BuildingStore.isBuilding(house)).isTrue();

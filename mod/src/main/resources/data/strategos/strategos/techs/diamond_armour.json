@@ -1,0 +1,13 @@
+{
+  "name": "strategos.tech.diamond_armour",
+  "icon": "minecraft:diamond_chestplate",
+  "cost": { "food": 450, "wood": 250, "iron": 350 },
+  "time": 100,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:iron_armour" }] },
+  "supersedes": "strategos:iron_armour",
+  "effects": [
+    { "path": "Resistance/hack", "op": "add", "value": 3, "filter": "Infantry Cavalry" },
+    { "path": "Resistance/pierce", "op": "add", "value": 3, "filter": "Infantry Cavalry" },
+    { "path": "Look/armour", "op": "add", "value": 3, "filter": "Infantry Cavalry" }
+  ]
+}

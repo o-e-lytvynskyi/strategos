@@ -77,6 +77,7 @@ class MilitaryFinishTest {
             case Attack a -> a.units();
             case AttackMove a -> a.units();
             case Move m -> m.units();
+            case dev.strategos.core.protocol.FormationMove f -> f.units(); // AI-09: a long march leaves as a formation
             default -> null;
         };
         if (set == null) {

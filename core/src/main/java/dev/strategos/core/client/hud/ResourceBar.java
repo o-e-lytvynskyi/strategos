@@ -25,13 +25,17 @@ public record ResourceBar(List<Entry> resources, int populationUsed, int populat
         return populationCap >= 0 && populationUsed >= populationCap;
     }
 
-    /** From the faction's last state, the match's resources and the income seen so far. */
-    public static ResourceBar of(@Nullable FactionState state, List<String> ids, Income income) {
+    /** From the faction's last state, the match's resources and the income seen so far; {@code shown} admits resources by index: the faction's resource rule (CIV-05). */
+    public static ResourceBar of(
+            @Nullable FactionState state, List<String> ids, Income income, java.util.function.IntPredicate shown) {
         if (state == null) {
             return EMPTY;
         }
         List<Entry> out = new ArrayList<>(state.stock().size());
         for (int r = 0; r < state.stock().size(); r++) {
+            if (!shown.test(r)) {
+                continue;
+            }
             out.add(new Entry(
                     r < ids.size() ? ids.get(r) : "?",
                     Math.floorDiv(state.stock().get(r), 1000),

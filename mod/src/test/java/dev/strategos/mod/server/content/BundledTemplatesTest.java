@@ -112,15 +112,38 @@ class BundledTemplatesTest {
         assertThat(bundled.result.set().techs())
                 .extracting(t -> t.id().value())
                 .containsExactly(
-                        "strategos:carry_1", // the data's own order is by id
+                        "strategos:arrow_slits", // the data's own order is by id
+                        "strategos:carpentry",
+                        "strategos:carry_1",
+                        "strategos:carry_2",
+                        "strategos:carry_3",
                         "strategos:chainmail",
+                        "strategos:diamond_armour",
+                        "strategos:diamond_weapons",
                         "strategos:gather_farm_1",
+                        "strategos:gather_farm_2",
+                        "strategos:gather_farm_3",
                         "strategos:gather_iron_1",
+                        "strategos:gather_iron_2",
+                        "strategos:gather_iron_3",
                         "strategos:gather_stone_1",
+                        "strategos:gather_stone_2",
+                        "strategos:gather_stone_3",
                         "strategos:gather_wood_1",
+                        "strategos:gather_wood_2",
+                        "strategos:gather_wood_3",
+                        "strategos:guild_lumber",
+                        "strategos:guild_mining",
+                        "strategos:iron_armour",
                         "strategos:iron_weapons",
+                        "strategos:masonry_1",
+                        "strategos:masonry_2",
+                        "strategos:netherite_weapons",
+                        "strategos:phalanx",
+                        "strategos:phase_city",
                         "strategos:phase_town",
-                        "strategos:phase_village");
+                        "strategos:phase_village",
+                        "strategos:skirmish_drill");
 
         Path tech = pack.resolve("data/test/strategos/techs/forge/anvils.json");
         Files.createDirectories(tech.getParent());
@@ -169,7 +192,7 @@ class BundledTemplatesTest {
                 .isTrue();
         assertThat(server.techTable().indexOf(new TechId("strategos:gather_wood_1")))
                 .isZero();
-        assertThat(server.techTable().indexOf(new TechId("aaa:early"))).isEqualTo(9);
+        assertThat(server.techTable().indexOf(new TechId("aaa:early"))).isEqualTo(32);
         assertThat(server.set().tech(new TechId("strategos:gather_wood_1")).netIndex())
                 .isZero();
     }

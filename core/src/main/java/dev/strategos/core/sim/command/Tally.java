@@ -26,6 +26,15 @@ final class Tally {
         }
     }
 
+    /** Adds what another rule's result counted, the refusals first met here keeping their place as the first. */
+    void add(CommandResult other) {
+        accepted += other.accepted();
+        rejected += other.rejected();
+        if (firstReason == null) {
+            firstReason = other.firstReason();
+        }
+    }
+
     /** ACCEPTED if every unit was accepted, PARTIAL if some, REJECTED if none. */
     CommandResult result(CommandEnvelope envelope, CommandKind<?> kind) {
         CommandOutcome outcome = accepted > 0 && rejected == 0

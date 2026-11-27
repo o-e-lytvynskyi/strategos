@@ -22,7 +22,7 @@ public record EconomyRules(List<ResourceDef> resources, int populationMax) {
     public static final int POPULATION_MAX = 150;
 
     public static final EconomyRules DEFAULTS = new EconomyRules(List.of(
-            new ResourceDef("food", List.of("fruit", "grain", "meat"), 0),
+            new ResourceDef("food", List.of("fruit", "grain", "meat", "hunt"), 0),
             new ResourceDef("wood", List.of("tree"), 0),
             new ResourceDef("stone", List.of("rock"), 0),
             new ResourceDef("iron", List.of("ore"), 0)));

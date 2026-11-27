@@ -1,8 +1,10 @@
 package dev.strategos.core.sim.replicate;
 
+import dev.strategos.core.content.AbilityDef;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.PromotionDef;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
@@ -57,7 +59,9 @@ public final class ReplicationService {
                         unit.templateIndex(),
                         stateCode(unit.state()),
                         unit.x(),
-                        unit.z()));
+                        unit.z(),
+                        own ? q.formationOf(handle) : 0,
+                        own && q.holdsStandingOrder(handle)));
                 if (entries.size() == UnitSummary.MAX_UNITS) {
                     break;
                 }
@@ -99,7 +103,8 @@ public final class ReplicationService {
                     own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE - 1, b.fieldAmount()) : -1,
                     own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE, b.fieldRipening()) : 0,
                     own && b.autoReseed(),
-                    own ? b.batches() : List.of()));
+                    own ? b.batches() : List.of(),
+                    b.captureShares()));
         }
         return new BuildingState(matchId, q.tick(), out);
     }
@@ -143,12 +148,11 @@ public final class ReplicationService {
             workers.add(r < counted.length - 1 ? counted[r] : 0);
         }
         List<Integer> researched = new ArrayList<>();
-        int phase = 0;
-        for (TechId id : q.researched(faction)) { // UI-13: the techs by net index, and the highest phase reached
+        int phase = q.phase(faction); // UI-13: the faction's phase, by its civilisation's rule
+        for (TechId id : q.researched(faction)) { // and the techs by net index
             TechDef tech = q.templates().tech(id);
             if (tech != null) {
                 researched.add(tech.netIndex());
-                phase = Math.max(phase, tech.isPhase() ? tech.ordinal() : 0);
             }
         }
         return new FactionState(
@@ -205,6 +209,13 @@ public final class ReplicationService {
             }
             StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
             Stance stance = q.explicitStance(handle);
+            List<UnitDetail.Cooldown> resting = new ArrayList<>();
+            for (AbilityDef def : q.templates().abilitiesOf(unit.templateIndex())) {
+                int left = q.abilityCooldown(handle, def.id());
+                if (left > 0) {
+                    resting.add(new UnitDetail.Cooldown(q.templates().abilityIndex(def.id()), left));
+                }
+            }
             units.add(new UnitDetail.Unit(
                     handle,
                     unit.templateIndex(),
@@ -216,9 +227,23 @@ public final class ReplicationService {
                     q.carriedResource(handle),
                     q.carriedAmount(handle),
                     target,
-                    stance == null ? UnitDetail.NO_STANCE : stance.code()));
+                    stance == null ? UnitDetail.NO_STANCE : stance.code(),
+                    resting,
+                    standing(q, handle, unit.templateIndex())));
         }
         return new UnitDetail(matchId, q.tick(), units);
+    }
+
+    /** A unit's rank and what the next needs (CMB-11), none for a unit that has earned nothing. */
+    private static UnitDetail.Standing standing(MatchQueries q, int handle, int template) {
+        int rank = q.rank(handle);
+        long earned = q.experience(handle);
+        if (rank == 0 && earned == 0) {
+            return UnitDetail.Standing.NONE;
+        }
+        PromotionDef def = q.templates().promotion(template);
+        long next = def == null || rank >= def.count() ? 0 : def.thresholds().get(rank);
+        return new UnitDetail.Standing(rank, earned, next);
     }
 
     /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2, GATHERING 3, BUILDING 4, GARRISONED 5. */

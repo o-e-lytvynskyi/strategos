@@ -68,6 +68,12 @@ worker's diff back with `git diff --binary` and `git apply --index`. Two workers
 side in two worktrees, but `runServerSmoke` binds one fixed port: at the same moment one of them
 fails "FAILED TO BIND TO PORT" ([minecraft-mod-build.md](kb/minecraft-mod-build.md)).
 
+**How a worker waits.** A long run goes to the background and its end comes as the tool's
+notification. A hand-made wait loop must never look for its target by a name its own command line
+contains: `until ! pgrep -f "v3.sh"; do sleep 5; done` matches the loop's own shell, never ends, and
+kept a worker "waiting on background work" after its report (M10 T25, three such loops). Wait on a
+file the run writes last, or on the run's own PID.
+
 ## Quality gates that do not move
 
 - The orchestrator reads `git diff` of every worker change before committing it.

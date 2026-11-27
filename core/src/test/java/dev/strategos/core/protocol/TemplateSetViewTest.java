@@ -3,9 +3,13 @@ package dev.strategos.core.protocol;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.gson.JsonObject;
+import dev.strategos.core.content.RawCiv;
+import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
@@ -17,7 +21,7 @@ class TemplateSetViewTest {
         TemplateSet set = TemplateSet.builtin();
         TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
 
-        assertThat(view.techs()).hasSize(9);
+        assertThat(view.techs()).hasSize(32); // TECH-05: ten before, twenty-two techs in T16
         assertThat(view.techs().get(0).id().value()).isEqualTo("strategos:gather_wood_1");
         TemplateSet back = view.toSet();
         assertThat(back.version()).isEqualTo(set.version());
@@ -28,6 +32,17 @@ class TemplateSetViewTest {
         assertThat(read).isEqualTo(view);
         assertThat(read.toSet().version()).isEqualTo(set.version());
     }
+
+    /** TECH-05: the view with all thirty-odd techs fits the wire's cap with room to spare; the ceiling is a pin. */
+    @Test
+    void theViewWithAllTheTechsFitsUnderTheCapWithRoomToSpare() {
+        byte[] bytes = WireCodec.encode(
+                TemplateSetView.WIRE, TemplateSetView.of(TemplateSet.builtin(), TemplateIdTable.EMPTY));
+        assertThat(bytes.length).as("the encoded view").isLessThan(TemplateSetView.MAX_BYTES);
+        assertThat(bytes.length).as("the pinned ceiling, half the cap").isLessThan(CEILING);
+    }
+
+    private static final int CEILING = 128 * 1024;
 
     @Test
     void aViewWrittenWithoutTechsIsTheOldWireFormAndReadsWithNone() {
@@ -105,6 +120,108 @@ class TemplateSetViewTest {
                 "v", List.of(), List.of(), List.of(new TemplateSetView.Tech(0, new TechId("t:a"), "7")));
 
         for (TemplateSetView view : List.of(torn, notObject, tornTech, techNotObject)) {
+            assertThatThrownBy(view::toSet).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    private static TemplateSet withCivs() {
+        TemplateSet builtin = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = builtin.all().stream()
+                .map(t -> new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())))
+                .toList();
+        List<TemplateCompiler.TechFlat> techs =
+                builtin.techs().stream().map(TemplateCompiler.TechFlat::of).toList();
+        JsonObject tribe = new JsonObject();
+        tribe.addProperty("name", "civ.t.tribe");
+        JsonObject roles = new JsonObject();
+        roles.addProperty("house", "strategos:building/house");
+        tribe.add("roles", roles);
+        return TemplateCompiler.fromFlattened(flats, techs, List.of(new RawCiv(new CivId("t:tribe"), "t:tribe", tribe)))
+                .set();
+    }
+
+    @Test
+    void aViewWithoutCivilisationsCarriesNoneAndTheClientGetsTheBuiltInDefault() {
+        TemplateSet set = TemplateSet.builtin();
+        TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
+
+        assertThat(view.civs()).as("the implied default is not sent").isEmpty();
+        TemplateSet back = WireCodec.decode(TemplateSetView.WIRE, WireCodec.encode(TemplateSetView.WIRE, view))
+                .toSet();
+        assertThat(back.version()).isEqualTo(set.version());
+        assertThat(back.civs()).isEqualTo(set.civs());
+        assertThat(back.civ(new CivId("strategos:default"))).isNotNull();
+        assertThat(view.version()).as("hex, no mark").matches("[0-9a-f]{64}");
+    }
+
+    @Test
+    void aViewWithCivilisationsKeepsTheirCanonicalJsonAndToSetReproducesTheServersVersion() {
+        TemplateSet set = withCivs();
+        TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
+
+        assertThat(set.hasImpliedCivs()).isFalse();
+        assertThat(view.civs()).extracting(c -> c.id().value()).containsExactly("t:tribe");
+        TemplateSetView read = WireCodec.decode(TemplateSetView.WIRE, WireCodec.encode(TemplateSetView.WIRE, view));
+        assertThat(read).isEqualTo(view);
+        TemplateSet back = read.toSet();
+        assertThat(back.version()).isEqualTo(set.version());
+        assertThat(back.version()).isNotEqualTo(TemplateSet.builtin().version());
+        assertThat(back.civs()).isEqualTo(set.civs());
+    }
+
+    @Test
+    void theCivilisationMarkFollowsTheTechsMarkAndAViewWithoutTechsMarksOnlyCivilisations() {
+        TemplateSetView both = TemplateSetView.of(withCivs(), TemplateIdTable.EMPTY);
+        WireReader in = new WireReader(WireCodec.encode(TemplateSetView.WIRE, both));
+        assertThat(in.readString(68)).endsWith("+t+c");
+
+        TemplateSet bare = new TemplateSet(List.of(TemplateSet.builtin().byIndex(0)));
+        TemplateSetView civsOnly = new TemplateSetView(
+                bare.version(),
+                List.of(),
+                TemplateSetView.of(bare, TemplateIdTable.EMPTY).templates(),
+                List.of(),
+                both.civs());
+        WireReader only = new WireReader(WireCodec.encode(TemplateSetView.WIRE, civsOnly));
+        assertThat(only.readString(68)).endsWith("+c").doesNotEndWith("+t+c");
+        assertThat(WireCodec.decode(TemplateSetView.WIRE, WireCodec.encode(TemplateSetView.WIRE, civsOnly)))
+                .isEqualTo(civsOnly);
+    }
+
+    @Test
+    void aViewWithoutCivilisationsRefusesToWriteAVersionThatLooksMarked() {
+        TemplateSetView marked = new TemplateSetView("abc+c", List.of(), List.of());
+
+        assertThatThrownBy(() -> WireCodec.encode(TemplateSetView.WIRE, marked))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aMarkedViewWithNoCivilisationsDoesNotRead() {
+        WireWriter out = new WireWriter();
+        out.writeString("abc+c", 66);
+        out.writeVarInt(0);
+        out.writeVarInt(0);
+        out.writeVarInt(0);
+
+        assertThatThrownBy(() -> WireCodec.decode(TemplateSetView.WIRE, out.toByteArray()))
+                .isInstanceOf(WireException.class);
+    }
+
+    @Test
+    void civilisationJsonThatDoesNotParseIsAnIllegalArgument() {
+        TemplateSetView torn = new TemplateSetView(
+                "v", List.of(), List.of(), List.of(), List.of(new TemplateSetView.Civ(new CivId("t:a"), "{")));
+        TemplateSetView notObject = new TemplateSetView(
+                "v", List.of(), List.of(), List.of(), List.of(new TemplateSetView.Civ(new CivId("t:a"), "7")));
+        TemplateSetView bad = new TemplateSetView(
+                "v",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(new TemplateSetView.Civ(new CivId("t:a"), "{\"colour\":1}")));
+
+        for (TemplateSetView view : List.of(torn, notObject, bad)) {
             assertThatThrownBy(view::toSet).isInstanceOf(IllegalArgumentException.class);
         }
     }

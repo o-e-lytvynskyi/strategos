@@ -4,7 +4,6 @@ import dev.strategos.core.client.camera.CameraInput;
 import dev.strategos.core.client.camera.CameraLimits;
 import dev.strategos.core.client.camera.CameraPose;
 import dev.strategos.core.client.camera.CameraRig;
-import dev.strategos.core.client.hud.IdleWorkers;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.model.ClientResume;
@@ -13,10 +12,12 @@ import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.client.select.UnitRole;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.DepositState;
+import dev.strategos.core.protocol.FormationShape;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.UnitSummary;
@@ -76,11 +77,7 @@ public final class RtsMode {
     private final RallyMarker rally = new RallyMarker(this);
     private final NodeMarker nodeMarker = new NodeMarker(this);
     private final FocusMarker focusMarker = new FocusMarker(this);
-    private final IdleWorkers idle = new IdleWorkers();
-    /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
-    private int pendingIdle = -1;
-
-    private int pendingIdleTicks;
+    private final RtsHotkeys hotkeys = new RtsHotkeys(this);
     private Selection selection = new Selection(-1);
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
@@ -103,6 +100,7 @@ public final class RtsMode {
     /** Listens on the mod bus for the key mappings and on the game bus for the rest. */
     public void register(IEventBus modBus) {
         modBus.addListener(RegisterKeyMappingsEvent.class, keys::register);
+        OrthoView.register(this);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, e -> tick());
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Pre.class, this::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeCameraAngles.class, this::onAngles);
@@ -138,6 +136,36 @@ public final class RtsMode {
         orders.fired(action);
     }
 
+    /** The command card's ability button: targeting armed with the ability at index {@code ability} of the set (UNIT-10). */
+    public void armAbility(int ability) {
+        orders.armAbility(ability);
+    }
+
+    /** The command card's or the key's formation march: the next ground click marches the selection in {@code shape} (ORD-06). */
+    public void armFormation(FormationShape shape) {
+        orders.armFormation(shape);
+    }
+
+    /** The armed formation march's shape code (ORD-06); -1 when none is armed. */
+    public int formationArmed() {
+        return orders.formationArmed();
+    }
+
+    /** The patrol and guard targeting (ORD-07). */
+    public StandingTargeting standing() {
+        return orders.standing();
+    }
+
+    /** The ability whose target the next click picks (UNIT-10), its index in the template set; -1 when none is armed. */
+    public int abilityArmed() {
+        return orders.abilityArmed();
+    }
+
+    /** The click that fires an armed ability, formation march or patrol or guard (UNIT-10, ORD-06, ORD-07); false for none. */
+    boolean fireArmed(double x, double y, boolean shift) {
+        return orders.fireArmed(x, y, shift);
+    }
+
     /** The last command a right click or a first-person key sent, for scenarios; null before any. */
     public @Nullable Command lastCommand() {
         return orders.lastCommand();
@@ -163,43 +191,14 @@ public final class RtsMode {
         return orders.send(command);
     }
 
-    /**
-     * The idle-worker key (UI-10): the next idle worker, in index order, is selected and the camera goes to it; a far
-     * one is selected when its body arrives after the jump.
-     */
+    /** The idle-worker key and the resource bar's idle count (UI-10): the next idle worker is selected, the camera on it. */
     public void nextIdleWorker() {
-        MatchJoin join = StrategosClient.match();
-        if (join == null || rig == null) {
-            return;
-        }
-        UnitSummary.Entry e =
-                idle.next(StrategosClient.model().units(), join.slot().value(), StrategosClient.templates());
-        if (e == null) {
-            return;
-        }
-        centreOn(join.originX() + e.qx() / 8.0, join.originZ() + e.qz() / 8.0);
-        pendingIdle = e.index();
-        pendingIdleTicks = 100;
-        selectPendingIdle();
+        hotkeys.nextIdle(UnitRole.WORKER);
     }
 
-    private void selectPendingIdle() {
-        Minecraft mc = Minecraft.getInstance();
-        if (pendingIdle < 0 || mc.level == null) {
-            return;
-        }
-        for (Entity e : mc.level.entitiesForRendering()) {
-            if (e instanceof UnitEntity body
-                    && body.spawnData() != null
-                    && Handle.index(body.spawnData().handle()) == pendingIdle) {
-                selection().set(List.of(body.spawnData().handle()));
-                pendingIdle = -1;
-                return;
-            }
-        }
-        if (--pendingIdleTicks <= 0) {
-            pendingIdle = -1;
-        }
+    /** The hotkeys that act on the selection or the camera (UI-17). */
+    RtsHotkeys hotkeys() {
+        return hotkeys;
     }
 
     /** The selected deposit's marker this frame (ART-02): its band's pieces, match-local; empty if none. */
@@ -262,12 +261,17 @@ public final class RtsMode {
 
     /** The context order for the selection to what the cursor at window points picks; see {@link RtsOrders#order}. */
     public void order(double x, double y, boolean shift) {
-        orders.order(x, y, shift, false, false);
+        orders.order(x, y, shift, false, false, false);
     }
 
     /** As {@link #order(double, double, boolean)}, Ctrl forcing an attack on an own target and Alt spreading it (ORD-05). */
     public void order(double x, double y, boolean shift, boolean force, boolean spread) {
-        orders.order(x, y, shift, force, spread);
+        orders.order(x, y, shift, force, spread, false);
+    }
+
+    /** As above, with {@code capture} (the capture key held): an enemy building under the cursor is captured (CMB-10). */
+    public void order(double x, double y, boolean shift, boolean force, boolean spread, boolean capture) {
+        orders.order(x, y, shift, force, spread, capture);
     }
 
     /** The focus the selected units share, for the ring and for scenarios; null for none. */
@@ -321,7 +325,8 @@ public final class RtsMode {
                     feet == null ? Double.NaN : feet[0],
                     feet == null ? Double.NaN : feet[1],
                     head == null ? Double.NaN : head[0],
-                    head == null ? Double.NaN : head[1]));
+                    head == null ? Double.NaN : head[1],
+                    formationOf(data)));
         }
         return out;
     }
@@ -337,7 +342,13 @@ public final class RtsMode {
             return null;
         }
         UnitSpawnData d = body.spawnData();
-        return new Seen(d.handle(), d.faction(), d.templateIndex(), 0, 0, 0, 0);
+        return new Seen(d.handle(), d.faction(), d.templateIndex(), 0, 0, 0, 0, formationOf(d));
+    }
+
+    /** The formation the unit keeps a place in (ORD-06), from the summary; 0 for none or for another faction's. */
+    private static int formationOf(UnitSpawnData d) {
+        UnitSummary.Entry e = StrategosClient.model().unit(Handle.index(d.handle()));
+        return e == null ? 0 : e.formation();
     }
 
     /** Pans the camera to the centre of the units {@code handles} names that have bodies here. */
@@ -431,6 +442,7 @@ public final class RtsMode {
         if (join != null && join.matchId() != groupsMatch) {
             groups.restore(saved == null ? java.util.List.of() : saved.groups());
             groupsMatch = join.matchId();
+            hotkeys.clearBookmarks(); // a bookmark is a place in its match
         }
         input = new InputState(keys.current());
         mc.setScreen(new RtsScreen(this));
@@ -453,6 +465,11 @@ public final class RtsMode {
 
     RtsKeys keys() {
         return keys;
+    }
+
+    /** Whether the key pressed is the current key of {@code action}'s mapping, rebinds included. */
+    public boolean isKey(Action action, int keyCode, int scanCode) {
+        return keys.mapping(action).matches(keyCode, scanCode);
     }
 
     void zoom(double notches) {
@@ -508,7 +525,7 @@ public final class RtsMode {
             return;
         }
         ticks++;
-        selectPendingIdle();
+        hotkeys.tick();
         outlines(mc);
         orders.showPreview(mc, ticks);
         orders.showMarkers(mc, ticks);

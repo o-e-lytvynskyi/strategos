@@ -6,12 +6,14 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.civ.AiHint;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -91,6 +93,43 @@ public final class AiView {
 
     public MatchBounds bounds() {
         return q.config().bounds();
+    }
+
+    /** Whether building {@code b} is a centre of its owner: it has the class its owner's civilisation names (CIV-01). */
+    public boolean isCentre(BuildingView b) {
+        return is(b.template(), q.centreClass(new FactionSlot(b.faction())));
+    }
+
+    /**
+     * The template its faction's civilisation gives {@code role} (a {@code CivRoles} name), null when it has none:
+     * the behaviour that needs the role is then skipped (CIV-05).
+     */
+    public @Nullable TemplateId civRole(String role) {
+        return q.role(new FactionSlot(faction), role);
+    }
+
+    /**
+     * Whether the rules its faction plays imply {@code hint} (CIV-05): the AI branches on this, never on a rule or a
+     * civilisation id. Every hint is set for the default civilisation.
+     */
+    public boolean needs(AiHint hint) {
+        return hint.in(q.aiHints(new FactionSlot(faction)));
+    }
+
+    /** Whether building template {@code id} takes in resources as a dropsite. */
+    public boolean isDropsite(TemplateId id) {
+        UnitTemplate t = q.templates().byId(id);
+        ValuePath p = q.templates().tokenPaths().byPath("Dropsite/resources");
+        if (t == null || p == null) {
+            return false;
+        }
+        String text = q.templates().text(t.netIndex(), p.id());
+        return text != null && !text.isBlank();
+    }
+
+    /** Whether its faction's civilisation uses resource {@code id}: it gathers none it does not (CIV-05). */
+    public boolean uses(String id) {
+        return q.usesResource(new FactionSlot(faction), id);
     }
 
     /** The match's resources in order. */
@@ -192,6 +231,13 @@ public final class AiView {
         return nodes;
     }
 
+    /** Node {@code id}'s work slots as packed cells ({@code x << 16 | z}): where its gatherers stand. */
+    public int[] nodeSlotCells(int id) {
+        int[] cells = q.nodeSlotCells(id);
+        budget.spend(cells.length);
+        return cells;
+    }
+
     /** Why a building of {@code id} at corner ({@code x}, {@code z}) breaks a rule of the ground, or null (AI-02). */
     public @Nullable String placementRefusal(TemplateId id, int x, int z) {
         UnitTemplate t = q.templates().byId(id);
@@ -252,6 +298,16 @@ public final class AiView {
         return true;
     }
 
+    /** Whether the faction has researched the technology {@code id}. */
+    public boolean researched(String id) {
+        for (TechId t : q.researched(new FactionSlot(faction))) {
+            if (t.value().equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Whether the faction has researched {@code tech}, or an own building holds it in its queue. */
     public boolean hasOrQueues(TechDef tech) {
         if (q.researched(new FactionSlot(faction)).contains(tech.id())) {
@@ -282,20 +338,12 @@ public final class AiView {
         return false;
     }
 
-    /** Whether building template {@code building} trains unit template {@code unit}: its {@code Trainer/units}. */
+    /**
+     * Whether this faction's building template {@code building} trains unit template {@code unit}: its effective
+     * {@code Trainer/units} for the faction and its roster, the rule production applies.
+     */
     public boolean trains(TemplateId building, TemplateId unit) {
-        UnitTemplate t = q.templates().byId(building);
-        ValuePath path = q.templates().tokenPaths().byPath("Trainer/units");
-        String units = t == null || path == null ? null : q.templates().text(t.netIndex(), path.id());
-        if (units == null) {
-            return false;
-        }
-        for (String id : units.trim().split("\\s+", -1)) {
-            if (id.equals(unit.value())) {
-                return true;
-            }
-        }
-        return false;
+        return q.trains(new FactionSlot(faction), building, unit);
     }
 
     /** The building {@code u}'s current order builds, or 0 when it builds none. */
@@ -394,5 +442,93 @@ public final class AiView {
         return !orders.isEmpty()
                 && orders.get(0).kind() == OrderKind.BURN
                 && orders.get(0).target() == building;
+    }
+
+    /** Whether unit {@code u}'s current order is to capture building {@code building} (AI-08). */
+    public boolean capturing(UnitView u, int building) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty()
+                && orders.get(0).kind() == OrderKind.CAPTURE
+                && orders.get(0).target() == building;
+    }
+
+    /** Building {@code building}'s capture points in thousandths, 0 when it cannot be captured (AI-08). */
+    public long captureTotal(int building) {
+        return q.captureTotal(building);
+    }
+
+    /** Building {@code building}'s owner's regeneration a second in thousandths, its garrison's included (AI-08). */
+    public long captureRegen(int building) {
+        return q.captureRegen(building);
+    }
+
+    /** Unit {@code handle}'s capture strength in thousandths a second (AI-08). */
+    public long captureStrength(int handle) {
+        return q.captureStrength(handle);
+    }
+
+    /** The places free in building {@code building} for unit {@code handle}; 0 when it does not admit it (AI-08). */
+    public int garrisonRoom(int handle, int building) {
+        return q.garrisonRoom(handle, building);
+    }
+
+    /** The faction owning the territory under column ({@code x}, {@code z}), -1 for neutral (AI-08). */
+    public int territoryOwner(int x, int z) {
+        return q.territoryOwner(x, z);
+    }
+
+    /** The most own buildings of {@code id} the faction may have now, 0 for no limit (AI-08). */
+    public int buildingLimit(TemplateId id) {
+        UnitTemplate t = q.templates().byId(id);
+        return t == null ? 0 : q.buildingLimit(t.netIndex(), faction);
+    }
+
+    /** Whether the research command's rule would take {@code tech} at own finished building {@code b} but for price and queue room (AI-09). */
+    public boolean canResearch(BuildingView b, TechDef tech) {
+        return q.researchable(b.handle(), tech);
+    }
+
+    /** Whether only {@code tech}'s requirements keep it from being researched at own building {@code b} (AI-09). */
+    public boolean blockedByRequirements(BuildingView b, TechDef tech) {
+        return q.researchBlockedByRequirements(b.handle(), tech);
+    }
+
+    /** Unit {@code u}'s rank (CMB-11): 0 for none. */
+    public int rank(UnitView u) {
+        return q.rank(u.handle());
+    }
+
+    /** The formation unit {@code u} keeps a place in (ORD-06), 0 for none. */
+    public int formation(UnitView u) {
+        return q.formationOf(u.handle());
+    }
+
+    /** Whether unit {@code u} has ability {@code ability} and it is off cooldown (UNIT-10). */
+    public boolean abilityReady(UnitView u, String ability) {
+        for (dev.strategos.core.content.AbilityDef def : q.templates().abilitiesOf(u.templateIndex())) {
+            if (def.id().equals(ability)) {
+                return q.abilityCooldown(u.handle(), ability) == 0;
+            }
+        }
+        return false;
+    }
+
+    /** Whether unit {@code u}'s current order is to go into a building (BLD-16). */
+    public boolean garrisoning(UnitView u) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty() && orders.get(0).kind() == OrderKind.GARRISON;
+    }
+
+    /** The own units inside building {@code building}, as the faction sees them (AI-09's healing). */
+    public List<UnitView> occupants(int building) {
+        List<UnitView> out = new ArrayList<>();
+        for (int h : q.garrisonOccupants(building)) {
+            UnitView u = q.unit(h);
+            if (u != null && u.faction().value() == faction) {
+                out.add(u);
+            }
+        }
+        budget.spend(out.size());
+        return out;
     }
 }

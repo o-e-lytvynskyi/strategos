@@ -30,6 +30,8 @@ class NoticeKindCodecTest {
                 .isEqualTo((byte) 6);
         assertThat(WireCodec.encode(WireCodecs.NOTICE_KIND, NoticeKind.RESEARCHED)[0])
                 .isEqualTo((byte) 7);
+        assertThat(WireCodec.encode(WireCodecs.NOTICE_KIND, NoticeKind.POPULATION_CAP)[0])
+                .isEqualTo((byte) 8);
         byte[] beyond = {(byte) kinds.length};
         assertThatThrownBy(() -> WireCodec.decode(WireCodecs.NOTICE_KIND, beyond))
                 .isInstanceOf(WireException.class);

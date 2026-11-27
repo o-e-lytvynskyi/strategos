@@ -41,7 +41,7 @@ class RuleChangeTest {
         assertThat(s.config().rules().economy().populationMax()).isEqualTo(40);
         assertThat(s.config().rules().play())
                 .isEqualTo(new PlayRules(PlayRules.Victory.CIVIC_CENTRE, true, true, false));
-        assertThat(s.population().cap(0))
+        assertThat(s.populationCap(0))
                 .as("no housing yet: the cap is the base, under the new maximum")
                 .isZero();
         h.runTicks(30);

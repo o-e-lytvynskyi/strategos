@@ -28,4 +28,5 @@ public sealed interface MatchEvent extends OutputEvent
                 MatchEnded,
                 UnderAttack,
                 WaveAnnounced,
-                TechResearched {}
+                TechResearched,
+                UnitRanked {}

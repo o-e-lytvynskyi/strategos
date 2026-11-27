@@ -1,0 +1,14 @@
+{
+  "name": "strategos.tech.carry_3",
+  "icon": "minecraft:ender_chest",
+  "cost": { "food": 450, "wood": 300 },
+  "time": 70,
+  "requires": { "all": [{ "phase": "city" }, { "tech": "strategos:carry_2" }] },
+  "supersedes": "strategos:carry_2",
+  "effects": [
+    { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 15, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 15, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 15, "filter": "Worker" },
+    { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 15, "filter": "Worker" }
+  ]
+}

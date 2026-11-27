@@ -72,5 +72,25 @@ final class Slots {
     /** One more than the tick of that sighting; 0 before. */
     static final int SEEN_AT = 30;
 
+    /** One more than the handle of the enemy building the wave is capturing (AI-08); 0 while none. */
+    static final int CAPTURE = 31;
+    /** One more than the tick that capture began; 0 while none. */
+    static final int CAPTURE_SINCE = 32;
+    /** One more than the tick of the last garrisoning ordered in defence (AI-08); 0 before. */
+    static final int GARRISONED = 33;
+
+    /**
+     * The technology the priority list waits to pay for (AI-09): one more than the tick it first came due, shifted left
+     * 16 bits, with the technology's net index plus one in the low bits; 0 while none is waited for.
+     */
+    static final int TECH_DUE = 34;
+
+    /**
+     * AI-09 (T25b): the build order's steps passed over while a phase was saved for, a nibble per step (up to {@value
+     * BuildManager#SKIPPABLE}): the step's building count when it was passed over plus one (capped at 15); 0 for a step not
+     * passed over.
+     */
+    static final int SKIPPED = 35;
+
     private Slots() {}
 }

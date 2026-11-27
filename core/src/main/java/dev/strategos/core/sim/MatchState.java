@@ -7,6 +7,9 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.FactionCivs;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -51,6 +54,8 @@ public final class MatchState {
 
     private long tick;
     private MatchConfig config;
+    private Allies allies;
+    private final PlayState play;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -76,6 +81,7 @@ public final class MatchState {
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
+    private boolean nightApplied;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
     private final SpatialQueries spatial;
 
@@ -91,6 +97,8 @@ public final class MatchState {
     private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private final MatchTerrain terrain;
+    private final RuleCatalogue catalogue;
+    private FactionCivs civs;
     private final MobilityCache mobilityCache = new MobilityCache(this);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
@@ -100,9 +108,18 @@ public final class MatchState {
     private final EconomyTimes economyTimes = new EconomyTimes();
     private final dev.strategos.core.sim.combat.CombatTimes combatTimes =
             new dev.strategos.core.sim.combat.CombatTimes();
+    private final dev.strategos.core.diag.SystemTimes systemTimes = new dev.strategos.core.diag.SystemTimes();
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
+        this(config, templates, RuleCatalogue.DEFAULT, entities, log);
+    }
+
+    MatchState(MatchConfig config, TemplateSet templates, RuleCatalogue catalogue, EntityStore entities, MatchLog log) {
         this.config = config;
+        this.catalogue = catalogue;
+        this.civs = FactionCivs.bind(config, templates, catalogue); // refuses a civilisation or a rule the set lacks
+        this.allies = Allies.sameFaction(config.factions());
+        this.play = new PlayState(this, config);
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -131,6 +148,8 @@ public final class MatchState {
         this.input = TickInputs.empty(0);
         this.terrain = new MatchTerrain(this);
         ensureCapacity(entities.highWater());
+        CivBonuses.reapply(this); // the civilisations' bonuses, derived at the start as at every restore (CIV-01)
+        NightFactor.reapply(this); // night's vision, derived like them (MATCH-16)
     }
 
     /** The published terrain: a copy-on-write grid, so a job keeps the one it captured. */
@@ -310,6 +329,11 @@ public final class MatchState {
         return combatTimes;
     }
 
+    /** PERF-16's times of the territory, garrison and capture systems; measured, never saved or hashed. */
+    public dev.strategos.core.diag.SystemTimes systemTimes() {
+        return systemTimes;
+    }
+
     /** Where the nodes are, built on first use after discovery or a restore. */
     public NodeIndex nodeIndex() {
         return nodeIndex.get();
@@ -410,6 +434,7 @@ public final class MatchState {
         health.ensureCapacity(size);
         carry.ensureCapacity(size);
         garrison.ensureCapacity(size);
+        play.experience().ensureCapacity(size);
     }
 
     /** The damage each unit has taken (CMB-01). */
@@ -478,6 +503,21 @@ public final class MatchState {
         return config.factions();
     }
 
+    /** The territory, capture, gate and breach state of the match. */
+    public PlayState play() {
+        return play;
+    }
+
+    /** Who is a friend (M9 spec §2.1). AFTER-M7: MATCH-06's diplomacy answers instead of the same faction. */
+    public Allies allies() {
+        return allies;
+    }
+
+    /** Tests only: a match with other alliances than the same faction (FakeAllies), until MATCH-06. */
+    public void setAllies(Allies allies) {
+        this.allies = allies;
+    }
+
     /** What unit {@code i} takes of its faction's population: its {@code Cost/population}, 0 for none (ECO-06). */
     public int unitPopulation(int i) {
         return PopulationCost.ofUnit(stats, i);
@@ -486,6 +526,11 @@ public final class MatchState {
     /** What a unit of {@code template} for {@code faction} takes of the population. */
     public int templatePopulation(int template, int faction) {
         return PopulationCost.ofTemplate(stats, template, faction);
+    }
+
+    /** The most population {@code faction} may use now: its {@code PopulationRule}'s cap, the one source of it. */
+    public int populationCap(int faction) {
+        return civs.rules(faction).population().cap(population, faction);
     }
 
     /** The factions' population counters (ECO-06). */
@@ -539,10 +584,18 @@ public final class MatchState {
         return config;
     }
 
+    /** Whether {@link NightFactor}'s modifiers are in the stats now: derived, never saved. */
+    boolean nightApplied() {
+        return nightApplied;
+    }
+
+    void setNightApplied(boolean applied) {
+        nightApplied = applied;
+    }
+
     /** A journaled rule change's rules (MATCH-01): the config carries them, and the population takes its maximum. */
     public void setRules(MatchRules rules) {
-        config =
-                new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules, config.starts());
+        config = config.withRules(rules);
         population.setMax(rules.economy().populationMax());
     }
 
@@ -567,6 +620,26 @@ public final class MatchState {
 
     public TemplateSet templates() {
         return templates;
+    }
+
+    /**
+     * Whether unit {@code i} may gather {@code resource}'s {@code subtype}: it can (a rate and a capacity) and its
+     * faction's civilisation uses the resource (CIV-05). The one test every gather order, rally and AI choice makes.
+     */
+    public boolean canGather(int i, int resource, int subtype) {
+        int faction = identity.faction(i);
+        return gatherRates.gathers(stats, i, resource, subtype)
+                && civs.rules(faction).resource().uses(faction, resource);
+    }
+
+    /** The rule variants this match's civilisations may select; the same through restore and replay (CIV-05). */
+    public RuleCatalogue catalogue() {
+        return catalogue;
+    }
+
+    /** Each faction's civilisation bound to the set (CIV-01). */
+    public FactionCivs civs() {
+        return civs;
     }
 
     public EntityStore entities() {
@@ -704,6 +777,8 @@ public final class MatchState {
 
     void setTemplates(TemplateSet set) {
         templates = set;
+        civs = FactionCivs.bind(
+                config, set, catalogue); // TemplateSwap checked that the set has every civilisation in use
     }
 
     /** One guard for both the server reload and INGEST, before any template-dependent state changes. */

@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import dev.strategos.core.protocol.AnnounceWave;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
@@ -46,10 +47,13 @@ final class MilitaryManager implements AiModule {
         StrategyScript.Battle battle = script.battle();
         List<Integer> army = new ArrayList<>();
         List<UnitView> soldiers = new ArrayList<>();
+        Depth.Veterans veterans = script.depth().veterans();
         for (UnitView u : view.units()) {
-            // those inside cannot muster; with battle tactics on, the horsemen march too (AI-03)
+            // those inside cannot muster; with battle tactics on, the horsemen march too (AI-03); a veteran healing
+            // stays out (AI-09)
             if (u.state() != UnitState.GARRISONED
-                    && (battle.enabled() ? view.role(u) != AiView.ROLE_NONE : view.is(u.template(), "Infantry"))) {
+                    && (battle.enabled() ? view.role(u) != AiView.ROLE_NONE : view.is(u.template(), "Infantry"))
+                    && !(veterans.on() && HealerManager.resting(view, u, veterans))) {
                 army.add(u.handle());
                 soldiers.add(u);
             }
@@ -83,7 +87,7 @@ final class MilitaryManager implements AiModule {
                     && memory.get(Slots.WAVE) > 0
                     && handles.length > 0
                     && away(base, soldiers, Tactics.home(a))
-                    && pushFogMarch(view, budget, sink, base, battle, soldiers)) {
+                    && pushFogMarch(view, budget, sink, memory, base, battle, soldiers)) {
                 return;
             }
             if (!waveDue) {
@@ -120,14 +124,13 @@ final class MilitaryManager implements AiModule {
         if (tick - (mustered - 1) >= 20L * a.announce() && handles.length > 0) {
             budget.spend(10);
             if (base.enemy() == null) {
-                // AI-18: no enemy building in sight — attack-move short of the enemy start (not onto its footprint)
-                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+                // AI-18: no enemy building in sight — attack-move short of the enemy start (not onto its footprint); a
+                // long way goes as one formation (AI-09)
+                sink.send(March.order(script, soldiers, handles, Tactics.front(base)));
             } else if (battle.fights()) { // AI-03: attack-move, so every kind engages the units on the way
-                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+                sink.send(March.order(script, soldiers, handles, Tactics.front(base)));
             } else {
-                sink.send(Attack.replace(
-                        UnitSet.of(handles),
-                        java.util.Objects.requireNonNull(base.enemy()).handle()));
+                sink.send(strike(view, memory, handles, java.util.Objects.requireNonNull(base.enemy())));
             }
             memory.set(Slots.WAVE, memory.get(Slots.WAVE) + 1);
             if (battle.finish() && battle.rams() > 0) {
@@ -150,6 +153,7 @@ final class MilitaryManager implements AiModule {
             AiView view,
             AiBudget budget,
             CommandSink sink,
+            AiMemory memory,
             Base base,
             StrategyScript.Battle battle,
             List<UnitView> soldiers) {
@@ -168,7 +172,8 @@ final class MilitaryManager implements AiModule {
                                             u.target().z() - front.z())
                                     < 4
                     : view.attackTarget(u) == base.enemy().handle()
-                            || view.burning(u, base.enemy().handle());
+                            || view.burning(u, base.enemy().handle())
+                            || view.capturing(u, base.enemy().handle());
             if (!onIt) {
                 idle.add(u.handle());
             }
@@ -181,7 +186,7 @@ final class MilitaryManager implements AiModule {
         if (base.enemy() == null) {
             sink.send(AttackMove.replace(UnitSet.of(handles), front));
         } else {
-            sink.send(Attack.replace(UnitSet.of(handles), base.enemy().handle()));
+            sink.send(strike(view, memory, handles, base.enemy()));
         }
         return true;
     }
@@ -215,6 +220,25 @@ final class MilitaryManager implements AiModule {
                 target != null
                         ? Attack.replace(UnitSet.of(handles), target.handle())
                         : AttackMove.replace(UnitSet.of(handles), front));
+    }
+
+    /**
+     * AI-08: the order that sends {@code handles} at the enemy building {@code b}: a capture when they take it by half
+     * faster than it regenerates and the wave has not been at it for {@value Seize#GIVE_UP} ticks, else a burn. Keeps
+     * the building and the tick the capture began.
+     */
+    private static Command strike(AiView view, AiMemory memory, int[] handles, BuildingView b) {
+        long tick = view.tick();
+        boolean capture = Seize.beats(view, handles, b);
+        if (capture) {
+            if (memory.get(Slots.CAPTURE) != b.handle() + 1L) {
+                memory.set(Slots.CAPTURE, b.handle() + 1L);
+                memory.set(Slots.CAPTURE_SINCE, tick + 1);
+            } else if (tick - (memory.get(Slots.CAPTURE_SINCE) - 1) > Seize.GIVE_UP) {
+                capture = false; // it holds: burn it
+            }
+        }
+        return Seize.order(handles, b, capture);
     }
 
     /** How long the most enemy soldiers seen at once stay what the army knows of the enemy's: three minutes. */
@@ -299,7 +323,8 @@ final class MilitaryManager implements AiModule {
                 // none in sight to attack: those already at the front are not sent there again (QA-12: this order,
                 // sent every think, kept the wave's sweep of the enemy's ground from ever being thought)
                 if (view.attackTarget(u) == 0
-                        && (base.enemy() != null
+                        && ((base.enemy() != null
+                                        && !view.capturing(u, base.enemy().handle()))
                                 || DetMath.length(u.x() - front.x(), u.z() - front.z()) > 2 * Tactics.ARROWS)) {
                     going.add(u.handle());
                 }
@@ -312,9 +337,8 @@ final class MilitaryManager implements AiModule {
                 sink.send(AttackMove.replace(
                         UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()), Tactics.front(base)));
             } else {
-                sink.send(Attack.replace(
-                        UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),
-                        base.enemy().handle()));
+                sink.send(strike(
+                        view, memory, going.stream().mapToInt(Integer::intValue).toArray(), base.enemy()));
             }
             return true;
         }

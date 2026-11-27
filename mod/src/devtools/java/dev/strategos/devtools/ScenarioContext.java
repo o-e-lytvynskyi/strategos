@@ -15,6 +15,9 @@ final class ScenarioContext {
 
     long nextSeed;
 
+    /** Set by {@link #worldLight()}: the runner no longer pins the client's light to noon. */
+    volatile boolean worldLight;
+
     /** x, y, z, yaw, pitch the runner holds the camera at, or null; set from the server thread. */
     volatile double @Nullable [] camera;
 
@@ -33,6 +36,15 @@ final class ScenarioContext {
      */
     void holdCamera(double x, double y, double z, float yaw, float pitch) {
         camera = new double[] {x, y, z, yaw, pitch};
+    }
+
+    /**
+     * From now on the client shows the world's own time and weather, as the server's next time packet brings them,
+     * instead of the noon the runner pins for goldens: for a scene whose subject is the light (MATCH-16's night), and
+     * for a run a person watches.
+     */
+    void worldLight() {
+        worldLight = true;
     }
 
     /** Save and quit, then create and enter another world, as the vanilla pause menu does. */

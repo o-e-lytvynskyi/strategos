@@ -31,6 +31,26 @@ public final class OrderKind {
     public static final int BURN = 9;
     /** Going into a building (BLD-16), whose handle the queue holds as the target: done once the unit is inside. */
     public static final int GARRISON = 10;
+    /** Capturing a building (CMB-10), whose handle the queue holds as the target: done when it changes hands or is lost. */
+    public static final int CAPTURE = 11;
+    /**
+     * Using an ability (UNIT-10): the queue's slot holds the ability's index in the template set, the target a unit it
+     * is aimed at (0 for none) and the place a point it is aimed at (the user's own for an aimless one); done once it
+     * has fired, or when it can no longer.
+     */
+    public static final int ABILITY = 12;
+    /**
+     * Keeping a place in a formation (ORD-06): the queue's target is the formation's id, its slot the unit's place in
+     * it and its ground place where that place will be a moment from now; done when the unit leaves the formation.
+     */
+    public static final int FORMATION = 13;
+    /**
+     * Patrolling between points (ORD-07): walking each leg as an attack-move does and starting the next at its end,
+     * for ever. The queue's anchors are the points, its slot the leg being walked and its place that leg's end.
+     */
+    public static final int PATROL = 14;
+    /** Guarding a friendly unit or building (ORD-07), whose handle the queue holds as the target: done when it is gone or changes hands. */
+    public static final int GUARD = 15;
 
     private OrderKind() {}
 
@@ -47,6 +67,11 @@ public final class OrderKind {
             case BUILD -> "build";
             case BURN -> "burn";
             case GARRISON -> "garrison";
+            case CAPTURE -> "capture";
+            case ABILITY -> "ability";
+            case FORMATION -> "formation";
+            case PATROL -> "patrol";
+            case GUARD -> "guard";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -64,6 +89,11 @@ public final class OrderKind {
             case "build" -> BUILD;
             case "burn" -> BURN;
             case "garrison" -> GARRISON;
+            case "capture" -> CAPTURE;
+            case "ability" -> ABILITY;
+            case "formation" -> FORMATION;
+            case "patrol" -> PATROL;
+            case "guard" -> GUARD;
             default -> null;
         };
     }
@@ -75,7 +105,7 @@ public final class OrderKind {
 
     /**
      * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the unit it
-     * flees from, the node it gathers at, or the building it builds, burns or goes into.
+     * flees from, the node it gathers at, the building it builds, burns, captures or goes into, the formation it keeps a place in, or the charge it guards.
      */
     public static boolean targets(int kind) {
         return attacks(kind)
@@ -84,6 +114,10 @@ public final class OrderKind {
                 || kind == GATHER
                 || kind == BUILD
                 || kind == BURN
-                || kind == GARRISON;
+                || kind == GARRISON
+                || kind == CAPTURE
+                || kind == ABILITY
+                || kind == FORMATION
+                || kind == GUARD;
     }
 }

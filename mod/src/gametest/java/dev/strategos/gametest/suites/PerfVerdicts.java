@@ -4,14 +4,17 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import dev.strategos.core.sim.econ.EconomyTimes;
+import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.ForeignLoad;
 import dev.strategos.core.testkit.ForeignLoad.Assessment;
 import dev.strategos.core.testkit.ForeignLoad.Reading;
+import dev.strategos.core.testkit.M10Scene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
+import dev.strategos.core.testkit.TerritoryScene;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +75,9 @@ final class PerfVerdicts {
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
+        // PERF-16 and PERF-17 (the M10 scene): four computer factions on MAP-02, A-C and E gate, D and G are reported
+        boolean m10Scene = r.config().scene() instanceof M10Scene.Config;
+        boolean territoryScene = r.config().scene() instanceof TerritoryScene.Config || m10Scene;
         long without = Percentiles.percentile(r.baseline(), 0.50);
         long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
         long[] c = new long[r.tick().length];
@@ -107,7 +113,16 @@ final class PerfVerdicts {
                                 broken,
                                 gated("c")));
             }
-            budgets.add("d", budget("d", "budget D", r.paths(), 0.99, scaled(2 * MS), broken, gated("d") && !melee));
+            budgets.add(
+                    "d",
+                    budget(
+                            "d",
+                            "budget D",
+                            r.paths(),
+                            0.99,
+                            scaled(2 * MS),
+                            broken,
+                            gated("d") && !melee && !territoryScene));
             JsonArray viewers = new JsonArray();
             for (long bytes : r.viewerBytes()) {
                 long perSecond = Math.round(bytes / seconds);
@@ -122,7 +137,7 @@ final class PerfVerdicts {
             budgets.add("e", viewers);
             budgets.addProperty("e_bodies_paired_mean", r.viewerUnits());
             budgets.addProperty("e_bodies_paired_most", r.viewerUnitsMost());
-            if (r.navBytes() > 32L << 20 && gated("g") && !melee) {
+            if (r.navBytes() > 32L << 20 && gated("g") && !melee && !territoryScene) {
                 broken.add("budget G: nav takes " + r.navBytes() + " bytes at 384²");
             }
         }
@@ -159,10 +174,22 @@ final class PerfVerdicts {
             json.add(
                     r.config().scene() instanceof MvpScene.Config
                             ? "mvp"
-                            : r.config().scene() instanceof BattleScene.Config
-                                    ? "battle"
-                                    : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
-                    firstLoop(r, costs, b, broken, !stress && !fast));
+                            : m10Scene
+                                    ? "m10"
+                                    : territoryScene
+                                            ? "territory"
+                                            : r.config().scene() instanceof BattleScene.Config
+                                                    ? "battle"
+                                                    : r.config().scene() instanceof EconomyScene.Config
+                                                            ? "economy"
+                                                            : "firstLoop",
+                    firstLoop(r, costs, b, broken, !stress && !fast && !territoryScene));
+            if (costs.territory() != null) {
+                json.add("systems", systems(costs.territory(), broken));
+            }
+            if (costs.depth() != null) {
+                json.add("systems", depth(costs.depth()));
+            }
         }
         if (melee) {
             json.addProperty("waves", r.fights()[0]);
@@ -236,7 +263,9 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        if (r.config().scene() instanceof MvpScene.Config) {
+        if (r.config().scene() instanceof MvpScene.Config
+                || r.config().scene() instanceof TerritoryScene.Config
+                || r.config().scene() instanceof M10Scene.Config) {
             mvp(json, r, costs, b, broken, gates);
             return json;
         }
@@ -336,6 +365,85 @@ final class PerfVerdicts {
             }
         }
         json.add("perUnit", perUnit);
+    }
+
+    /**
+     * PERF-16: the territory and garrison systems' part of the report, {@code systems}: the territory system's run each
+     * sampled tick, which is the {@code WORLD} phase's territory share, its recomputes in the window and the most in any
+     * {@value TerritorySystem#CADENCE} ticks, the tick thread's wait on the recompute job (the territory never blocks a
+     * tick), and the garrison and capture systems' runs. Two gates, under {@code c}: the join's p99 at most half a
+     * millisecond, and no window of {@value TerritorySystem#CADENCE} ticks holding two recomputes.
+     */
+    private static JsonObject systems(SoakCosts.Territory t, List<String> broken) {
+        JsonObject territory = spread(t.territory());
+        long recomputes = Arrays.stream(t.recomputes()).sum();
+        long most = 0;
+        long window = 0;
+        for (int i = 0; i < t.recomputes().length; i++) {
+            window += t.recomputes()[i];
+            if (i >= TerritorySystem.CADENCE) {
+                window -= t.recomputes()[i - TerritorySystem.CADENCE];
+            }
+            most = Math.max(most, window);
+        }
+        territory.addProperty("recomputes", recomputes);
+        territory.addProperty("mostRecomputesPerCadenceWindow", most);
+        territory.addProperty("cadenceTicks", TerritorySystem.CADENCE);
+        JsonObject join = spread(t.join());
+        long joinLimit = scaled(MS / 2);
+        join.addProperty("limitP99", joinLimit);
+        territory.add("join", join);
+        JsonObject garrison = spread(t.garrison());
+        JsonObject capture = spread(t.capture());
+        garrison.add("capture", capture);
+        JsonObject systems = new JsonObject();
+        systems.add("territory", territory);
+        systems.add("garrison", garrison);
+        systems.addProperty(
+                "note",
+                "territory is the territory system's run, part of the WORLD phase; join is the tick thread's wait on"
+                        + " its recompute job; garrison's capture is the capture system's run, in the COMBAT phase");
+        if (gated("c")) {
+            long p99 = t.join().length == 0 ? 0 : Percentiles.percentile(t.join(), 0.99);
+            if (p99 > joinLimit) {
+                broken.add("territory blocks the tick: its job's join waits p99 " + p99 + " ns, above " + joinLimit);
+            }
+            if (most > 1) {
+                broken.add("territory recomputes " + most + " times within " + TerritorySystem.CADENCE
+                        + " ticks, above 1");
+            }
+        }
+        return systems;
+    }
+
+    /**
+     * PERF-17: the M10 systems' part of the report, {@code systems}: what the formation system, the wild animals'
+     * thinking (fauna) and the ability system (cooldowns, buffs, autocast) cost a sampled tick, in nanoseconds. Reported,
+     * not gated: they are inside budget A, which gates.
+     */
+    private static JsonObject depth(SoakCosts.Depth d) {
+        JsonObject systems = new JsonObject();
+        systems.add("formation", spread(d.formation()));
+        systems.add("fauna", spread(d.fauna()));
+        systems.add("ability", spread(d.ability()));
+        systems.addProperty("formedFraction", d.formed());
+        JsonObject scene = new JsonObject();
+        scene.addProperty("marches", d.marches());
+        scene.addProperty("charges", d.charges());
+        scene.addProperty("researches", d.researches());
+        JsonArray phases = new JsonArray();
+        for (String phase : d.phases()) {
+            phases.add(phase);
+        }
+        scene.add("phases", phases);
+        systems.add("scene", scene);
+        systems.addProperty(
+                "note",
+                "formation is the formation system's run and ability the ability system's, both UNIT_AI; fauna is the"
+                        + " Gaia units' own turns to think inside the units' state machines (UNIT_AI), the animals'"
+                        + " fleeing and hunting included; the abilities' orders and the units' use of them count in the"
+                        + " units' thinking, not here");
+        return systems;
     }
 
     /**

@@ -1,0 +1,13 @@
+{
+  "name": "strategos.tech.iron_armour",
+  "icon": "minecraft:iron_chestplate",
+  "cost": { "food": 300, "wood": 150, "iron": 250 },
+  "time": 80,
+  "requires": { "all": [{ "phase": "town" }, { "tech": "strategos:chainmail" }] },
+  "supersedes": "strategos:chainmail",
+  "effects": [
+    { "path": "Resistance/hack", "op": "add", "value": 2, "filter": "Infantry Cavalry" },
+    { "path": "Resistance/pierce", "op": "add", "value": 2, "filter": "Infantry Cavalry" },
+    { "path": "Look/armour", "op": "add", "value": 2, "filter": "Infantry Cavalry" }
+  ]
+}

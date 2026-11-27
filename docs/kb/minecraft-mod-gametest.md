@@ -150,7 +150,8 @@ sort). M5 T4: the reconciler test saved a half-written house ("rewrote 62"); wai
 `materialises_one_body_per_unit` asserted after `runAfterDelay(2)` and saw "0 bodies"; wait
 until `rt.bodies().count()` reaches the count, then assert. M5 T18: `navtests.own_writes_never_dirty`
 waited for the whole level's writer queue to empty, which other matches keep busy; it waits for its
-own match's `pendingIn` now.
+own match's `pendingIn` now. M9 T11: `towertests.upgrade_keeps_garrison` checked the upgraded tower's
+blocks after a fixed delay and passed alone but failed in the full batch; it waits for `pendingIn` too.
 
 ## A batch without its `@AfterBatch` hook leaks its matches into the next batch
 

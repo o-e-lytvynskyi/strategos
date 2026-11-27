@@ -34,7 +34,7 @@ import org.junit.jupiter.params.provider.Arguments;
 final class BurnTransitionRows {
     private BurnTransitionRows() {}
 
-    /** The built-in templates whose worker carries a torch, at the same net indices. */
+    /** The built-in templates whose worker carries a torch and the ability {@code poke}, at the same net indices. */
     static TemplateSet torchWorkers() {
         List<TemplateCompiler.Flat> flats = new ArrayList<>();
         for (UnitTemplate t : TemplateSet.builtin().all()) {
@@ -44,6 +44,7 @@ final class BurnTransitionRows {
                         "Attack",
                         JsonParser.parseString("{\"Structure\": {\"fire\": 1, \"prepare\": 10, \"repeat\": 20}}")
                                 .getAsJsonObject());
+                json.add("Abilities", JsonParser.parseString(AbilityTransitionRows.POKE)); // UNIT-10's rows
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }

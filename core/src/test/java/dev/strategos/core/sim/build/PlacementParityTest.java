@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.client.build.ClientPlacement;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.PlacementRule;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -33,6 +34,15 @@ import org.junit.jupiter.api.Test;
  * third cell of a 64² match with a civic centre, a house's foundation, trees, a bush, a pond and a raised step.
  */
 class PlacementParityTest {
+    /** A test-only placement variant: today's checks with no territory rule, on both sides of the wire. */
+    private static final PlacementRule IGNORES_TERRITORY = (world, b, at, faction, params) -> PlacementRules.standard(
+            world,
+            b,
+            at,
+            faction,
+            new PlacementRules.Params(
+                    params.civicCentre(), params.spacing(), PlacementRules.ANYWHERE, params.affordable()));
+
     @Test
     void theClientGivesTheServersVerdict() {
         VoxelWorld w = VoxelFixtures.flat(64, 64, 32, 1);
@@ -71,12 +81,23 @@ class PlacementParityTest {
         List<String> resources = s.config().rules().economy().resources().stream()
                 .map(r -> r.id())
                 .toList();
-        PlacementRules.World client =
-                ClientPlacement.world(templates, buildings.buildings(), 64, 64, new ClientPlacement.Columns() {
+        PlacementRules.World client = ClientPlacement.world(
+                templates,
+                buildings.buildings(),
+                64,
+                64,
+                new ClientPlacement.Columns() {
                     @Override
                     public double floor(int x, int z) {
                         return Placing.floor(
                                 s.surfaces(), s.config().bounds(), x, z); // what its own blocks say, equally
+                    }
+
+                    @Override
+                    public int territory(int x, int z) { // the grid the client was sent (TERR-01)
+                        return Objects.requireNonNull(s.play().territorySystem())
+                                .grid()
+                                .ownerAt(x, z);
                     }
 
                     @Override
@@ -89,27 +110,39 @@ class PlacementParityTest {
                         }
                         return false;
                     }
-                });
+                },
+                f -> "CivicCentre");
         PlacementRules.World server = Placing.world(s, 0);
         int compared = 0;
         int refused = 0;
+        int differing = 0;
         for (String id :
                 List.of("strategos:building/house", "strategos:building/barracks", "strategos:building/civic_centre")) {
             UnitTemplate t = Objects.requireNonNull(templates.byId(new dev.strategos.core.shared.TemplateId(id)));
             Blueprint b = Objects.requireNonNull(templates.blueprint(t.netIndex()));
             PlacementRules.Params serverParams = Placing.params(s, t.netIndex(), 0);
             PlacementRules.Params clientParams =
-                    ClientPlacement.params(templates, t.netIndex(), resources, faction.stock());
+                    ClientPlacement.params(templates, t.netIndex(), resources, faction.stock(), "CivicCentre");
             assertThat(clientParams).as(id).isEqualTo(serverParams);
             for (int rotation = 0; rotation < 4; rotation++) {
                 for (int x = -3; x < 64; x += 3) {
                     for (int z = -3; z < 64; z += 3) {
                         Footprint at = Footprint.of(b, x, z, rotation);
-                        PlacementRules.Verdict expected = PlacementRules.check(server, b, at, 0, serverParams);
-                        PlacementRules.Verdict got = PlacementRules.check(client, b, at, 0, clientParams);
+                        PlacementRules.Verdict expected =
+                                PlacementRules.check(PlacementRule.DEFAULT, server, b, at, 0, serverParams);
+                        PlacementRules.Verdict got =
+                                PlacementRules.check(PlacementRule.DEFAULT, client, b, at, 0, clientParams);
                         assertThat(got)
                                 .as("%s at %d, %d turned %d", id, x, z, rotation)
                                 .isEqualTo(expected);
+                        PlacementRules.Verdict variantServer =
+                                PlacementRules.check(IGNORES_TERRITORY, server, b, at, 0, serverParams);
+                        PlacementRules.Verdict variantClient =
+                                PlacementRules.check(IGNORES_TERRITORY, client, b, at, 0, clientParams);
+                        assertThat(variantClient)
+                                .as("%s at %d, %d turned %d, a variant rule", id, x, z, rotation)
+                                .isEqualTo(variantServer);
+                        differing += variantServer.equals(expected) ? 0 : 1;
                         compared++;
                         refused += expected.ok() ? 0 : 1;
                     }
@@ -117,6 +150,9 @@ class PlacementParityTest {
             }
         }
         assertThat(compared).isGreaterThan(5_000);
+        assertThat(differing)
+                .as("the test variant (no territory rule) changes some verdicts: the parity is not vacuous")
+                .isPositive();
         assertThat(refused).as("refusals of every kind among them").isBetween(compared / 4, compared - 100);
     }
 }

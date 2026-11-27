@@ -26,7 +26,8 @@ import java.util.TreeMap;
  * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}) unless {@code opening}
  * names one (QA-12's pairings). AI-05's
  * {@code level} (resolved into a script by {@link Levels}) holds the pace of a difficulty ({@link Level}); a build
- * step may research a tech or a phase instead of placing a building.
+ * step may research a tech or a phase instead of placing a building. AI-09's {@code depth} block is the late game: the
+ * tree's priority list, healers, charges, formation marches and spared veterans ({@link Depth}).
  */
 public record StrategyScript(
         String worker,
@@ -47,7 +48,8 @@ public record StrategyScript(
         Camp camp,
         Level level,
         String opening,
-        int early) {
+        int early,
+        Depth depth) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
      * one: a resource's nearest node, or an own building of that template id; "" for no preference. A research step
@@ -292,7 +294,8 @@ public record StrategyScript(
                 camp,
                 level,
                 opening,
-                o.early() >= 0 ? o.early() : early);
+                o.early() >= 0 ? o.early() : early,
+                depth);
     }
 
     /**
@@ -312,6 +315,10 @@ public record StrategyScript(
         if (!opening.isEmpty() && openings.stream().noneMatch(o -> o.name().equals(opening))) {
             throw new IllegalArgumentException("a strategy script pins the opening '" + opening + "', which it lacks");
         }
+        if (!depth.techs().order().isEmpty() && build.size() > BuildManager.SKIPPABLE) {
+            throw new IllegalArgumentException("a strategy script with a depth block takes a build order of at most "
+                    + BuildManager.SKIPPABLE + " steps, not " + build.size());
+        }
         openings = List.copyOf(openings);
         ratio = Collections.unmodifiableSortedMap(new TreeMap<>(ratio));
         build = List.copyOf(build);
@@ -319,16 +326,12 @@ public record StrategyScript(
     }
 
     public static final Codec<StrategyScript> CODEC = RecordCodecBuilder.create(i -> i.group(
-                    Codec.STRING
-                            .optionalFieldOf("worker", "strategos:unit/worker")
-                            .forGetter(StrategyScript::worker),
+                    Codec.STRING.optionalFieldOf("worker", "").forGetter(StrategyScript::worker),
                     Codec.INT.optionalFieldOf("maxWorkers", 20).forGetter(StrategyScript::maxWorkers),
                     Codec.unboundedMap(Codec.STRING, Codec.INT).fieldOf("ratio").forGetter(StrategyScript::ratio),
                     Step.CODEC.listOf().fieldOf("build").forGetter(StrategyScript::build),
                     Codec.INT.optionalFieldOf("housingMargin", 2).forGetter(StrategyScript::housingMargin),
-                    Codec.STRING
-                            .optionalFieldOf("soldier", "strategos:unit/infantry")
-                            .forGetter(StrategyScript::soldier),
+                    Codec.STRING.optionalFieldOf("soldier", "").forGetter(StrategyScript::soldier),
                     Codec.INT.optionalFieldOf("soldierQueue", 2).forGetter(StrategyScript::soldierQueue),
                     Attack.CODEC.fieldOf("attack").forGetter(StrategyScript::attack),
                     Codec.INT
@@ -345,8 +348,8 @@ public record StrategyScript(
                             .listOf()
                             .optionalFieldOf("openings", List.of())
                             .forGetter(StrategyScript::openings),
-                    Tail.CODEC.forGetter(
-                            script -> new Tail(script.camp(), script.level(), script.opening(), script.early())))
+                    Tail.CODEC.forGetter(script ->
+                            new Tail(script.camp(), script.level(), script.opening(), script.early(), script.depth())))
             .apply(
                     i,
                     (worker,
@@ -383,15 +386,17 @@ public record StrategyScript(
                             tail.camp(),
                             tail.level(),
                             tail.opening(),
-                            tail.early())));
+                            tail.early(),
+                            tail.depth())));
 
-    /** The last four fields, grouped: a record codec takes at most 16 fields. */
-    private record Tail(Camp camp, Level level, String opening, int early) {
+    /** The last five fields, grouped: a record codec takes at most 16 fields. */
+    private record Tail(Camp camp, Level level, String opening, int early, Depth depth) {
         static final com.mojang.serialization.MapCodec<Tail> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                         Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(Tail::camp),
                         Level.CODEC.optionalFieldOf("level", Level.NONE).forGetter(Tail::level),
                         Codec.STRING.optionalFieldOf("opening", "").forGetter(Tail::opening),
-                        Codec.intRange(0, 100).optionalFieldOf("early", 0).forGetter(Tail::early))
+                        Codec.intRange(0, 100).optionalFieldOf("early", 0).forGetter(Tail::early),
+                        Depth.CODEC.optionalFieldOf("depth", Depth.NONE).forGetter(Tail::depth))
                 .apply(i, Tail::new));
     }
 

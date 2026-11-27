@@ -104,11 +104,25 @@ final class Tactics {
         long state = memory.get(Slots.FIGHT);
         memory.set(Slots.CLEAR, state != 2 && arrived && near.isEmpty() ? 1 : 0);
         if (state == 2 || (battle.retreat() > 0 && enemy > 0 && own < battle.retreat() * enemy)) {
-            retreat(budget, sink, memory, base, wave, state != 2);
+            retreat(view, budget, sink, memory, base, script.depth().veterans(), wave, state != 2);
             return true;
         }
         if (battle.fights()) {
-            engage(view, budget, sink, memory, base, battle, wave, near);
+            List<UnitView> fighting = wave;
+            if (March.holding(script, base, wave, near)) { // AI-09: a formation on its march is left to walk
+                fighting = new ArrayList<>(wave);
+                fighting.removeIf(u -> view.formation(u) != 0);
+            }
+            if (!fighting.isEmpty()) {
+                engage(view, budget, sink, memory, base, battle, fighting, near);
+            }
+            Charge.use(
+                    view,
+                    budget,
+                    sink,
+                    script.depth().charge(),
+                    wave,
+                    near); // after the orders: it goes in front of them
         }
         return true;
     }
@@ -132,13 +146,31 @@ final class Tactics {
         return true;
     }
 
+    /**
+     * The wave goes home. With the script's veterans on (AI-09) the ranked soldiers are pulled back first: the first think
+     * of a retreat orders only them, the rest of the wave holding the line a think longer, unless none is ranked.
+     */
     private static void retreat(
-            AiBudget budget, CommandSink sink, AiMemory memory, Base base, List<UnitView> wave, boolean first) {
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            AiMemory memory,
+            Base base,
+            Depth.Veterans veterans,
+            List<UnitView> wave,
+            boolean first) {
         Vec2d home = new Vec2d(base.x(), base.z());
         List<Integer> going = new ArrayList<>();
+        boolean ranked = false;
+        if (first && veterans.on()) {
+            for (UnitView u : wave) {
+                ranked |= veterans.veteran(view.rank(u));
+            }
+        }
         for (UnitView u : wave) {
             Vec2d t = u.target();
-            if (t == null || DetMath.length(t.x() - home.x(), t.z() - home.z()) > SETTLED) {
+            if ((!first || !ranked || veterans.veteran(view.rank(u)))
+                    && (t == null || DetMath.length(t.x() - home.x(), t.z() - home.z()) > SETTLED)) {
                 going.add(u.handle());
             }
         }

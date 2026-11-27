@@ -65,7 +65,7 @@ final class GatherRule implements CommandRule<Gather> {
                 continue;
             }
             int i = Handle.index(handle);
-            if (!state.gatherRates().gathers(state.stats(), i, resource, subtype)) {
+            if (!state.canGather(i, resource, subtype)) {
                 tally.reject(RejectReason.UNSUPPORTED);
                 continue;
             }

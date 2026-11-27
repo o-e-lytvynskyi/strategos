@@ -8,6 +8,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.econ.NodeView;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -99,6 +100,7 @@ final class SiteFinder {
         candidates.sort((a, b) -> a[2] != b[2]
                 ? Integer.compare(a[2], b[2])
                 : a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
+        int[] slots = workSlots(view, ox, oz, range + REGION / 4);
         Reach before = null;
         int looks = 0;
         for (int[] c : candidates) {
@@ -108,7 +110,9 @@ final class SiteFinder {
             if (pack(c[0], c[1]) == skip) {
                 continue;
             }
-            if (crowded(view, c[0], c[1], probe) || view.placementRefusal(building, c[0], c[1]) != null) {
+            if (crowded(view, c[0], c[1], probe)
+                    || coversSlot(slots, c[0], c[1], probe)
+                    || view.placementRefusal(building, c[0], c[1]) != null) {
                 continue;
             }
             looks++;
@@ -121,6 +125,108 @@ final class SiteFinder {
             budget.spend(10);
             Reach after = Reach.walk(view, cx, cz, seed, Footprint.of(bp, c[0], c[1], 0));
             if (after.covers(before)) {
+                return new int[] {c[0], c[1]};
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The work slots of the live nodes within {@code reach} blocks of ({@code ox}, {@code oz}), as packed cells in
+     * ascending order: a building on one leaves the gatherer who holds it walking to a place it cannot stand on (QA-12).
+     */
+    private static int[] workSlots(AiView view, int ox, int oz, int reach) {
+        int[] cells = new int[64];
+        int n = 0;
+        for (NodeView node : view.nodes()) {
+            if (node.amount() > 0 && Math.abs(node.anchorX() - ox) <= reach && Math.abs(node.anchorZ() - oz) <= reach) {
+                for (int cell : view.nodeSlotCells(node.id())) {
+                    if (n == cells.length) {
+                        cells = Arrays.copyOf(cells, n * 2);
+                    }
+                    cells[n++] = cell;
+                }
+            }
+        }
+        cells = Arrays.copyOf(cells, n);
+        Arrays.sort(cells);
+        return cells;
+    }
+
+    /**
+     * Whether the footprint of {@code probe} at corner ({@code x}, {@code z}), or the lane of {@code GAP / 2} blocks round
+     * it, covers one of the sorted {@code slots}: a building flush with a slot leaves a one-block lane that a crowd of
+     * gatherers jams.
+     */
+    private static boolean coversSlot(int[] slots, int x, int z, Footprint probe) {
+        if (slots.length == 0) {
+            return false;
+        }
+        for (int cx = x - GAP / 2; cx < x + probe.spanX() + GAP / 2; cx++) {
+            for (int cz = z - GAP / 2; cz < z + probe.spanZ() + GAP / 2; cz++) {
+                if (cx >= 0 && cz >= 0 && Arrays.binarySearch(slots, (cx << 16) | cz) >= 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** A civic centre's least distance from another's: the template's spacing is 64 blocks between footprints (AI-08). */
+    static final int CENTRE_SPACING = 64;
+
+    /** How far from the centre a second civic centre's site's middle may lie. */
+    static final int CENTRE_REACH = 120;
+
+    /** The stride of the second centre's search, and the most places it looks at. */
+    static final int CENTRE_STRIDE = 4;
+
+    static final int CENTRE_LOOKS = 400;
+
+    /**
+     * AI-08: the corner of the site for a second civic centre on neutral land nearest the base: a place whose middle
+     * is on no one's territory, at least {@value #CENTRE_SPACING} blocks from the centre, that the ground's rules
+     * take; null when none within {@value #CENTRE_REACH} blocks does. Looks at most {@value #CENTRE_LOOKS} places.
+     */
+    static int @Nullable [] neutral(AiView view, AiBudget budget, Base base, TemplateId building) {
+        UnitTemplate t = view.templates().byId(building);
+        Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
+        if (bp == null) {
+            return null;
+        }
+        Footprint probe = Footprint.of(bp, 0, 0, 0);
+        int cx = (int) Math.floor(base.x());
+        int cz = (int) Math.floor(base.z());
+        List<int[]> candidates = new ArrayList<>();
+        for (int dx = -CENTRE_REACH; dx <= CENTRE_REACH; dx += CENTRE_STRIDE) {
+            for (int dz = -CENTRE_REACH; dz <= CENTRE_REACH; dz += CENTRE_STRIDE) {
+                double d = DetMath.length(dx, dz);
+                int mx = cx + dx;
+                int mz = cz + dz;
+                int x = mx - probe.spanX() / 2;
+                int z = mz - probe.spanZ() / 2;
+                if (d < CENTRE_SPACING
+                        || d > CENTRE_REACH
+                        || x < 0
+                        || z < 0
+                        || x + probe.spanX() > view.bounds().sizeX()
+                        || z + probe.spanZ() > view.bounds().sizeZ()
+                        || view.territoryOwner(mx, mz) != -1) {
+                    continue;
+                }
+                candidates.add(new int[] {x, z, (int) Math.round(d * 16)});
+            }
+        }
+        candidates.sort((a, b) -> a[2] != b[2]
+                ? Integer.compare(a[2], b[2])
+                : a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
+        int looks = 0;
+        for (int[] c : candidates) {
+            if (looks == CENTRE_LOOKS || budget.exhausted()) {
+                return null;
+            }
+            looks++;
+            if (view.placementRefusal(building, c[0], c[1]) == null) {
                 return new int[] {c[0], c[1]};
             }
         }

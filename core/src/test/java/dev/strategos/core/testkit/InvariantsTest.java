@@ -4,18 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
+import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -155,6 +162,63 @@ class InvariantsTest {
     }
 
     @Test
+    void lootIsASourceTheTreasuryConservesEveryTickOfASeededFight() {
+        long looted = 0;
+        for (long seed = 1; seed <= 5; seed++) {
+            SimHarness h = SimHarness.builder()
+                    .seed(seed)
+                    .size(64, 64)
+                    .yBand(0, 31, 1)
+                    .factions(2)
+                    .build();
+            h.publishAll(VoxelFixtures.flat(64, 64, 32, 1));
+            h.step();
+            MatchState s = KernelAccess.state(h.core());
+            int[] reds = spawn(h, 0, 20, 5);
+            int[] blues = spawn(h, 1, 26, 3);
+            for (int blue : blues) { // each blue carries wood the reds take with its life
+                s.ledger().found(1, 10_000);
+                s.ledger().taken(1, 10_000);
+                s.carry().ensureCapacity(Handle.index(blue) + 1);
+                s.carry().add(Handle.index(blue), 1, 0, 10_000);
+            }
+            h.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(reds), blues[0]));
+            h.submit(new PlayerSlot(1), Attack.replace(UnitSet.of(blues), reds[0]));
+            for (int tick = 0; tick < 500; tick++) {
+                h.step(); // the core's FINAL throws on a broken balance; the harness's invariants too
+                for (int f = 0; f < 2; f++) {
+                    FactionTreasury t = h.queries().treasury(new FactionSlot(f));
+                    for (int r = 0; r < t.stock().size(); r++) {
+                        assertThat(t.granted().get(r)
+                                        + t.gathered().get(r)
+                                        + t.refunded().get(r)
+                                        + t.looted().get(r))
+                                .as("seed %d tick %d faction %d resource %d", seed, tick, f, r)
+                                .isEqualTo(t.stock().get(r) + t.spent().get(r));
+                    }
+                }
+            }
+            h.assertInvariants();
+            for (int f = 0; f < 2; f++) {
+                looted += h.queries().treasury(new FactionSlot(f)).looted().stream()
+                        .mapToLong(Long::longValue)
+                        .sum();
+            }
+        }
+        assertThat(looted).as("kills paid in the fights").isPositive();
+    }
+
+    private static int[] spawn(SimHarness h, int faction, double x, int count) {
+        h.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(faction), new Vec2d(x, 20), count, 1.5));
+        return h.step().events().stream()
+                .filter(UnitCreated.class::isInstance)
+                .mapToInt(e -> ((UnitCreated) e).handle())
+                .toArray();
+    }
+
+    @Test
     void aHarnessWhoseStepBreaksAnInvariantThrowsNamingSeedAndTick() {
         SimHarness live = SimHarness.builder().build();
         int unit = live.spawn(new FactionSlot(0), new Vec2d(8.5, 8.5), 1, 0)[0];
@@ -184,7 +248,40 @@ class InvariantsTest {
     /** A 32 x 32 match, y 0..16, holding exactly the units it is given; {@code cap} is its unit cap. */
     private static final class FakeQueries implements MatchQueries {
         @Override
+        public int abilityCooldown(int handle, String ability) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public String templateSwapProblem(TemplateSet next) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int phase(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String centreClass(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public dev.strategos.core.shared.TemplateId role(FactionSlot faction, String role) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean trains(
+                FactionSlot faction,
+                dev.strategos.core.shared.TemplateId building,
+                dev.strategos.core.shared.TemplateId unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean usesResource(FactionSlot faction, String resource) {
             throw new UnsupportedOperationException();
         }
 

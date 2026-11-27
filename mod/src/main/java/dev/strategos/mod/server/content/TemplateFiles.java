@@ -6,9 +6,11 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DynamicOps;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.io.IOException;
@@ -37,6 +39,8 @@ public final class TemplateFiles {
     public static final String DIRECTORY = "strategos/templates";
     /** The technologies (TECH-01): {@code data/<namespace>/strategos/techs/**.json}, id {@code <namespace>:<path>}. */
     public static final String TECHS = "strategos/techs";
+    /** The civilisations (CIV-01): {@code data/<namespace>/strategos/civs/**.json}, id {@code <namespace>:<path>}. */
+    public static final String CIVS = "strategos/civs";
 
     private static final String SUFFIX = ".json";
 
@@ -52,12 +56,14 @@ public final class TemplateFiles {
     public record Read(
             Map<ResourceLocation, JsonElement> files,
             Map<ResourceLocation, JsonElement> techs,
+            Map<ResourceLocation, JsonElement> civs,
             Map<String, CompoundTag> blueprints,
             List<TemplateProblem> problems) {}
 
     public static Read read(ResourceManager resources) {
         Map<ResourceLocation, JsonElement> files = new TreeMap<>();
         Map<ResourceLocation, JsonElement> techs = new TreeMap<>();
+        Map<ResourceLocation, JsonElement> civs = new TreeMap<>();
         Map<String, CompoundTag> blueprints = new TreeMap<>();
         List<TemplateProblem> problems = new ArrayList<>();
         for (Map.Entry<ResourceLocation, Resource> e : resources
@@ -92,7 +98,17 @@ public final class TemplateFiles {
                 problems.add(TemplateProblem.error(file(at), "", "does not parse: " + ex.getMessage()));
             }
         }
-        return new Read(files, techs, blueprints, problems);
+        for (Map.Entry<ResourceLocation, Resource> e : resources
+                .listResources(CIVS, at -> at.getPath().endsWith(SUFFIX))
+                .entrySet()) {
+            ResourceLocation at = e.getKey();
+            try (Reader reader = e.getValue().openAsReader()) {
+                civs.put(at, JsonParser.parseReader(reader));
+            } catch (IOException | JsonParseException ex) {
+                problems.add(TemplateProblem.error(file(at), "", "does not parse: " + ex.getMessage()));
+            }
+        }
+        return new Read(files, techs, civs, blueprints, problems);
     }
 
     /** The blueprints of {@code read}; one that does not parse is a problem naming its file. */
@@ -163,6 +179,33 @@ public final class TemplateFiles {
                 continue;
             }
             raws.add(new RawTech(id, file(at), json));
+        }
+        return raws;
+    }
+
+    /** The civilisations of {@code read} whose conditions hold, as {@link #raws} keeps templates. */
+    public static List<RawCiv> rawCivs(Read read, DynamicOps<JsonElement> ops, List<TemplateProblem> problems) {
+        List<RawCiv> raws = new ArrayList<>();
+        for (Map.Entry<ResourceLocation, JsonElement> e : read.civs().entrySet()) {
+            ResourceLocation at = e.getKey();
+            if (!e.getValue().isJsonObject()) {
+                problems.add(TemplateProblem.error(file(at), "", "a civilisation is a JSON object"));
+                continue;
+            }
+            JsonObject json = e.getValue().getAsJsonObject().deepCopy();
+            if (!ICondition.conditionsMatched(ops, json)) {
+                continue;
+            }
+            json.remove(ConditionalOps.DEFAULT_CONDITIONS_KEY);
+            String path = at.getPath().substring(CIVS.length() + 1, at.getPath().length() - SUFFIX.length());
+            CivId id;
+            try {
+                id = new CivId(at.getNamespace() + ":" + path);
+            } catch (IllegalArgumentException ex) {
+                problems.add(TemplateProblem.error(file(at), "", String.valueOf(ex.getMessage())));
+                continue;
+            }
+            raws.add(new RawCiv(id, file(at), json));
         }
         return raws;
     }

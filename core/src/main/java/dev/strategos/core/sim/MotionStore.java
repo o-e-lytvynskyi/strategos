@@ -39,6 +39,9 @@ public final class MotionStore {
     private double[] netZ = new double[0];
     private int[] net = new int[0];
     private long[] netOrder = new long[0];
+    private double[] netBest = new double[0];
+    private double[] netAimX = new double[0];
+    private double[] netAimZ = new double[0];
     private int[] settle = new int[0];
     private int[] ghostTicks = new int[0];
 
@@ -83,8 +86,11 @@ public final class MotionStore {
             double netZ,
             int net,
             int settle,
-            long netOrder) {
-        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0, 0, 0);
+            long netOrder,
+            double netBest,
+            double netAimX,
+            double netAimZ) {
+        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     public void ensureCapacity(int size) {
@@ -117,6 +123,9 @@ public final class MotionStore {
             netZ = Arrays.copyOf(netZ, capacity);
             net = Arrays.copyOf(net, capacity);
             netOrder = Arrays.copyOf(netOrder, capacity);
+            netBest = Arrays.copyOf(netBest, capacity);
+            netAimX = Arrays.copyOf(netAimX, capacity);
+            netAimZ = Arrays.copyOf(netAimZ, capacity);
             settle = Arrays.copyOf(settle, capacity);
         }
     }
@@ -288,6 +297,34 @@ public final class MotionStore {
         netZ[i] = ticks == 0 ? 0 : z;
         net[i] = ticks;
         netOrder[i] = ticks == 0 ? 0 : order;
+        if (ticks == 0) {
+            netBest[i] = 0;
+            netAimX[i] = 0;
+            netAimZ[i] = 0;
+        }
+    }
+
+    /**
+     * The least squared distance to the order's target the net-progress count has seen (the count restarts on coming
+     * nearer than it, as the invariant of QA-02.3 counts progress); meaningful while {@link #net} is not 0.
+     */
+    public double netBest(int i) {
+        return netBest[i];
+    }
+
+    /** The target {@link #netBest} is the distance to: it is measured afresh when the order's target moves. */
+    public double netAimX(int i) {
+        return netAimX[i];
+    }
+
+    public double netAimZ(int i) {
+        return netAimZ[i];
+    }
+
+    public void setNetBest(int i, double squared, double aimX, double aimZ) {
+        netBest[i] = squared;
+        netAimX[i] = aimX;
+        netAimZ[i] = aimZ;
     }
 
     /**
@@ -335,7 +372,10 @@ public final class MotionStore {
                                 netZ[i],
                                 net[i],
                                 settle[i],
-                                netOrder[i]));
+                                netOrder[i],
+                                netBest[i],
+                                netAimX[i],
+                                netAimZ[i]));
     }
 
     public void setExtra(int i, Extra e) {
@@ -360,6 +400,9 @@ public final class MotionStore {
         net[i] = e.ladder().net();
         settle[i] = e.ladder().settle();
         netOrder[i] = e.ladder().netOrder();
+        netBest[i] = e.ladder().netBest();
+        netAimX[i] = e.ladder().netAimX();
+        netAimZ[i] = e.ladder().netAimZ();
     }
 
     /** Whether unit {@code i}'s terrain part is still {@link Extra#NONE}'s: it never touched terrain. */

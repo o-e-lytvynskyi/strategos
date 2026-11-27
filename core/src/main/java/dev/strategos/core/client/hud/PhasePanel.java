@@ -1,6 +1,6 @@
 package dev.strategos.core.client.hud;
 
-import dev.strategos.core.content.FactionView;
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.Requirement;
 import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
@@ -27,11 +27,11 @@ public record PhasePanel(TechDef phase, List<Row> rows) {
 
     /** The panel for {@code selected}, or null when it researches no phase still ahead. */
     public static @Nullable PhasePanel of(
-            TemplateSet templates, FactionView view, BuildingState.@Nullable Entry selected) {
+            TemplateSet templates, ClientFactionView view, BuildingState.@Nullable Entry selected) {
         if (selected == null || !selected.own() || selected.state() != CommandCard.COMPLETE) {
             return null;
         }
-        for (TechDef tech : CommandCard.researches(templates, selected.template())) {
+        for (TechDef tech : CardLists.researches(templates, view, selected.template())) {
             if (tech.isPhase() && !view.researched(tech.id())) {
                 List<Row> rows = new ArrayList<>();
                 for (Requirements.Leaf leaf : Requirements.checklist(tech.requires(), view)) {
@@ -41,6 +41,26 @@ public record PhasePanel(TechDef phase, List<Row> rows) {
             }
         }
         return null;
+    }
+
+    /**
+     * The language key of phase {@code ordinal}'s display name for a faction of {@code civ} (CIV-01): the
+     * civilisation's own entry when it has one for that ordinal, else {@code fallback}.
+     */
+    private static String key(@Nullable CivDef civ, int ordinal, String fallback) {
+        return civ != null && ordinal >= 0 && ordinal < civ.phases().size()
+                ? civ.phases().get(ordinal)
+                : fallback;
+    }
+
+    /** A news line's phase name: the civilisation's, else the default civilisation's {@code strategos.phase.<ordinal>}. */
+    public static String phaseKey(@Nullable CivDef civ, int ordinal) {
+        return key(civ, ordinal, "strategos.phase." + ordinal);
+    }
+
+    /** The panel header's key for a viewer of {@code civ}: the civilisation's phase name, else the phase tech's own. */
+    public String title(@Nullable CivDef civ) {
+        return key(civ, phase.ordinal(), phase.name());
     }
 
     /** A leaf as the panel and a disabled button name it. */

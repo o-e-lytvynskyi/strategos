@@ -2,18 +2,23 @@ package dev.strategos.mod.server.content;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.Herd;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.mod.server.match.MatchRuntime;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
@@ -95,7 +100,35 @@ public final class Scenarios {
             List<StartSlot> starts,
             TemplateSet templates,
             Function<String, @Nullable String> scripts) {
-        List<Command> commands = ScenarioSetup.commands(scenario, starts, templates, scripts);
+        return apply(rt, scenario, starts, templates, scripts, r -> r);
+    }
+
+    /**
+     * As {@link #apply(MatchRuntime, Scenario, List, TemplateSet, Function)}, each faction's start kit that of the
+     * civilisation the match gives it, and the slots' resources passed through {@code scale}.
+     */
+    public static List<Command> apply(
+            MatchRuntime rt,
+            Scenario scenario,
+            List<StartSlot> starts,
+            TemplateSet templates,
+            Function<String, @Nullable String> scripts,
+            UnaryOperator<Map<String, Long>> scale) {
+        MatchCore core = rt.core();
+        List<CivId> civs = core == null ? List.of() : core.queries().config().civs();
+        List<Command> commands = ScenarioSetup.commands(scenario, starts, templates, scripts, civs, scale);
+        for (Command c : commands) {
+            rt.submit(PlayerSlot.ADMIN, c);
+        }
+        return commands;
+    }
+
+    /**
+     * Spawns a map's wild {@code herds} (ECO-10) in {@code rt}, as Gaia's, after the scenario is set up; the commands it
+     * sent.
+     */
+    public static List<Command> herds(MatchRuntime rt, Scenario scenario, List<Herd> herds, TemplateSet templates) {
+        List<Command> commands = ScenarioSetup.herds(scenario, herds, templates);
         for (Command c : commands) {
             rt.submit(PlayerSlot.ADMIN, c);
         }

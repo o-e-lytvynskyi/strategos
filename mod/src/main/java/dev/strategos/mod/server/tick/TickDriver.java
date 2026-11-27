@@ -43,7 +43,8 @@ public final class TickDriver {
             return;
         }
         boolean running = false;
-        for (MatchRuntime rt : server.matches().activeIn(level)) {
+        java.util.List<MatchRuntime> active = server.matches().activeIn(level);
+        for (MatchRuntime rt : active) {
             running |= rt.lifecycle() == MatchLifecycle.RUNNING;
             Runnable work = rt.lifecycle() == MatchLifecycle.RUNNING
                     ? () -> {
@@ -61,6 +62,7 @@ public final class TickDriver {
                     : () -> rt.materialiseOnly(level);
             server.faults().run(rt, "tick", work);
         }
+        server.sky().drive(level, active); // MATCH-16: a lone match's day and night are the level's time
         server.writer().flush(level, level.getServer().getTickCount(), running);
         server.writer().takeWritten(level).forEach((match, written) -> {
             MatchRuntime rt = server.matches().get(new MatchId(match));

@@ -24,8 +24,8 @@ class BatchTest {
         p.h.submit(ProdScene.P0, new TrainBatch(p.centre, TemplateSet.WORKER, 5));
         p.h.step();
         assertThat(p.s.treasury().stock(0, 0)).as("five costs at once").isEqualTo(food - 5 * 60_000);
-        assertThat(p.s.buildings().queueSize(p.centre)).as("one entry").isOne();
-        assertThat(p.s.buildings().batch(p.centre, 0)).isEqualTo(5);
+        assertThat(p.s.buildings().queues().queueSize(p.centre)).as("one entry").isOne();
+        assertThat(p.s.buildings().queues().batch(p.centre, 0)).isEqualTo(5);
         long expected = Math.round(200 * DetMath.pow(5, 0.8));
         List<UnitCreated> made = new ArrayList<>();
         long first = -1;

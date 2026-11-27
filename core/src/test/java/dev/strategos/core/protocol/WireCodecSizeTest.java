@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.AbilityId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.junit.jupiter.api.Test;
@@ -91,6 +93,145 @@ class WireCodecSizeTest {
         }
     }
 
+    /** UNIT-10: the ability command is wire id 35, as small as its target, and its decoder refuses what it cannot read. */
+    @Test
+    void useAbilityIsWireId35WithTheSizesOfItsFields() {
+        UseAbility none = UseAbility.replace(UnitSet.of(5), new AbilityId("charge"), Target.none());
+        UseAbility point =
+                new UseAbility(UnitSet.of(5), new AbilityId("charge"), Target.point(1, 2), QueueMode.PUSH_FRONT);
+        UseAbility unit =
+                new UseAbility(UnitSet.of(5), new AbilityId("charge"), Target.unit(0x300007), QueueMode.QUEUE);
+        assertThat(CommandKinds.DEFAULT.of(none).wireId()).isEqualTo(35);
+        assertThat(CommandKinds.DEFAULT.of(none).adminOnly()).isFalse();
+        assertThat(size(UseAbility.WIRE, none))
+                .as("count and handle 2, id 7, kind 1, mode 1")
+                .isEqualTo(11);
+        assertThat(size(UseAbility.WIRE, point)).as("a point adds two doubles").isEqualTo(27);
+        assertThat(size(UseAbility.WIRE, unit))
+                .as("a unit adds a 4-byte handle")
+                .isEqualTo(15);
+        for (UseAbility use : List.of(none, point, unit)) {
+            assertThat(roundTrip(COMMANDS, use)).isEqualTo(use);
+            assertThat(size(COMMANDS, use)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        UseAbility widest = new UseAbility(
+                UnitSet.of(many),
+                new AbilityId("a".repeat(Limits.ID_BYTES)),
+                Target.point(-1e300, 1e300),
+                QueueMode.PUSH_FRONT);
+        assertThat(size(UseAbility.WIRE, widest)).isLessThanOrEqualTo(UseAbility.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        assertThat(UseAbility.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        byte[] nan = WireCodec.encode(
+                COMMANDS,
+                new UseAbility(UnitSet.of(5), new AbilityId("a"), Target.point(Double.NaN, 1), QueueMode.QUEUE));
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, nan)).isInstanceOf(WireException.class);
+        byte[] badKind = WireCodec.encode(COMMANDS, none);
+        badKind[badKind.length - 2] = 9; // the target's kind byte
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, badKind))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("target kind");
+    }
+
+    /** ORD-06: the formation command is wire id 38 (after 36 Patrol and 37 Guard, before 39 DeleteUnits), as small as its fields, and refuses a bad shape. */
+    @Test
+    void formationMoveIsWireId38WithTheSizesOfItsFields() {
+        FormationMove box = FormationMove.replace(UnitSet.of(5), new Vec2d(1, 2), FormationShape.BOX);
+        FormationMove line =
+                new FormationMove(UnitSet.of(5, 6), new Vec2d(-1.5, 2), FormationShape.LINE, QueueMode.QUEUE);
+        assertThat(CommandKinds.DEFAULT.of(box).wireId()).isEqualTo(38);
+        assertThat(CommandKinds.DEFAULT.of(box).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.byWireId(40)).isNull();
+        assertThat(size(FormationMove.WIRE, box))
+                .as("count and handle 2, point 16, shape 1, mode 1")
+                .isEqualTo(20);
+        assertThat(size(FormationMove.WIRE, line)).as("one more handle, 1 byte").isEqualTo(21);
+        for (FormationMove move : List.of(box, line)) {
+            assertThat(roundTrip(COMMANDS, move)).isEqualTo(move);
+            assertThat(size(COMMANDS, move)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        FormationMove widest = new FormationMove(
+                UnitSet.of(many), new Vec2d(-1e300, 1e300), FormationShape.LINE, QueueMode.PUSH_FRONT);
+        assertThat(size(FormationMove.WIRE, widest)).isLessThanOrEqualTo(FormationMove.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        assertThat(FormationMove.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        byte[] badShape = WireCodec.encode(COMMANDS, box);
+        badShape[badShape.length - 2] = 7; // the shape byte, before the mode's
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, badShape))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("formation shape");
+    }
+
+    /** ORD-07: patrol is wire id 36 and guard 37, each as small as its fields, and a patrol past its points' cap does not decode. */
+    @Test
+    void patrolAndGuardAreWireIds36And37WithTheSizesOfTheirFields() {
+        Patrol one = Patrol.replace(UnitSet.of(5), List.of(new Vec2d(1, 2)));
+        Patrol two = new Patrol(UnitSet.of(5, 6), List.of(new Vec2d(1, 2), new Vec2d(-3.5, 9)), QueueMode.QUEUE);
+        Guard guard = Guard.replace(UnitSet.of(5), 0x80007);
+        assertThat(CommandKinds.DEFAULT.of(one).wireId()).isEqualTo(36);
+        assertThat(CommandKinds.DEFAULT.of(guard).wireId()).isEqualTo(37);
+        assertThat(CommandKinds.DEFAULT.of(one).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.of(guard).adminOnly()).isFalse();
+        assertThat(size(Patrol.WIRE, one))
+                .as("count and handle 2, points 1, one point 16, mode 1")
+                .isEqualTo(20);
+        assertThat(size(Patrol.WIRE, two)).as("a handle and a point more").isEqualTo(37);
+        assertThat(size(Guard.WIRE, guard))
+                .as("count and handle 2, charge 3 as a varint, mode 1")
+                .isEqualTo(6);
+        for (Command command : List.<Command>of(one, two, guard)) {
+            assertThat(roundTrip(COMMANDS, command)).isEqualTo(command);
+            assertThat(size(COMMANDS, command)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        List<Vec2d> points = new java.util.ArrayList<>();
+        for (int k = 0; k < Patrol.MAX_POINTS; k++) {
+            points.add(new Vec2d(-1e300, 1e300));
+        }
+        Patrol widest = new Patrol(UnitSet.of(many), points, QueueMode.PUSH_FRONT);
+        assertThat(size(Patrol.WIRE, widest)).isLessThanOrEqualTo(Patrol.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        Guard farthest = new Guard(UnitSet.of(many), Integer.MAX_VALUE, QueueMode.PUSH_FRONT);
+        assertThat(size(Guard.WIRE, farthest)).isLessThanOrEqualTo(Guard.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, farthest)).isEqualTo(farthest);
+        assertThat(Patrol.WIRE.maxSize())
+                .as("a command in a batch of 32 stays inside the batch's bytes")
+                .isLessThan(Limits.BATCH_BYTES);
+        points.add(new Vec2d(0, 0));
+        byte[] tooMany = WireCodec.encode(COMMANDS, new Patrol(UnitSet.of(5), points, QueueMode.REPLACE));
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, tooMany)).isInstanceOf(WireException.class);
+    }
+
+    /** UI-17: delete is wire id 39, as small as its unit set, and never admin only. */
+    @Test
+    void deleteUnitsIsWireId39WithTheSizeOfItsUnitSet() {
+        DeleteUnits one = new DeleteUnits(UnitSet.of(5));
+        DeleteUnits two = new DeleteUnits(UnitSet.of(5, 6));
+        assertThat(CommandKinds.DEFAULT.of(one).wireId()).isEqualTo(39);
+        assertThat(CommandKinds.DEFAULT.of(one).adminOnly()).isFalse();
+        assertThat(CommandKinds.DEFAULT.byWireId(39)).isSameAs(CommandKinds.DELETE_UNITS);
+        assertThat(size(DeleteUnits.WIRE, one)).as("count and handle, 2 bytes").isEqualTo(2);
+        assertThat(size(DeleteUnits.WIRE, two)).as("one more handle, 1 byte").isEqualTo(3);
+        for (DeleteUnits delete : List.of(one, two)) {
+            assertThat(roundTrip(COMMANDS, delete)).isEqualTo(delete);
+            assertThat(size(COMMANDS, delete)).isLessThanOrEqualTo(COMMANDS.maxSize());
+        }
+        int[] many = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(many, i -> Integer.MIN_VALUE + i * 14_000_000);
+        DeleteUnits widest = new DeleteUnits(UnitSet.of(many));
+        assertThat(size(DeleteUnits.WIRE, widest)).isLessThanOrEqualTo(DeleteUnits.WIRE.maxSize());
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+    }
+
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
@@ -98,7 +239,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:capture=32,strategos:upgrade_building=33,strategos:place_wall=34,strategos:use_ability=35,strategos:patrol=36,strategos:guard=37,strategos:formation_move=38,strategos:delete_units=39");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -157,6 +298,54 @@ class WireCodecSizeTest {
                 .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
     }
 
+    /** CIV-01: each faction's civilisation id is appended to {@code match_join}, absent when all play the default. */
+    @Test
+    void matchJoinCarriesTheCivilisationsAppendedAndOldBytesStillRead() {
+        MatchJoin withCivs = new MatchJoin(
+                1,
+                100,
+                -60,
+                -200,
+                48,
+                48,
+                -64,
+                319,
+                2,
+                new PlayerSlot(1),
+                "{}",
+                List.of("t:lean", "strategos:default"));
+        assertThat(size(MatchJoin.WIRE, withCivs))
+                .as("the base, the count, a length and the bytes of each id")
+                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 1 + (1 + 6) + (1 + 17));
+        assertThat(roundTrip(MatchJoin.WIRE, withCivs)).isEqualTo(withCivs);
+        MatchJoin plain = new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(1), "{}");
+        assertThat(plain.civs()).isEmpty();
+        assertThat(roundTrip(MatchJoin.WIRE, plain))
+                .as("bytes from before civilisations")
+                .isEqualTo(plain);
+        assertThat(plain.civ(0)).isEqualTo(dev.strategos.core.shared.CivId.DEFAULT);
+        assertThat(withCivs.civ(0).value()).isEqualTo("t:lean");
+
+        byte[] bytes = WireCodec.encode(
+                MatchJoin.WIRE,
+                new MatchJoin(
+                        1,
+                        100,
+                        -60,
+                        -200,
+                        48,
+                        48,
+                        -64,
+                        319,
+                        2,
+                        new PlayerSlot(1),
+                        "{}",
+                        List.of("NOT AN ID", "t:lean")));
+        assertThat(WireCodec.decode(MatchJoin.WIRE, bytes).civs())
+                .as("an entry that is no id reads as the default; the join still decodes")
+                .containsExactly("strategos:default", "t:lean");
+    }
+
     /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
     @Test
     void matchStateCarriesTheFactionTiersAppended() {
@@ -196,10 +385,15 @@ class WireCodecSizeTest {
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
+        assertThat(SkirmishSetup.WIRE.maxSize())
+                .as(
+                        "skirmish: the map, the options, up to 16 civilisation ids (CIV-01), the day-and-night byte (MATCH-16)")
+                .isEqualTo(3 + 128 + 1 + 1 + 5 + 1 + 1 + 16 * (1 + 48) + 1);
         assertThat(MatchStateMsg.WIRE.maxSize())
                 .as("match_state")
                 .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
+        assertThat(TerritoryUpdate.WIRE.maxSize()).as("territory").isEqualTo(8192);
 
         MatchJoin widest = new MatchJoin(
                 Integer.MAX_VALUE,
@@ -212,7 +406,9 @@ class WireCodecSizeTest {
                 Integer.MIN_VALUE,
                 Integer.MAX_VALUE,
                 PlayerSlot.ADMIN,
-                "r".repeat(MatchJoin.RULES_BYTES));
+                "r".repeat(MatchJoin.RULES_BYTES),
+                java.util.Collections.nCopies(
+                        dev.strategos.core.sim.MatchConfig.MAX_FACTIONS, "a:" + "c".repeat(MatchJoin.CIV_BYTES - 2)));
         assertThat(size(MatchJoin.WIRE, widest)).isEqualTo(MatchJoin.WIRE.maxSize());
         assertThat(roundTrip(MatchJoin.WIRE, widest)).isEqualTo(widest);
         NoticeMsg longest = new NoticeMsg(NoticeKind.ORDER_FAILED, -1, "d".repeat(NoticeMsg.DETAIL_BYTES));
@@ -235,6 +431,33 @@ class WireCodecSizeTest {
                 .as("with empty results")
                 .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
         assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
+    }
+
+    /** UNIT-10, CMB-11: the widest {@code unit_detail}, every optional part of every unit at its largest, fits its cap. */
+    @Test
+    void theWidestUnitDetailFitsItsCap() {
+        List<UnitDetail.Order> orders = java.util.Collections.nCopies(
+                UnitDetail.MAX_ORDERS, new UnitDetail.Order(Integer.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE));
+        List<UnitDetail.Cooldown> resting = java.util.Collections.nCopies(
+                UnitDetail.MAX_COOLDOWNS, new UnitDetail.Cooldown(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        UnitDetail.Unit widest = new UnitDetail.Unit(
+                Integer.MAX_VALUE,
+                Integer.MAX_VALUE,
+                255,
+                Float.MAX_VALUE,
+                Float.MAX_VALUE,
+                Float.MAX_VALUE,
+                orders,
+                Integer.MAX_VALUE - 1,
+                Long.MAX_VALUE,
+                Integer.MAX_VALUE,
+                255,
+                resting,
+                new UnitDetail.Standing(Integer.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE));
+        UnitDetail full = new UnitDetail(
+                Integer.MAX_VALUE, Long.MAX_VALUE, java.util.Collections.nCopies(UiQuery.MAX_HANDLES, widest));
+        assertThat(size(UnitDetail.WIRE, full)).isLessThanOrEqualTo(UnitDetail.WIRE.maxSize());
+        assertThat(roundTrip(UnitDetail.WIRE, full)).isEqualTo(full);
     }
 
     @Test
@@ -627,6 +850,129 @@ class WireCodecSizeTest {
 
     /** AUD-04.2's cap for one tick's world fx to one viewer: 64 placements in under a kilobyte. */
     private static final int FX_TICK_CAP = 1_000;
+
+    /** CMB-10: a building with an open capture carries a byte per faction; the widest state stays within its cap. */
+    @Test
+    void aBuildingStateWithCaptureSharesRoundTripsWithinItsCap() {
+        List<Integer> queue = List.of(6, 6, 6, 6, 6, 6, 6, 6);
+        List<Integer> shares = new ArrayList<>(Collections.nCopies(BuildingState.MAX_CAPTURE_FACTIONS - 1, 255));
+        shares.add(1);
+        List<BuildingState.Entry> widest = new ArrayList<>();
+        for (int k = 0; k < BuildingState.MAX_BUILDINGS; k++) {
+            widest.add(new BuildingState.Entry(
+                    Integer.MAX_VALUE - k,
+                    Integer.MAX_VALUE,
+                    Integer.MAX_VALUE,
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE,
+                    3,
+                    Integer.MIN_VALUE,
+                    15,
+                    Integer.MAX_VALUE,
+                    255,
+                    true,
+                    queue,
+                    true,
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE,
+                    Integer.MAX_VALUE,
+                    Integer.MAX_VALUE - 1,
+                    Integer.MAX_VALUE,
+                    true,
+                    Collections.nCopies(queue.size(), TrainBatch.MOST),
+                    shares));
+        }
+        BuildingState state = new BuildingState(Integer.MAX_VALUE, Long.MAX_VALUE, widest);
+        byte[] bytes = WireCodec.encode(BuildingState.WIRE, state);
+        assertThat(WireCodec.decode(BuildingState.WIRE, bytes)).isEqualTo(state);
+        assertThat(bytes.length).isLessThanOrEqualTo(BuildingState.WIRE.maxSize());
+        assertThat(BuildingState.WIRE.maxSize())
+                .as("building_state's cap: the old 115 bytes an entry and a count and 16 shares")
+                .isEqualTo(5 + 10 + 2 + BuildingState.MAX_BUILDINGS * (115 + 1 + BuildingState.MAX_CAPTURE_FACTIONS));
+    }
+
+    @Test
+    void aBuildingWithoutACaptureCostsNoByteMore() {
+        BuildingState.Entry plain = new BuildingState.Entry(
+                1, 2, 0, 3, 4, 0, 5, 2, 0, 255, false, List.of(), false, 0, 0, 0, -1, 0, false, List.of());
+        BuildingState.Entry taken = new BuildingState.Entry(
+                1,
+                2,
+                0,
+                3,
+                4,
+                0,
+                5,
+                2,
+                0,
+                255,
+                false,
+                List.of(),
+                false,
+                0,
+                0,
+                0,
+                -1,
+                0,
+                false,
+                List.of(),
+                List.of(140, 115));
+        int without = WireCodec.encode(BuildingState.WIRE, new BuildingState(1, 1, List.of(plain))).length;
+        byte[] with = WireCodec.encode(BuildingState.WIRE, new BuildingState(1, 1, List.of(taken)));
+        assertThat(with.length).as("a count and a byte a faction").isEqualTo(without + 3);
+        assertThat(WireCodec.decode(BuildingState.WIRE, with).buildings().get(0).captureShare(1))
+                .isEqualTo(115);
+    }
+
+    @Test
+    void captureSharesThatCannotBeWrittenOnlyOneWayAreRefused() {
+        assertThatThrownBy(() -> new BuildingState.Entry(
+                        1,
+                        2,
+                        0,
+                        3,
+                        4,
+                        0,
+                        5,
+                        2,
+                        0,
+                        255,
+                        false,
+                        List.of(),
+                        false,
+                        0,
+                        0,
+                        0,
+                        -1,
+                        0,
+                        false,
+                        List.of(),
+                        List.of(255, 0)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new BuildingState.Entry(
+                        1,
+                        2,
+                        0,
+                        3,
+                        4,
+                        0,
+                        5,
+                        2,
+                        0,
+                        255,
+                        false,
+                        List.of(),
+                        false,
+                        0,
+                        0,
+                        0,
+                        -1,
+                        0,
+                        false,
+                        List.of(),
+                        List.of(256)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 
     private static <T> int size(WireCodec<T> codec, T value) {
         return WireCodec.encode(codec, value).length;

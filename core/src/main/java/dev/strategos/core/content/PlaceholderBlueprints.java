@@ -20,7 +20,11 @@ public final class PlaceholderBlueprints {
     public static final String STOREHOUSE = "strategos:storehouse";
     public static final String FARMSTEAD = "strategos:farmstead";
     public static final String TOWER = "strategos:tower";
+    public static final String SENTRY_TOWER = "strategos:sentry_tower";
     public static final String ARSENAL = "strategos:arsenal";
+    public static final String TEMPLE = "strategos:temple";
+    public static final String PALISADE = "strategos:palisade";
+    public static final String PALISADE_GATE = "strategos:palisade_gate";
     public static final String QUARRY = "strategos:quarry";
     public static final String QUARRY_LARGE = "strategos:quarry_large";
     public static final String IRON_MINE = "strategos:iron_mine";
@@ -38,7 +42,11 @@ public final class PlaceholderBlueprints {
                 storehouse(),
                 farmstead(),
                 tower(),
+                sentryTower(),
+                palisade(),
+                palisadeGate(),
                 arsenal(),
+                temple(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
                 deposit(IRON_MINE, 3, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
@@ -203,6 +211,71 @@ public final class PlaceholderBlueprints {
     }
 
     /**
+     * 5 x 7 x 5 (BLD-12): a wooden lookout on a cobblestone footing, crimson-plank walls with a doorway on the north
+     * side, a plank platform and a railing between four stem posts (crimson wood never burns). Lower than the defence
+     * tower, on the same footprint, so an upgrade rewrites it in place.
+     */
+    public static Blueprint sentryTower() {
+        Grid g = new Grid(
+                5,
+                7,
+                5,
+                List.of(
+                        "minecraft:crimson_planks",
+                        "minecraft:stripped_crimson_stem[axis=y]",
+                        "minecraft:cobblestone"));
+        g.fill(0, 0, 0, 4, 0, 4, 2);
+        for (int y = 1; y <= 3; y++) {
+            g.ring(0, y, 0, 4, 4, 0);
+        }
+        g.clear(2, 1, 0, 2, 2, 0); // the doorway
+        g.fill(0, 4, 0, 4, 4, 4, 0);
+        g.ring(0, 5, 0, 4, 4, 0);
+        for (int y = 1; y <= 6; y++) { // the corner posts
+            g.set(0, y, 0, 1);
+            g.set(4, y, 0, 1);
+            g.set(0, y, 4, 1);
+            g.set(4, y, 4, 1);
+        }
+        return g.blueprint(SENTRY_TOWER, 2, 1, 0);
+    }
+
+    /** The palette of the walls (BLD-13): crimson wood never burns, so posts and rails are crimson stem and fence. */
+    private static List<String> wallPalette() {
+        return List.of(
+                "minecraft:stripped_crimson_stem[axis=y]",
+                "minecraft:crimson_fence[east=false,north=false,south=false,waterlogged=false,west=false]",
+                "minecraft:crimson_fence_gate[facing=north,in_wall=false,open=false,powered=false]");
+    }
+
+    /**
+     * 4 x 3 x 1 (BLD-13): a palisade segment along X, a stem post at each end and fence between, three high. A segment
+     * is turned a quarter to run along Z; its blocks are not, and fences join their neighbours by themselves. Its door
+     * marker is a formality (nobody enters a wall).
+     */
+    public static Blueprint palisade() {
+        Grid g = new Grid(4, 3, 1, wallPalette());
+        g.fill(0, 0, 0, 3, 2, 0, 1);
+        g.fill(0, 0, 0, 0, 2, 0, 0);
+        g.fill(3, 0, 0, 3, 2, 0, 0);
+        return g.blueprint(PALISADE, 1, 0, 0);
+    }
+
+    /**
+     * 4 x 4 x 1 (BLD-13): a palisade segment a block taller, its middle two columns fence gates two high under a
+     * two-high fence lintel; the core opens and shuts them (the mod sets their {@code open} state), and units pass the
+     * two columns as a gate.
+     */
+    public static Blueprint palisadeGate() {
+        Grid g = new Grid(4, 4, 1, wallPalette());
+        g.fill(0, 0, 0, 3, 3, 0, 1);
+        g.fill(0, 0, 0, 0, 3, 0, 0);
+        g.fill(3, 0, 0, 3, 3, 0, 0);
+        g.fill(1, 0, 0, 2, 1, 0, 2);
+        return g.blueprint(PALISADE_GATE, 1, 0, 0);
+    }
+
+    /**
      * 11 x 7 x 9 (CMB-09): stone-brick walls on a cobblestone base, a crimson-plank roof and a ridge, and a doorway three
      * wide and three high on the north side, wide enough for a ram to roll out of.
      */
@@ -227,6 +300,36 @@ public final class PlaceholderBlueprints {
             g.set(x, 4, 0, 3);
         }
         return g.blueprint(ARSENAL, 5, 1, 0);
+    }
+
+    /**
+     * 9 x 7 x 9 (CMB-12): quartz-brick walls on a polished base, a white-terracotta roof with a ridge, chiseled
+     * pillars at the corners and a doorway three wide and three high on the north side.
+     */
+    public static Blueprint temple() {
+        Grid g = new Grid(
+                9,
+                7,
+                9,
+                List.of(
+                        "minecraft:polished_andesite",
+                        "minecraft:quartz_bricks",
+                        "minecraft:white_terracotta",
+                        "minecraft:chiseled_quartz_block"));
+        g.fill(0, 0, 0, 8, 0, 8, 0);
+        for (int y = 1; y <= 4; y++) {
+            g.ring(0, y, 0, 8, 8, 1);
+        }
+        for (int y = 1; y <= 4; y++) { // a pillar at each corner
+            g.set(0, y, 0, 3);
+            g.set(8, y, 0, 3);
+            g.set(0, y, 8, 3);
+            g.set(8, y, 8, 3);
+        }
+        g.clear(3, 1, 0, 5, 3, 0); // the doorway
+        g.fill(0, 5, 0, 8, 5, 8, 2);
+        g.fill(1, 6, 1, 7, 6, 7, 2);
+        return g.blueprint(TEMPLE, 4, 1, 0);
     }
 
     /** 9 x 6 x 7: mud-brick walls on cobblestone, a crimson-plank roof and a ridge. */

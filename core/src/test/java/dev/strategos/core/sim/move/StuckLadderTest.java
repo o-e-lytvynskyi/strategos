@@ -257,6 +257,36 @@ class StuckLadderTest {
     }
 
     /**
+     * The backstop must fail an order no later than the stall check (QA-02.3) would. That check restarts on coming nearer
+     * its target than ever, or on 8 blocks from the place that last counted; the net count restarted only on 8 blocks
+     * from where it began, so a unit that crept nearer in a crowd and then loitered, 8 blocks from that origin but not
+     * from the place it crept to, had the check run out first (M10 T26's matrix: 18 of 200 easy mirrors, a crowd of
+     * soldiers at a fallen start, past minute 45). Here the unit comes nearer once, at tick 100, then goes to and fro
+     * within 8 blocks of where it did, its ladder count cleared each tick.
+     */
+    @Test
+    void theNetCountRestartsWhereTheStallCheckDoesAndFailsBeforeIt() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        long failedAt = -1;
+        for (int t = 0; t < 900 && failedAt < 0; t++) {
+            MotionStore motion = state(h).motion();
+            motion.setProgress(i, 40.5, 16.5, Double.POSITIVE_INFINITY, 0); // a waypoint passed
+            double x = t < 100 ? 8.5 : 14.5; // nearer once, at tick 100
+            double z = t < 130 ? 16.5 : 24; // then 9.6 blocks from where the count began, 7.5 from where it got nearer
+            motion.set(i, x, motion.y(i), z, motion.yaw(i));
+            h.step(); // the harness checks the stall invariant after every step
+            if (unit(h, unit).state() != UnitState.WALKING) {
+                failedAt = t;
+            }
+        }
+        assertThat(failedAt).as("its order failed").isNotNegative();
+    }
+
+    /**
      * QA-12: the net-progress count belongs to an order. A unit walked on under a new order (a chaser's order replaced by
      * a move, a group's by another, the unit never pausing) with the old order's count still running, and the first
      * step 8 blocks from where that count began restarted it a little after the new walk began, so the new walk's
@@ -275,11 +305,109 @@ class StuckLadderTest {
         assertThat(motion.net(i)).as("its own count").isBetween(1, 10);
 
         motion.setNet(i, motion.x(i), motion.z(i), 400, 12_345L); // another order's count, long running
+        motion.setNetBest(i, 1, 99, 99); // to another place
         h.step();
         assertThat(motion.net(i)).as("the count of another order starts again").isBetween(1, 2);
         assertThat(motion.netOrder(i)).isNotEqualTo(12_345L);
         h.runTicks(10);
         assertThat(motion.net(i)).as("and runs on under this order's own").isBetween(11, 13);
+    }
+
+    /**
+     * A bot that swaps a burn for a capture of the same building, and back, every few hundred ticks sends a new order each
+     * time, but the walk is the one the stall check sees (the same place), so the net count must go on across it
+     * (M10 T26's opening balance: a boxed-in soldier, 641 ticks, its order alternating between two kinds).
+     */
+    @Test
+    void aNewOrderToTheSamePlaceKeepsTheNetCount() {
+        SimHarness h = harness(VoxelFixtures.flat(64, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        h.runTicks(5);
+        MotionStore motion = state(h).motion();
+
+        motion.setNet(i, motion.x(i), motion.z(i), 400, 12_345L); // the count of the order before, to this very place
+        h.step();
+
+        assertThat(motion.net(i)).as("the count goes on").isEqualTo(401);
+    }
+
+    /**
+     * A place traded to a group member, or a chased unit moving, is no new order: the count goes on, and the distance
+     * and the disc it measures are taken afresh from where the unit stands.
+     */
+    @Test
+    void anOrdersPlaceMovingKeepsTheNetCountAndMeasuresItAfresh() {
+        SimHarness h = harness(VoxelFixtures.flat(64, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        MotionStore motion = state(h).motion();
+        state(h).orders().replace(i, state(h).orders().kind(i), 40.5, 16.5, 7, 0); // a group's, so no place in its key
+        h.runTicks(30);
+        int before = motion.net(i);
+        assertThat(before).isBetween(20, 40);
+
+        state(h).orders().setPlace(i, 41.5, 16.5);
+        h.step();
+
+        assertThat(motion.net(i)).as("the count goes on").isEqualTo(before + 1);
+        assertThat(motion.netAimX(i)).isEqualTo(41.5);
+        double dx = 41.5 - motion.x(i);
+        double dz = 16.5 - motion.z(i);
+        assertThat(motion.netBest(i)).as("measured afresh").isCloseTo(dx * dx + dz * dz, within(1e-9));
+    }
+
+    /** A new order to another place is a new walk: the count starts again, as the real order, not a stored count, says. */
+    @Test
+    void anOrderToAnotherPlaceStartsTheNetCountAgain() {
+        SimHarness h = harness(VoxelFixtures.flat(64, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        h.runTicks(30);
+        MotionStore motion = state(h).motion();
+        assertThat(motion.net(i)).isGreaterThan(20);
+
+        order(h, unit, 41.5, 16.5);
+
+        assertThat(motion.net(i)).isBetween(1, 2);
+        assertThat(motion.netAimX(i)).isEqualTo(41.5);
+    }
+
+    /**
+     * The backstop fails no order on a tick the walk ends in arrival (the arrival and a failure would both reach the
+     * unit's AI, the outcome depending on message order): its count may sit at the limit and the unit still arrives.
+     */
+    @Test
+    void theNetCountFailsNoOrderOnTheTickItArrives() {
+        int landing = -1;
+        for (int pass = 0; pass < 2; pass++) {
+            SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+            int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+            int i = Handle.index(unit);
+            order(h, unit, 12.5, 16.5);
+            List<Stuck> stuck = new ArrayList<>();
+            state(h).bus().subscribe(Stuck.class, stuck::add);
+            MotionStore motion = state(h).motion();
+            for (int t = 0; t < 200 && unit(h, unit).state() == UnitState.WALKING; t++) {
+                if (pass == 1 && t == landing) {
+                    // the count at the limit, its walk not getting nearer: the next tick fails it unless it arrives
+                    motion.setNet(i, motion.x(i), motion.z(i), StuckLadder.NET_FAIL - 1, motion.netOrder(i));
+                    motion.setNetBest(i, 0, 12.5, 16.5);
+                }
+                h.step();
+                if (pass == 0) {
+                    landing = t;
+                }
+            }
+            assertThat(unit(h, unit).state()).isNotEqualTo(UnitState.WALKING);
+            assertThat(stuck).as("no failure beside the arrival").isEmpty();
+        }
     }
 
     @Test
@@ -314,9 +442,19 @@ class StuckLadderTest {
         MatchCore restored = MatchCore.restore(decoded, TemplateSet.builtin(), CorePorts.of(() -> 0L));
         MatchCore cleared = MatchCore.restore(saved, TemplateSet.builtin(), CorePorts.of(() -> 0L));
         KernelAccess.state(cleared).motion().setNet(i, 0, 0, 0);
+        double live0 = state(h).motion().netBest(i);
+        double aimX = state(h).motion().netAimX(i);
+        double aimZ = state(h).motion().netAimZ(i);
+        MatchCore nudged = MatchCore.restore(saved, TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        KernelAccess.state(nudged).motion().setNetBest(i, live0 + 1, aimX, aimZ);
         assertThat(decoded).isEqualTo(saved);
-        assertThat(KernelAccess.state(restored).motion().net(i))
-                .isEqualTo(state(h).motion().net(i));
+        MotionStore live = state(h).motion();
+        MotionStore back = KernelAccess.state(restored).motion();
+        assertThat(back.net(i)).isEqualTo(live.net(i));
+        assertThat(back.netBest(i)).isEqualTo(live.netBest(i)).isPositive();
+        assertThat(back.netAimX(i)).isEqualTo(live.netAimX(i));
+        assertThat(back.netAimZ(i)).isEqualTo(live.netAimZ(i));
+        assertThat(nudged.stateHash()).as("the best distance is hashed").isNotEqualTo(original.stateHash());
         assertThat(restored.stateHash()).isEqualTo(original.stateHash()).isNotEqualTo(cleared.stateHash());
     }
 
@@ -384,6 +522,41 @@ class StuckLadderTest {
             }
         }
         assertThat(stuck).extracting(Stuck::rung).containsExactly(Stuck.GIVE_UP);
+    }
+
+    /**
+     * A boxed-in unit whose every new route is a truncated one-waypoint path at its own feet (the search reached no
+     * nearer cell) passes that waypoint at once; passing it must not wipe the count of ticks without progress, or the
+     * ladder never reaches its last rung (rush-boom seed 49: WALKING without progress for thousands of ticks).
+     */
+    @Test
+    void aTruncatedRouteAtTheUnitsFeetDoesNotRestartTheCount() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        List<Stuck> stuck = new ArrayList<>();
+        state(h).bus().subscribe(Stuck.class, stuck::add);
+        int top = 0;
+        for (int t = 0; t < 700 && unit(h, unit).state() == UnitState.WALKING; t++) {
+            if (t % 20 == 0) {
+                state(h).paths()
+                        .follow(
+                                i,
+                                new dev.strategos.core.sim.nav.PathStore.Waypoints(
+                                        new double[] {state(h).motion().x(i) + 0.2},
+                                        new double[] {state(h).motion().z(i)},
+                                        new int[] {state(h).motion().floor(i)},
+                                        true),
+                                dev.strategos.core.sim.nav.PathStatus.OK);
+                state(h).paths().decided(i, h.tick());
+            }
+            h.step();
+            top = Math.max(top, state(h).motion().stuck(i));
+        }
+        assertThat(top).as("the count climbed").isGreaterThanOrEqualTo(StuckLadder.REPATH);
+        assertThat(stuck).extracting(Stuck::rung).contains(Stuck.GIVE_UP);
     }
 
     /** Holds unit {@code handle} still: its walk speed 0, as boxed in as a unit can be. */

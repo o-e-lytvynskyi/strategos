@@ -53,8 +53,16 @@ class GarrisonDataTest {
     void aHolderWithoutAnyRulesIsNotNeeded() {
         TemplateCompiler.Result result = compile(null);
         assertThat(result.problems()).isEmpty();
-        assertThat(result.set().valuePaths().byPath(CorePaths.GARRISON_CAPACITY))
-                .isNull();
+        int centre = Objects.requireNonNull(result.set().byId(CENTRE)).netIndex();
+        assertThat(result.set()
+                        .value(
+                                centre,
+                                result.set()
+                                        .valuePaths()
+                                        .byPath(CorePaths.GARRISON_CAPACITY)
+                                        .id()))
+                .as("the houses and towers still hold some, the centre none")
+                .isNaN();
     }
 
     @Test
@@ -76,9 +84,9 @@ class GarrisonDataTest {
                 .anyMatch(p -> p.pointer().equals("/" + CorePaths.GARRISON_CLASSES));
         assertThat(compile("{\"capacity\": 5, \"classes\": \" \"}").problems())
                 .anyMatch(p -> p.pointer().equals("/" + CorePaths.GARRISON_CLASSES));
-        assertThat(compile("{\"capacity\": 5, \"classes\": \"Worker\", \"heal\": 1}")
+        assertThat(compile("{\"capacity\": 5, \"classes\": \"Worker\", \"bogus\": 1}")
                         .problems())
-                .anyMatch(p -> p.pointer().equals("/GarrisonHolder/heal"));
+                .anyMatch(p -> p.pointer().equals("/GarrisonHolder/bogus"));
         assertThat(compile("{\"capacity\": 5, \"classes\": \"Worker Infantry\"}")
                         .problems())
                 .isEmpty();

@@ -59,4 +59,9 @@ public final class View {
     public double height() {
         return height;
     }
+
+    /** Whether the projection is orthographic: no perspective divide, so the pick rays are parallel (CAM-06). */
+    public boolean orthographic() {
+        return projection[3] == 0 && projection[7] == 0 && projection[11] == 0 && projection[15] == 1;
+    }
 }

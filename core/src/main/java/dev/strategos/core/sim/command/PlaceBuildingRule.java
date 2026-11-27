@@ -56,7 +56,12 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         }
         Footprint at = Footprint.of(b, place.x(), place.z(), place.rotation());
         PlacementRules.Verdict verdict = PlacementRules.check(
-                Placing.world(state, faction), b, at, faction, Placing.params(state, template.netIndex(), faction));
+                state.civs().rules(faction).placement(),
+                Placing.world(state, faction),
+                b,
+                at,
+                faction,
+                Placing.params(state, template.netIndex(), faction));
         PlacementRules.Rule failed = verdict.failed();
         long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
         if (failed == PlacementRules.Rule.AFFORDABLE) {
@@ -70,6 +75,7 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         int handle = state.buildings()
                 .create(template.netIndex(), faction, at, Placing.baseY(state, b, at), BuildingStore.FOUNDATION, 0);
         state.buildings().setSlots(handle, Placing.slots(state, at));
+        state.civs().rules(faction).construction().onPlaced(state, handle);
         Tally tally = Builders.assign(envelope, state, builders, handle, at, place.mode());
         if (builders.size() == 0) {
             return Tally.acceptAll(envelope, kind(), 0); // a foundation for later, with no builder yet
@@ -84,9 +90,9 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
             case FREE -> RejectReason.BLOCKED;
             case LAND -> RejectReason.NOT_ON_LAND;
             case EXPLORED -> RejectReason.NOT_EXPLORED;
+            case TERRITORY -> RejectReason.OUTSIDE_TERRITORY;
             case FLAT -> RejectReason.NOT_FLAT;
             case SPACING -> RejectReason.TOO_CLOSE;
-            case REACH -> RejectReason.OUT_OF_REACH;
             case AFFORDABLE -> RejectReason.NOT_ENOUGH_RESOURCES;
         };
     }

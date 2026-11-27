@@ -282,6 +282,24 @@ class BalanceSheetTest {
                         "strategos:carry_1 effects/3/value",
                         "strategos:iron_weapons effects/3/value", // Look/weapon, the weapon tier
                         "strategos:chainmail effects/2/value"); // Look/armour, the armour tier
+        assertThat(sheet.techRows())
+                .as("TECH-05: every tier of every line is on the sheet, with a note")
+                .filteredOn(row -> row.path().equals("time"))
+                .extracting(row -> row.tech().value())
+                .contains(
+                        "strategos:gather_wood_2",
+                        "strategos:gather_wood_3",
+                        "strategos:gather_farm_3",
+                        "strategos:gather_stone_3",
+                        "strategos:gather_iron_3",
+                        "strategos:carry_3",
+                        "strategos:diamond_weapons",
+                        "strategos:netherite_weapons",
+                        "strategos:iron_armour",
+                        "strategos:diamond_armour",
+                        "strategos:masonry_2");
+        assertThat(sheet.techRows())
+                .allSatisfy(row -> assertThat(row.provenance()).isNotBlank());
         assertThat(sheet.techRows().stream().map(row -> row.tech().value()).distinct())
                 .as("every shipped technology has rows")
                 .containsAll(TemplateSet.builtin().techs().stream()

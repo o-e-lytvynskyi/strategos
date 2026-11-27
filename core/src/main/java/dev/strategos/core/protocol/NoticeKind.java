@@ -21,5 +21,7 @@ public enum NoticeKind {
     /** A building's construction finished; the detail names its template (UI-21). */
     BUILT,
     /** A technology other than a phase was researched; the detail names it (UI-21). */
-    RESEARCHED
+    RESEARCHED,
+    /** A building's training waits: its faction's fixed population cap is reached (CIV-05); more housing does not help. */
+    POPULATION_CAP
 }

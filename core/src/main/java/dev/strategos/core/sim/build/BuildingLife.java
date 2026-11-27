@@ -51,7 +51,32 @@ public final class BuildingLife {
         }
         writeBlueprint(s, Handle.index(handle), handle, b, at, baseY);
         Production.finished(s, handle); // its housing counts (ECO-06)
+        WallGates.finished(s, handle); // a palisade gate opens its way (BLD-13)
         return handle;
+    }
+
+    /**
+     * Building {@code handle} changes owner to faction {@code to} (CMB-10, M9 spec §2.5), the one way a building does:
+     * the units inside come out; the old owner loses its housing and gets its queue refunded; the rally point is
+     * cleared; then the new owner holds it and its housing. Vision, territory and stats follow the faction on their
+     * own (they read it each tick). Limits are not checked: a captured second centre stays.
+     */
+    public static void transfer(MatchState s, int handle, int to) {
+        BuildingStore b = s.buildings();
+        if (b.faction(handle) == to) {
+            return;
+        }
+        if (!s.garrison().empty()) {
+            Garrisons.ejectAll(s, handle);
+        }
+        Production.lost(s, handle);
+        WallGates.lost(s, handle);
+        b.queues().setRally(handle, BuildingStore.RALLY_NONE, 0, 0, 0);
+        b.setFaction(handle, to);
+        if (b.state(handle) == BuildingStore.COMPLETE) {
+            s.population().house(to, Production.housing(s, handle));
+            WallGates.finished(s, handle); // a gate is its new owner's
+        }
     }
 
     /**
@@ -63,6 +88,7 @@ public final class BuildingLife {
             Garrisons.ejectAll(s, handle); // the units inside come out alive at the door (BLD-16)
         }
         Production.lost(s, handle); // its housing and its queue (ECO-06, PROD-01)
+        WallGates.lost(s, handle); // its gate is gone (BLD-13)
         Blueprint b = s.blueprintOf(handle);
         Footprint at = s.footprintOf(handle);
         int baseY = s.buildings().baseY(handle);

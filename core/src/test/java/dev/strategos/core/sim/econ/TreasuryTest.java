@@ -44,7 +44,7 @@ class TreasuryTest {
         saved[5] = 7; // resource 1's stock with nothing granted, gathered or refunded
         t.restore(saved);
         assertThat(t.broken())
-                .isEqualTo("faction 0 resource 1: granted 0 + gathered 0 + refunded 0 != stock 7 + spent 0");
+                .isEqualTo("faction 0 resource 1: granted 0 + gathered 0 + refunded 0 + looted 0 != stock 7 + spent 0");
 
         t.restore(new long[] {-5, 0, 0, 0, 0, 0, 0, 0, 5, 0});
         assertThat(t.broken()).startsWith("faction 0 resource 0: stock -5 below 0");

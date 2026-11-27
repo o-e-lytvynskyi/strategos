@@ -8,6 +8,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.sim.civ.RuleCatalogue;
 import java.util.List;
 
 /**
@@ -25,9 +26,16 @@ public final class ReplayDriver {
 
     /** As {@link #replay(Journal, TemplateSet)}, its path and page jobs run by {@code jobs}: never another result. */
     public static ReplayResult replay(Journal journal, TemplateSet templates, JobExecutor jobs) {
+        return replay(journal, templates, RuleCatalogue.DEFAULT, jobs);
+    }
+
+    /** As above, the civilisations' rules drawn from {@code catalogue}: the one the journal's match was played with. */
+    public static ReplayResult replay(
+            Journal journal, TemplateSet templates, RuleCatalogue catalogue, JobExecutor jobs) {
         MatchCore core = MatchCore.restore(
                 journal.start(),
                 templates,
+                catalogue,
                 new CorePorts(MetricsSink.none(), () -> 0L, jobs, JournalSink.MEMORY),
                 journal.segments().get(0)::slice);
         List<TickInputs> recorded = journal.nonEmptyTicks();

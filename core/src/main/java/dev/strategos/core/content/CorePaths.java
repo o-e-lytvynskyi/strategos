@@ -103,6 +103,33 @@ public final class CorePaths {
 
     public static final String GARRISON_CLASSES = "GarrisonHolder/classes";
 
+    /**
+     * What a garrison does for those inside (BLD-10, M9 spec §2.7): {@code heal} hit points a second for each occupant,
+     * and {@code ejectBelow}, the share of its most hit points under which a building lets everyone out. Optional.
+     */
+    public static final String GARRISON_HEAL = "GarrisonHolder/heal";
+
+    public static final String GARRISON_EJECT_BELOW = "GarrisonHolder/ejectBelow";
+
+    /**
+     * A building's territory influence (TERR-01, M9 spec §2.2): its weight, its radius in blocks, and whether it is a
+     * root (1) that connects the land around it. A building without {@code radius} claims none. Optional.
+     */
+    public static final String TERRITORY_WEIGHT = "TerritoryInfluence/weight";
+
+    public static final String TERRITORY_RADIUS = "TerritoryInfluence/radius";
+    public static final String TERRITORY_ROOT = "TerritoryInfluence/root";
+
+    /**
+     * A building's upgrade (BLD-12, M9 spec §2.8): the template {@code to} it becomes (a token), the seconds it takes,
+     * the phase techs it {@code requires} (tokens) and its cost, {@code Upgrade/Cost/resources/<id>}. Optional.
+     */
+    public static final String UPGRADE_TO = "Upgrade/to";
+
+    public static final String UPGRADE_TIME = "Upgrade/time";
+    public static final String UPGRADE_REQUIRES = "Upgrade/requires";
+    public static final String UPGRADE_COST_PREFIX = "Upgrade/Cost/resources/";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;
@@ -150,6 +177,31 @@ public final class CorePaths {
                 STANCE);
     }
 
+    /**
+     * Abilities (UNIT-10): {@code Abilities/<id>/{target,range,radius,cooldown,autocast,pick,effects}} and {@code
+     * Abilities/<id>/Cost/resources/<r>}, read by {@link AbilityDef}. Optional, so they stay out of {@link #all()}; a
+     * timed effect's modifiers address ordinary value paths.
+     */
+    public static final String ABILITIES = "Abilities";
+
+    public static final String ABILITY_COST_RESOURCES = "Cost/resources/";
+
+    /**
+     * What killing or hurting a unit is worth to the one who does it (CMB-11): an ordinary number path, optional, so it
+     * stays out of {@link #all()}. A unit without it is worth nothing. Its ranks are {@code Promotion/thresholds} and
+     * {@code Promotion/ranks}, lists that {@link PromotionDef} reads.
+     */
+    public static final String PROMOTION_VALUE = "Promotion/value";
+
+    /**
+     * Day and night (MATCH-16): {@code Vision/night} is the multiplier a template's vision takes at night, and {@code
+     * Vision/light} the radius a building keeps at night (a torch or a campfire). Optional number paths, so they stay
+     * out of {@link #all()}.
+     */
+    public static final String VISION_NIGHT = "Vision/night";
+
+    public static final String VISION_LIGHT = "Vision/light";
+
     private CorePaths() {}
 
     public static double min(String path) {
@@ -181,7 +233,12 @@ public final class CorePaths {
                     BUILDING_PIERCE,
                     BUILDING_RANGE,
                     BUILDING_SPREAD,
-                    GARRISON_CAPACITY -> 0;
+                    GARRISON_CAPACITY,
+                    GARRISON_HEAL,
+                    GARRISON_EJECT_BELOW,
+                    TERRITORY_WEIGHT,
+                    TERRITORY_RADIUS,
+                    TERRITORY_ROOT -> 0;
             case HEALTH, MELEE_REPEAT, RANGED_REPEAT, BUILDING_INTERVAL -> 1;
             case RANGED_SPEED, BUILDING_SPEED -> 0.01;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
@@ -198,6 +255,11 @@ public final class CorePaths {
             case RANGED_RANGE, BUILDING_RANGE -> 128;
             case BUILDING_ARROWS, BUILDING_PER_GARRISONED -> 32;
             case GARRISON_CAPACITY -> 200;
+            case GARRISON_HEAL -> 1_000;
+            case GARRISON_EJECT_BELOW -> 1;
+            case TERRITORY_WEIGHT -> 65_535;
+            case TERRITORY_RADIUS -> 256;
+            case TERRITORY_ROOT -> 1;
             case BUILDING_INTERVAL -> 1_200;
             case BUILDING_PIERCE -> Float.MAX_VALUE;
             case RANGED_PREPARE, RANGED_REPEAT -> 200;

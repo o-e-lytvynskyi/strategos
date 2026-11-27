@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.EconomyRules;
@@ -70,6 +71,9 @@ public final class StateHasher {
                 if (paths.lastRequest(i) != PathStore.NEVER) {
                     h = mixPath(h, paths, i);
                 }
+                if (paths.wanted(i)) { // a path asked for after this tick's request pass, for the next (row 26)
+                    h = Hasher.mix(h, 0x57A47EDL);
+                }
                 if (!motion.untouched(i)) {
                     h = mixMotion(h, motion, i);
                 }
@@ -137,6 +141,24 @@ public final class StateHasher {
         if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
             h = s.stances().mix(h);
         }
+        if (!s.play().gates().empty()) { // only while a gate stands (PATH-12)
+            h = s.play().gates().mix(h);
+        }
+        if (!s.play().breaches().empty()) { // only once a unit breached a wall (BLD-13)
+            h = s.play().breaches().mix(h, s.entities()::isAlive);
+        }
+        if (!s.play().capture().empty()) { // only while a building is being captured (CMB-10)
+            h = s.play().capture().mix(h);
+        }
+        if (!s.play().abilities().empty()) { // only while an ability is on cooldown or its modifiers last (UNIT-10)
+            h = s.play().abilities().mix(h, s.entities());
+        }
+        if (!s.play().experience().empty()) { // only once a unit has earned experience (CMB-11)
+            h = s.play().experience().mix(h, s.entities());
+        }
+        if (!s.play().formations().empty()) { // only while a formation exists (ORD-06)
+            h = s.play().formations().mix(h);
+        }
         if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
             h = s.garrison().mix(h);
         }
@@ -193,7 +215,18 @@ public final class StateHasher {
             h = Hasher.mix(h, rules.play().revealMap() ? 1 : 0);
             h = Hasher.mix(h, rules.play().explored() ? 1 : 0);
             h = Hasher.mix(h, rules.play().aiVision() ? 1 : 0);
+            if (rules.play().dayNight()) { // appended, so every rule set without it hashes as before (MATCH-16)
+                h = Hasher.mix(h, 1);
+            }
             h = Hasher.mix(h, rules.economy().populationMax());
+        }
+
+        if (config.hasCustomCivs()) { // the civilisations by id string, in faction order; the default hashes as before
+            for (int f = 0; f < config.factions(); f++) {
+                String civ = config.civ(f).value();
+                h = Hasher.mix(h, civ.length());
+                for (int k = 0; k < civ.length(); k++) h = Hasher.mix(h, civ.charAt(k));
+            }
         }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();
@@ -219,6 +252,13 @@ public final class StateHasher {
             h = Hasher.mix(h, o.slot());
             if (OrderKind.targets(o.kind())) { // only attacks and follows hold one: older queues hash as before
                 h = Hasher.mix(h, o.target());
+            }
+            if (!o.anchors().isEmpty()) { // only a patrol holds points: older queues hash as before
+                h = Hasher.mix(h, o.anchors().size());
+                for (Vec2d anchor : o.anchors()) {
+                    h = Hasher.mix(h, Double.doubleToLongBits(anchor.x()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(anchor.z()));
+                }
             }
         }
         return h;
@@ -250,6 +290,9 @@ public final class StateHasher {
             h = Hasher.mix(h, Double.doubleToLongBits(motion.netZ(i)));
             h = Hasher.mix(h, motion.net(i));
             h = Hasher.mix(h, motion.netOrder(i));
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.netBest(i)));
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.netAimX(i)));
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.netAimZ(i)));
         }
         if (motion.settle(i) != 0) { // QA-12's crowd-settle count, only while a unit walks near its place
             h = Hasher.mix(h, motion.settle(i));

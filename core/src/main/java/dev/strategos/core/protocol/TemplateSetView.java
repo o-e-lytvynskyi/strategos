@@ -4,11 +4,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import dev.strategos.core.content.CanonicalJson;
+import dev.strategos.core.content.CivDef;
+import dev.strategos.core.content.RawCiv;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
@@ -25,16 +28,24 @@ public record TemplateSetView(
         String version,
         List<TemplateId> table,
         List<TemplateSetView.Template> templates,
-        List<TemplateSetView.Tech> techs) {
+        List<TemplateSetView.Tech> techs,
+        List<TemplateSetView.Civ> civs) {
     /** The bound of {@code template_set} (spec §2.7). */
     public static final int MAX_BYTES = 256 * 1024;
 
     /** Ends the version of a view that carries techs; the version itself is hex. */
     static final String TECHS_MARK = "+t";
 
+    /**
+     * Ends the version of a view that carries civilisations (after {@link #TECHS_MARK} when both are there): the set's
+     * civilisations are not just the implied default.
+     */
+    static final String CIVS_MARK = "+c";
+
     static final int MAX_ID = 256;
     static final int MAX_JSON = 64 * 1024;
     static final int MAX_TEMPLATES = 4_096;
+    static final int MAX_CIVS = 256;
 
     /** One template: its net index, id and canonical flattened JSON. */
     @CoreApi
@@ -44,10 +55,20 @@ public record TemplateSetView(
     @CoreApi
     public record Tech(int netIndex, TechId id, String json) {}
 
+    /** One civilisation (CIV-01): its id and canonical JSON. */
+    @CoreApi
+    public record Civ(CivId id, String json) {}
+
     public TemplateSetView {
         table = List.copyOf(table);
         templates = List.copyOf(templates);
         techs = List.copyOf(techs);
+        civs = List.copyOf(civs);
+    }
+
+    /** A view without civilisations: the set has the implied default (what streams written before CIV-01 hold). */
+    public TemplateSetView(String version, List<TemplateId> table, List<Template> templates, List<Tech> techs) {
+        this(version, table, templates, techs, List.of());
     }
 
     /** A view without technologies: what streams written before TECH-01 hold. */
@@ -66,13 +87,20 @@ public record TemplateSetView(
         for (TechDef t : set.techs()) {
             techs.add(new Tech(t.netIndex(), t.id(), CanonicalJson.write(t.toJson())));
         }
-        return new TemplateSetView(set.version(), table.ids(), templates, techs);
+        List<Civ> civs = new ArrayList<>();
+        if (!set.hasImpliedCivs()) {
+            for (CivDef c : set.civs()) {
+                civs.add(new Civ(c.id(), CanonicalJson.write(c.toJson())));
+            }
+        }
+        return new TemplateSetView(set.version(), table.ids(), templates, techs, civs);
     }
 
     /** The set this view describes, decoded as the server's compiler decodes; its version is checked by the caller. */
     public TemplateSet toSet() {
         List<TemplateCompiler.Flat> flats = new ArrayList<>();
         List<TemplateCompiler.TechFlat> techFlats = new ArrayList<>();
+        List<RawCiv> civFiles = new ArrayList<>();
         try {
             for (Template t : templates) {
                 flats.add(new TemplateCompiler.Flat(
@@ -82,11 +110,15 @@ public record TemplateSetView(
                 techFlats.add(new TemplateCompiler.TechFlat(
                         t.id(), t.netIndex(), JsonParser.parseString(t.json()).getAsJsonObject()));
             }
+            for (Civ c : civs) {
+                civFiles.add(new RawCiv(
+                        c.id(), c.id().value(), JsonParser.parseString(c.json()).getAsJsonObject()));
+            }
         } catch (JsonParseException | IllegalStateException e) {
             throw new IllegalArgumentException(
                     "a template set view holds JSON that does not parse: " + e.getMessage(), e);
         }
-        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats, techFlats);
+        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats, techFlats, civFiles);
         if (!result.ok()) {
             throw new IllegalArgumentException("a template set view does not decode: " + result.problems());
         }
@@ -101,7 +133,14 @@ public record TemplateSetView(
             if (view.techs().isEmpty() && view.version().endsWith(TECHS_MARK)) {
                 throw new IllegalArgumentException("a version ending in '" + TECHS_MARK + "' needs techs");
             }
-            out.writeString(view.techs().isEmpty() ? view.version() : view.version() + TECHS_MARK, 64 + 2);
+            if (view.civs().isEmpty() && view.version().endsWith(CIVS_MARK)) {
+                throw new IllegalArgumentException("a version ending in '" + CIVS_MARK + "' needs civilisations");
+            }
+            out.writeString(
+                    view.version()
+                            + (view.techs().isEmpty() ? "" : TECHS_MARK)
+                            + (view.civs().isEmpty() ? "" : CIVS_MARK),
+                    64 + 4);
             out.writeVarInt(view.table().size());
             for (TemplateId id : view.table()) {
                 out.writeString(id.value(), MAX_ID);
@@ -120,13 +159,22 @@ public record TemplateSetView(
                     out.writeString(t.json(), MAX_JSON);
                 }
             }
+            if (!view.civs().isEmpty()) {
+                out.writeVarInt(view.civs().size());
+                for (Civ c : view.civs()) {
+                    out.writeString(c.id().value(), MAX_ID);
+                    out.writeString(c.json(), MAX_JSON);
+                }
+            }
         }
 
         @Override
         public TemplateSetView read(WireReader in) {
-            String marked = in.readString(64 + 2);
-            boolean withTechs = marked.endsWith(TECHS_MARK);
-            String version = withTechs ? marked.substring(0, marked.length() - TECHS_MARK.length()) : marked;
+            String marked = in.readString(64 + 4);
+            boolean withCivs = marked.endsWith(CIVS_MARK);
+            String unmarked = withCivs ? marked.substring(0, marked.length() - CIVS_MARK.length()) : marked;
+            boolean withTechs = unmarked.endsWith(TECHS_MARK);
+            String version = withTechs ? unmarked.substring(0, unmarked.length() - TECHS_MARK.length()) : unmarked;
             int ids = in.readVarInt(MAX_TEMPLATES);
             List<TemplateId> table = new ArrayList<>(ids);
             for (int k = 0; k < ids; k++) {
@@ -151,7 +199,18 @@ public record TemplateSetView(
                     techs.add(new Tech(index, id, in.readString(MAX_JSON)));
                 }
             }
-            return new TemplateSetView(version, table, templates, techs);
+            List<Civ> civs = new ArrayList<>();
+            if (withCivs) {
+                int n = in.readVarInt(MAX_CIVS);
+                if (n == 0) {
+                    throw new WireException("a template set marked with civilisations holds none");
+                }
+                for (int k = 0; k < n; k++) {
+                    CivId id = civId(in.readString(MAX_ID));
+                    civs.add(new Civ(id, in.readString(MAX_JSON)));
+                }
+            }
+            return new TemplateSetView(version, table, templates, techs, civs);
         }
 
         @Override
@@ -159,6 +218,14 @@ public record TemplateSetView(
             return MAX_BYTES;
         }
     };
+
+    private static CivId civId(String value) {
+        try {
+            return new CivId(value);
+        } catch (IllegalArgumentException e) {
+            throw new WireException("civilisation id: " + e.getMessage());
+        }
+    }
 
     private static TechId techId(String value) {
         try {

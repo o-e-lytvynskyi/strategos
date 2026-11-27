@@ -156,13 +156,28 @@ public final class MvpScene implements SoakScene {
 
     private final Config config;
     private final List<StartSlot> starts;
+    private final int factions;
+    private final int northShift;
 
     public MvpScene(Config config, List<StartSlot> starts) {
+        this(config, starts, 2, 0);
+    }
+
+    /**
+     * {@code factions} of 2 or 4: the first two on the map's two starts, any others as a pair beside them, {@code
+     * northShift} blocks north of the west's frame (the west one) and the east one its mirror (PERF-16).
+     */
+    MvpScene(Config config, List<StartSlot> starts, int factions, int northShift) {
         if (starts.size() < 2) {
             throw new IllegalArgumentException("the scene needs two start slots");
         }
+        if (factions != 2 && factions != 4) {
+            throw new IllegalArgumentException("two or four factions, not " + factions);
+        }
         this.config = config;
         this.starts = starts;
+        this.factions = factions;
+        this.northShift = northShift;
     }
 
     @Override
@@ -175,9 +190,10 @@ public final class MvpScene implements SoakScene {
         Placed iron = deposit(templates, IRON_MINE, IRON_AT, taken);
         List<Placed> layout = layout(templates, taken);
         List<Issue> out = new ArrayList<>();
-        for (int f = 0; f < 2; f++) {
+        for (int f = 0; f < factions; f++) {
             FactionSlot faction = new FactionSlot(f);
             boolean east = east(f);
+            int dz = f < 2 ? 0 : -northShift;
             if (!config.ai().isEmpty()) {
                 out.add(admin(new SetAi(faction, Levels.PROFILE, config.ai())));
             }
@@ -185,23 +201,23 @@ public final class MvpScene implements SoakScene {
                 out.add(admin(new Grant(faction, STOCK_ID[k], STOCK[k])));
             }
             for (Placed p : layout) {
-                out.add(admin(new SpawnBuilding(p.template(), faction, anchorX(p, east), anchorZ(p, east), 0)));
+                out.add(admin(new SpawnBuilding(p.template(), faction, anchorX(p, east), anchorZ(p, east, dz), 0)));
             }
             for (Placed d : List.of(quarry, iron)) {
-                out.add(admin(new SpawnDeposit(d.template(), anchorX(d, east), anchorZ(d, east))));
+                out.add(admin(new SpawnDeposit(d.template(), anchorX(d, east), anchorZ(d, east, dz))));
             }
-            units(out, faction, east);
+            units(out, faction, east, dz);
         }
         return out;
     }
 
-    private void units(List<Issue> out, FactionSlot faction, boolean east) {
-        Vec2d soldiers = at(SOLDIER_YARD, east);
+    private void units(List<Issue> out, FactionSlot faction, boolean east, int dz) {
+        Vec2d soldiers = at(SOLDIER_YARD, east, dz);
         spawn(out, TemplateSet.INFANTRY, faction, soldiers, config.spearmen(), SOLDIER_SPREAD);
         spawn(out, BattleScene.ARCHER, faction, soldiers, config.archers(), SOLDIER_SPREAD);
         spawn(out, BattleScene.HORSEMAN, faction, soldiers, config.horsemen(), SOLDIER_SPREAD);
         spawn(out, RAM, faction, soldiers, config.rams(), SOLDIER_SPREAD);
-        spawn(out, TemplateSet.WORKER, faction, at(WORKER_YARD, east), config.workers(), WORKER_SPREAD);
+        spawn(out, TemplateSet.WORKER, faction, at(WORKER_YARD, east, dz), config.workers(), WORKER_SPREAD);
     }
 
     private static void spawn(
@@ -291,7 +307,7 @@ public final class MvpScene implements SoakScene {
         taken.add(new int[] {p.x(), p.z(), p.x() + p.spanX() - 1, p.z() + p.spanZ() - 1});
     }
 
-    private static int[] span(TemplateSet templates, TemplateId id) {
+    static int[] span(TemplateSet templates, TemplateId id) {
         UnitTemplate t = templates.byId(id);
         Blueprint bp = t == null ? null : templates.blueprint(t.netIndex());
         if (bp == null) {
@@ -304,19 +320,21 @@ public final class MvpScene implements SoakScene {
     // ---- the east, the west turned half round
 
     private boolean east(int f) {
-        return starts.get(f).x() >= FirstSkirmish.SIZE / 2;
+        return starts.get(f % 2).x() >= FirstSkirmish.SIZE / 2;
     }
 
     private static int anchorX(Placed p, boolean east) {
         return east ? FirstSkirmish.SIZE - p.x() - p.spanX() : p.x();
     }
 
-    private static int anchorZ(Placed p, boolean east) {
-        return east ? FirstSkirmish.SIZE - p.z() - p.spanZ() : p.z();
+    /** The corner's z: the west's frame shifted {@code dz} north, the east's that turned half round. */
+    private static int anchorZ(Placed p, boolean east, int dz) {
+        return east ? FirstSkirmish.SIZE - (p.z() + dz) - p.spanZ() : p.z() + dz;
     }
 
-    private static Vec2d at(Vec2d west, boolean east) {
-        return east ? new Vec2d(FirstSkirmish.SIZE - west.x(), FirstSkirmish.SIZE - west.z()) : west;
+    private static Vec2d at(Vec2d west, boolean east, int dz) {
+        Vec2d shifted = new Vec2d(west.x(), west.z() + dz);
+        return east ? new Vec2d(FirstSkirmish.SIZE - shifted.x(), FirstSkirmish.SIZE - shifted.z()) : shifted;
     }
 
     @Override

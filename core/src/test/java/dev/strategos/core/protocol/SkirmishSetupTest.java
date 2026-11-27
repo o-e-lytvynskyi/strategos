@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.strategos.core.protocol.SkirmishSetup.Level;
 import dev.strategos.core.protocol.SkirmishSetup.StartResources;
 import dev.strategos.core.protocol.SkirmishSetup.Visibility;
+import dev.strategos.core.shared.CivId;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -113,5 +115,75 @@ class SkirmishSetupTest {
         byte[] b =
                 new WireWriter().writeString("x".repeat(129), 256).writeByte(0).toByteArray();
         assertThatThrownBy(() -> WireCodec.decode(SkirmishSetup.WIRE, b)).isInstanceOf(WireException.class);
+    }
+
+    /** CIV-01: civilisations are appended to the wire form, absent for the default, and old bytes still read. */
+    @Test
+    void civilisationsAreAppendedAndOldBytesStillRead() {
+        SkirmishSetup d = SkirmishSetup.DEFAULTS;
+        byte[] old = raw(d.map(), 1, 0, 150, 0);
+        assertThat(WireCodec.encode(SkirmishSetup.WIRE, d))
+                .as("no civilisations: the bytes of before")
+                .isEqualTo(old);
+        assertThat(WireCodec.decode(SkirmishSetup.WIRE, old)).isEqualTo(d);
+        assertThat(d.civs()).isEmpty();
+        assertThat(d.civ(0)).isEqualTo(CivId.DEFAULT);
+        assertThat(d.civ(1)).isEqualTo(CivId.DEFAULT);
+
+        SkirmishSetup allDefault = withCivs(d, CivId.DEFAULT, CivId.DEFAULT);
+        assertThat(WireCodec.encode(SkirmishSetup.WIRE, allDefault))
+                .as("only defaults: left out")
+                .isEqualTo(old);
+
+        SkirmishSetup mixed = withCivs(d, CivId.DEFAULT, new CivId("t:lean"));
+        byte[] bytes = WireCodec.encode(SkirmishSetup.WIRE, mixed);
+        assertThat(bytes)
+                .hasSize(old.length + 1 + (1 + CivId.DEFAULT.value().length()) + (1 + "t:lean".length()))
+                .hasSizeLessThanOrEqualTo(SkirmishSetup.WIRE.maxSize());
+        assertThat(WireCodec.decode(SkirmishSetup.WIRE, bytes)).isEqualTo(mixed);
+        assertThat(mixed.civ(1).value()).isEqualTo("t:lean");
+
+        SkirmishSetup one = withCivs(d, new CivId("t:lean"));
+        assertThat(one.civ(0)).as("one civilisation is every slot's").isEqualTo(one.civ(1));
+        assertThat(WireCodec.decode(SkirmishSetup.WIRE, WireCodec.encode(SkirmishSetup.WIRE, one)))
+                .isEqualTo(one);
+    }
+
+    @Test
+    void aMalformedCivilisationListIsAWireException() {
+        byte[] base = raw("a:b", 0, 0, 150, 0);
+        byte[][] bad = {
+            append(base, new WireWriter().writeVarInt(0).toByteArray()), // the writer never writes an empty list
+            append(base, new WireWriter().writeVarInt(17).toByteArray()), // over the cap
+            append(
+                    base,
+                    new WireWriter().writeVarInt(1).writeString("NOT AN ID", 48).toByteArray()),
+            append(
+                    base,
+                    new WireWriter().writeVarInt(2).writeString("t:lean", 48).toByteArray()), // cut short
+            append(
+                    base,
+                    new WireWriter()
+                            .writeVarInt(1)
+                            .writeString("t:lean", 48)
+                            .writeByte(0)
+                            .toByteArray()),
+        };
+        for (byte[] b : bad) {
+            assertThatThrownBy(() -> WireCodec.decode(SkirmishSetup.WIRE, b)).isInstanceOf(WireException.class);
+        }
+        List<CivId> tooMany = java.util.Collections.nCopies(17, new CivId("t:lean"));
+        assertThatThrownBy(() -> withCivs(SkirmishSetup.DEFAULTS, tooMany.toArray(new CivId[0])))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private static SkirmishSetup withCivs(SkirmishSetup d, CivId... civs) {
+        return new SkirmishSetup(d.map(), d.level(), d.resources(), d.populationCap(), d.visibility(), List.of(civs));
+    }
+
+    private static byte[] append(byte[] a, byte[] b) {
+        byte[] out = java.util.Arrays.copyOf(a, a.length + b.length);
+        System.arraycopy(b, 0, out, a.length, b.length);
+        return out;
     }
 }

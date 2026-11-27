@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.AttackSpread;
+import dev.strategos.core.protocol.Capture;
 import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
@@ -74,5 +75,12 @@ class OrderIntentTest {
     void followMeSendsOneFollowOfTheSelection() {
         assertThat(OrderIntents.follow(List.of(4, 2))).isEqualTo(Follow.replace(UnitSet.of(2, 4)));
         assertThat(OrderIntents.follow(List.of())).isNull();
+    }
+
+    /** CMB-10: with the capture key held a click on an enemy building is a Capture; none without a selection. */
+    @Test
+    void aCaptureClickCapturesTheBuilding() {
+        assertThat(OrderIntents.capture(List.of(7, 3), 0x300007)).isEqualTo(new Capture(UnitSet.of(3, 7), 0x300007));
+        assertThat(OrderIntents.capture(List.of(), 0x300007)).isNull();
     }
 }

@@ -14,6 +14,7 @@ import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.civ.CivBindException;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.mod.StrategosConfig;
 import dev.strategos.mod.StrategosSettings;
@@ -110,8 +111,9 @@ public final class MatchRegistry {
      * A RUNNING match in {@code space}, with the next id; with a map, a PREPARING one that starts once the map is
      * imported and its terrain hash checked ({@link #stepPreparing}). Throws {@link MatchRefusedException} for a size
      * outside 8..512, a Y band taller than 128 or outside the level's build height, a floor outside the band, another
-     * match within 2 blocks, a map that is missing or does not fit the space, or a saved match while the registry blob
-     * is not usable.
+     * match within 2 blocks, a map that is missing or does not fit the space, a civilisation the template set lacks
+     * (the id allocated for it is spent: ids are a sequence, so a gap is harmless), or a saved match while the registry
+     * blob is not usable.
      */
     public MatchRuntime create(ServerLevel level, MatchSpace space, MatchOptions options) {
         if (!space.level().equals(level.dimension())) {
@@ -136,8 +138,14 @@ public final class MatchRegistry {
                 bounds,
                 options.factions(),
                 MatchRules.DEFAULTS.withEconomy(economy.get()).withPlay(options.play()),
-                map == null ? List.of() : map.manifest().startSlots()); // AI-18: the computer knows the starts
-        MatchCore core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
+                map == null ? List.of() : map.manifest().startSlots(), // AI-18: the computer knows the starts
+                options.civs());
+        MatchCore core;
+        try {
+            core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
+        } catch (CivBindException e) { // the template set lacks a civilisation the config names (CIV-01)
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {
             policy = defaultPolicy();

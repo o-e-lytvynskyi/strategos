@@ -1,6 +1,7 @@
 {
   "abstract": true,
   "Identity": { "classes": "Unit" },
+  "Vision": { "night": 0.6 },
   "UnitMotion": { "walkSpeed": 0.1875, "turnRate": 45, "mobility": "infantry" },
   "Body": { "entityType": "strategos:unit_humanoid", "model": "humanoid", "width": 0.6, "height": 1.8, "radius": 0.35 }
 }

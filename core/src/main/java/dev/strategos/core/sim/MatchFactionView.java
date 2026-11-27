@@ -29,7 +29,7 @@ public final class MatchFactionView implements FactionView {
             return true;
         }
         try {
-            return researched(new TechId("strategos:phase_" + phase));
+            return state.civs().rules(faction).phase().reached(state, faction, phase);
         } catch (IllegalArgumentException e) {
             return false; // a name the compiler would have refused: never reached
         }

@@ -112,8 +112,8 @@ final class ProdScene {
             if (b.state(handle) == BuildingStore.COMPLETE) {
                 housing += Production.housing(s, handle);
             }
-            if (b.queueSize(handle) > 0 && b.reserved(handle)) {
-                used += s.templatePopulation(b.queue(handle)[0], faction);
+            if (b.queues().queueSize(handle) > 0 && b.queues().reserved(handle)) {
+                used += s.templatePopulation(b.queues().queue(handle)[0], faction);
             }
         }
         return new int[] {used, housing};

@@ -4,6 +4,9 @@ import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.body.BodyEvents;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -24,6 +27,10 @@ import org.jspecify.annotations.Nullable;
  * trackers.
  */
 public final class UnitEntity extends LivingEntity implements IEntityWithComplexSpawn {
+    /** The rank the insignia shows (CMB-11), 0 for none: synched, so a promotion reaches the trackers (a byte in a body's spawn data too). */
+    private static final EntityDataAccessor<Integer> DATA_RANK =
+            SynchedEntityData.defineId(UnitEntity.class, EntityDataSerializers.INT);
+
     private @Nullable UnitSpawnData spawnData;
     private boolean removedByRegistry;
 
@@ -44,6 +51,22 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
 
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_RANK, 0);
+    }
+
+    /** The rank this body shows, 0 for none. */
+    public int rank() {
+        return getEntityData().get(DATA_RANK);
+    }
+
+    /** On the server: the unit reached {@code rank}; vanilla sends the change to the body's trackers. */
+    public void setRank(int rank) {
+        getEntityData().set(DATA_RANK, rank);
     }
 
     /** On the server, before {@code addFreshEntity}: which unit this body shows. */
@@ -311,5 +334,6 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         spawnData = UnitSpawnData.STREAM_CODEC.decode(additionalData);
+        setRank(spawnData.rank());
     }
 }

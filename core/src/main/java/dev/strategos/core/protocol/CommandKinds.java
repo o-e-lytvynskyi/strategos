@@ -69,6 +69,28 @@ public final class CommandKinds {
             "strategos:attack_spread", 30, AttackSpread.class, AttackSpread.CODEC, AttackSpread.WIRE, false);
     public static final CommandKind<Research> RESEARCH =
             new CommandKind<>("strategos:research", 31, Research.class, Research.CODEC, Research.WIRE, false);
+    public static final CommandKind<Capture> CAPTURE =
+            new CommandKind<>("strategos:capture", 32, Capture.class, Capture.CODEC, Capture.WIRE, false);
+    public static final CommandKind<UpgradeBuilding> UPGRADE_BUILDING = new CommandKind<>(
+            "strategos:upgrade_building",
+            33,
+            UpgradeBuilding.class,
+            UpgradeBuilding.CODEC,
+            UpgradeBuilding.WIRE,
+            false);
+    public static final CommandKind<PlaceWall> PLACE_WALL =
+            new CommandKind<>("strategos:place_wall", 34, PlaceWall.class, PlaceWall.CODEC, PlaceWall.WIRE, false);
+    public static final CommandKind<UseAbility> USE_ABILITY =
+            new CommandKind<>("strategos:use_ability", 35, UseAbility.class, UseAbility.CODEC, UseAbility.WIRE, false);
+    public static final CommandKind<Patrol> PATROL =
+            new CommandKind<>("strategos:patrol", 36, Patrol.class, Patrol.CODEC, Patrol.WIRE, false);
+    public static final CommandKind<Guard> GUARD =
+            new CommandKind<>("strategos:guard", 37, Guard.class, Guard.CODEC, Guard.WIRE, false);
+    public static final CommandKind<FormationMove> FORMATION_MOVE = new CommandKind<>(
+            "strategos:formation_move", 38, FormationMove.class, FormationMove.CODEC, FormationMove.WIRE, false);
+    public static final CommandKind<DeleteUnits> DELETE_UNITS = new CommandKind<>(
+            "strategos:delete_units", 39, DeleteUnits.class, DeleteUnits.CODEC, DeleteUnits.WIRE, false);
+
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -100,7 +122,15 @@ public final class CommandKinds {
             RING_BELL,
             ALL_CLEAR,
             ATTACK_SPREAD,
-            RESEARCH));
+            RESEARCH,
+            CAPTURE,
+            UPGRADE_BUILDING,
+            PLACE_WALL,
+            USE_ABILITY,
+            PATROL,
+            GUARD,
+            FORMATION_MOVE,
+            DELETE_UNITS));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;
